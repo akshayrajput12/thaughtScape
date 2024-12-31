@@ -4,29 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-
-interface Profile {
-  id: string;
-  username: string;
-  full_name: string;
-  bio: string;
-  avatar_url: string;
-  age: number;
-  country: string;
-  state: string;
-  city: string;
-}
-
-interface Poem {
-  id: string;
-  title: string;
-  content: string;
-  created_at: string;
-}
+import type { Profile as ProfileType, Poem } from "@/types";
 
 const Profile = () => {
   const { id } = useParams();
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<ProfileType | null>(null);
   const [poems, setPoems] = useState<Poem[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
@@ -71,12 +53,12 @@ const Profile = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const updates = {
-      full_name: formData.get('full_name'),
-      bio: formData.get('bio'),
-      age: parseInt(formData.get('age') as string),
-      country: formData.get('country'),
-      state: formData.get('state'),
-      city: formData.get('city'),
+      full_name: String(formData.get('full_name')),
+      bio: String(formData.get('bio')),
+      age: formData.get('age') ? parseInt(String(formData.get('age'))) : null,
+      country: String(formData.get('country')),
+      state: String(formData.get('state')),
+      city: String(formData.get('city')),
     };
 
     const { error } = await supabase
@@ -125,7 +107,7 @@ const Profile = () => {
                 <label className="block text-sm font-medium mb-1">Full Name</label>
                 <input
                   name="full_name"
-                  defaultValue={profile.full_name}
+                  defaultValue={profile.full_name || ''}
                   className="w-full p-2 border rounded"
                 />
               </div>
@@ -133,7 +115,7 @@ const Profile = () => {
                 <label className="block text-sm font-medium mb-1">Bio</label>
                 <textarea
                   name="bio"
-                  defaultValue={profile.bio}
+                  defaultValue={profile.bio || ''}
                   className="w-full p-2 border rounded"
                   rows={3}
                 />
@@ -144,7 +126,7 @@ const Profile = () => {
                   <input
                     name="age"
                     type="number"
-                    defaultValue={profile.age}
+                    defaultValue={profile.age || ''}
                     className="w-full p-2 border rounded"
                   />
                 </div>
@@ -152,7 +134,7 @@ const Profile = () => {
                   <label className="block text-sm font-medium mb-1">Country</label>
                   <input
                     name="country"
-                    defaultValue={profile.country}
+                    defaultValue={profile.country || ''}
                     className="w-full p-2 border rounded"
                   />
                 </div>
@@ -160,7 +142,7 @@ const Profile = () => {
                   <label className="block text-sm font-medium mb-1">State</label>
                   <input
                     name="state"
-                    defaultValue={profile.state}
+                    defaultValue={profile.state || ''}
                     className="w-full p-2 border rounded"
                   />
                 </div>
@@ -168,7 +150,7 @@ const Profile = () => {
                   <label className="block text-sm font-medium mb-1">City</label>
                   <input
                     name="city"
-                    defaultValue={profile.city}
+                    defaultValue={profile.city || ''}
                     className="w-full p-2 border rounded"
                   />
                 </div>
