@@ -15,8 +15,6 @@ export interface Profile {
   updated_at: string;
 }
 
-export type User = Profile;
-
 export interface Poem {
   id: string;
   title: string;

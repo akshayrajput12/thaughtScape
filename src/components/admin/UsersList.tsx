@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -26,7 +26,8 @@ const UsersList = () => {
 
       setUsers(usersData.map(user => ({
         ...user,
-        is_profile_completed: user.is_profile_completed || false
+        is_profile_completed: user.is_profile_completed || false,
+        is_admin: user.is_admin || false
       })));
     };
 
@@ -61,42 +62,24 @@ const UsersList = () => {
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                  <div>
-                    <div className="font-medium text-gray-900">{user.full_name}</div>
-                  </div>
-                </div>
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-500">@{user.username}</td>
-              <td className="px-6 py-4 text-sm text-gray-500">
-                {new Date(user.created_at).toLocaleDateString()}
-              </td>
-              <td className="px-6 py-4 text-right text-sm font-medium">
-                <Button
-                  variant={user.is_admin ? "destructive" : "default"}
-                  onClick={() => handleToggleAdmin(user.id, user.is_admin)}
-                >
-                  {user.is_admin ? "Remove Admin" : "Make Admin"}
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-4">
+      {users.map((user) => (
+        <div
+          key={user.id}
+          className="flex items-center justify-between p-4 bg-white rounded-lg shadow"
+        >
+          <div>
+            <h3 className="font-medium">{user.full_name || user.username}</h3>
+            <p className="text-sm text-gray-500">{user.email}</p>
+          </div>
+          <Button
+            variant={user.is_admin ? "destructive" : "default"}
+            onClick={() => handleToggleAdmin(user.id, user.is_admin)}
+          >
+            {user.is_admin ? "Remove Admin" : "Make Admin"}
+          </Button>
+        </div>
+      ))}
     </div>
   );
 };

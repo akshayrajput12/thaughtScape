@@ -341,6 +341,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_admin: boolean | null
+          is_profile_completed: boolean | null
           phone: string | null
           state: string | null
           updated_at: string
@@ -356,6 +357,7 @@ export type Database = {
           full_name?: string | null
           id: string
           is_admin?: boolean | null
+          is_profile_completed?: boolean | null
           phone?: string | null
           state?: string | null
           updated_at?: string
@@ -371,6 +373,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_admin?: boolean | null
+          is_profile_completed?: boolean | null
           phone?: string | null
           state?: string | null
           updated_at?: string
