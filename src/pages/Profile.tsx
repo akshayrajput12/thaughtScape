@@ -37,11 +37,27 @@ const Profile = () => {
 
       setProfile(profileData);
 
-      const { data: poemsData } = await supabase
+      const { data: poemsData, error: poemsError } = await supabase
         .from('poems')
-        .select('*')
+        .select(`
+          *,
+          author:profiles!poems_author_id_fkey (
+            id,
+            username,
+            full_name
+          )
+        `)
         .eq('author_id', id)
         .order('created_at', { ascending: false });
+
+      if (poemsError) {
+        toast({
+          title: "Error",
+          description: "Could not load poems",
+          variant: "destructive",
+        });
+        return;
+      }
 
       setPoems(poemsData || []);
     };

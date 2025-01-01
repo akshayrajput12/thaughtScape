@@ -22,9 +22,13 @@ const Index = () => {
         .from('poems')
         .select(`
           *,
-          author:profiles(id, username, full_name),
-          likes:likes(count),
-          bookmarks:bookmarks(count)
+          author:profiles!poems_author_id_fkey (
+            id,
+            username,
+            full_name
+          ),
+          likes (count),
+          bookmarks (count)
         `)
         .order('created_at', { ascending: false })
         .limit(10);

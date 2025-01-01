@@ -12,10 +12,7 @@ export const UsersList = () => {
     const fetchUsers = async () => {
       const { data: usersData, error } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          auth_users:auth_users(email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -27,12 +24,7 @@ export const UsersList = () => {
         return;
       }
 
-      const formattedUsers = usersData.map(user => ({
-        ...user,
-        email: user.auth_users?.[0]?.email || ''
-      }));
-
-      setUsers(formattedUsers);
+      setUsers(usersData);
     };
 
     fetchUsers();
@@ -66,7 +58,7 @@ export const UsersList = () => {
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
@@ -78,11 +70,10 @@ export const UsersList = () => {
                 <div className="flex items-center">
                   <div>
                     <div className="font-medium text-gray-900">{user.full_name}</div>
-                    <div className="text-sm text-gray-500">@{user.username}</div>
                   </div>
                 </div>
               </td>
-              <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
+              <td className="px-6 py-4 text-sm text-gray-500">@{user.username}</td>
               <td className="px-6 py-4 text-sm text-gray-500">
                 {new Date(user.created_at).toLocaleDateString()}
               </td>
