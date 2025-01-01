@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@/types";
 
-export const UsersList = () => {
+const UsersList = () => {
   const [users, setUsers] = useState<User[]>([]);
   const { toast } = useToast();
 
@@ -30,31 +30,36 @@ export const UsersList = () => {
     fetchUsers();
   }, [toast]);
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleToggleAdmin = async (userId: string, currentStatus: boolean) => {
     const { error } = await supabase
       .from('profiles')
-      .delete()
+      .update({ is_admin: !currentStatus })
       .eq('id', userId);
 
     if (error) {
       toast({
         title: "Error",
-        description: "Could not delete user",
+        description: "Could not update user status",
         variant: "destructive",
       });
       return;
     }
 
-    setUsers(users.filter(user => user.id !== userId));
+    setUsers(users.map(user => 
+      user.id === userId 
+        ? { ...user, is_admin: !currentStatus }
+        : user
+    ));
+
     toast({
       title: "Success",
-      description: "User deleted successfully",
+      description: "User status updated successfully",
     });
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <table className="w-full">
+    <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
@@ -63,10 +68,10 @@ export const UsersList = () => {
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="bg-white divide-y divide-gray-200">
           {users.map((user) => (
             <tr key={user.id}>
-              <td className="px-6 py-4">
+              <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center">
                   <div>
                     <div className="font-medium text-gray-900">{user.full_name}</div>
@@ -77,13 +82,12 @@ export const UsersList = () => {
               <td className="px-6 py-4 text-sm text-gray-500">
                 {new Date(user.created_at).toLocaleDateString()}
               </td>
-              <td className="px-6 py-4 text-right">
+              <td className="px-6 py-4 text-right text-sm font-medium">
                 <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDeleteUser(user.id)}
+                  variant={user.is_admin ? "destructive" : "default"}
+                  onClick={() => handleToggleAdmin(user.id, user.is_admin)}
                 >
-                  Delete
+                  {user.is_admin ? "Remove Admin" : "Make Admin"}
                 </Button>
               </td>
             </tr>
@@ -93,3 +97,5 @@ export const UsersList = () => {
     </div>
   );
 };
+
+export default UsersList;

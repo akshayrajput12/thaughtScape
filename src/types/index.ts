@@ -10,13 +10,12 @@ export interface Profile {
   bio: string | null;
   avatar_url: string | null;
   is_admin: boolean;
+  is_profile_completed: boolean;
   created_at: string;
   updated_at: string;
 }
 
-export interface User extends Profile {
-  email: string;
-}
+export type User = Profile;
 
 export interface Poem {
   id: string;
