@@ -18,7 +18,7 @@ const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<any>(null);
-  const [profile, setProfile] = useState<ProfileType | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,13 +27,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
 
       if (session?.user) {
-        const { data: profile } = await supabase
+        const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single();
         
-        setProfile(profile);
+        if (profileData) {
+          setProfile({
+            ...profileData,
+            is_profile_completed: profileData.is_profile_completed || false
+          });
+        }
       }
       
       setLoading(false);
@@ -46,13 +51,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       if (session?.user) {
-        const { data: profile } = await supabase
+        const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single();
         
-        setProfile(profile);
+        if (profileData) {
+          setProfile({
+            ...profileData,
+            is_profile_completed: profileData.is_profile_completed || false
+          });
+        }
       }
     });
 

@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import type { User } from "@/types";
+import type { Profile } from "@/types";
 
 const UsersList = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<Profile[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -24,7 +24,10 @@ const UsersList = () => {
         return;
       }
 
-      setUsers(usersData);
+      setUsers(usersData.map(user => ({
+        ...user,
+        is_profile_completed: user.is_profile_completed || false
+      })));
     };
 
     fetchUsers();
