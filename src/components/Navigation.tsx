@@ -2,7 +2,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { Bell, MessageSquare, PenTool, User, LogOut } from "lucide-react";
+import { Bell, MessageSquare, PenTool, User, LogOut, Home } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navigation = () => {
   const navigate = useNavigate();
@@ -19,11 +25,15 @@ const Navigation = () => {
           .select('is_admin')
           .eq('id', session.user.id)
           .single();
+        
         setIsAdmin(profile?.is_admin || false);
+        if (profile?.is_admin) {
+          navigate('/admin');
+        }
       }
     };
     checkAdmin();
-  }, []);
+  }, [navigate]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -40,6 +50,9 @@ const Navigation = () => {
           
           {userId ? (
             <div className="flex items-center gap-4">
+              <Link to="/" className="text-gray-600 hover:text-gray-900">
+                <Home className="h-6 w-6" />
+              </Link>
               <Link to="/write" className="text-gray-600 hover:text-gray-900">
                 <PenTool className="h-6 w-6" />
               </Link>
@@ -49,17 +62,26 @@ const Navigation = () => {
               <Link to="/messages" className="text-gray-600 hover:text-gray-900">
                 <MessageSquare className="h-6 w-6" />
               </Link>
-              <Link to={`/profile/${userId}`} className="text-gray-600 hover:text-gray-900">
-                <User className="h-6 w-6" />
-              </Link>
-              {isAdmin && (
-                <Link to="/admin" className="text-sm font-medium text-primary-foreground bg-primary px-4 py-2 rounded-md">
-                  Admin
-                </Link>
-              )}
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut className="h-5 w-5" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <User className="h-6 w-6" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate(`/profile/${userId}`)}>
+                    Profile
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      Admin Dashboard
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={handleLogout}>
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ) : (
             <div className="flex items-center gap-4">

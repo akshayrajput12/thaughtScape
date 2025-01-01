@@ -14,7 +14,7 @@ export const UsersList = () => {
         .from('profiles')
         .select(`
           *,
-          email:auth_users(email)
+          auth_users:auth_users(email)
         `)
         .order('created_at', { ascending: false });
 
@@ -29,7 +29,7 @@ export const UsersList = () => {
 
       const formattedUsers = usersData.map(user => ({
         ...user,
-        email: user.email?.[0]?.email || ''
+        email: user.auth_users?.[0]?.email || ''
       }));
 
       setUsers(formattedUsers);

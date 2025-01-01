@@ -4,22 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Bookmark, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-interface Poem {
-  id: string;
-  title: string;
-  content: string;
-  author: {
-    id: string;
-    username: string;
-    full_name: string;
-  };
-  created_at: string;
-  _count: {
-    likes: number;
-    bookmarks: number;
-  };
-}
+import type { Poem } from "@/types";
 
 const Index = () => {
   const [poems, setPoems] = useState<Poem[]>([]);
@@ -38,10 +23,8 @@ const Index = () => {
         .select(`
           *,
           author:profiles(id, username, full_name),
-          _count {
-            likes,
-            bookmarks
-          }
+          likes:likes(count),
+          bookmarks:bookmarks(count)
         `)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -51,7 +34,15 @@ const Index = () => {
         return;
       }
 
-      setPoems(data || []);
+      const formattedPoems = data.map(poem => ({
+        ...poem,
+        _count: {
+          likes: poem.likes[0]?.count || 0,
+          bookmarks: poem.bookmarks[0]?.count || 0
+        }
+      }));
+
+      setPoems(formattedPoems);
     };
 
     fetchPoems();
@@ -123,7 +114,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-primary/10">
-      {/* Hero Section */}
       <section className="container px-4 pt-20 pb-16 text-center">
         <h1 className="text-5xl font-serif font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600">
           Where Words Take Flight
