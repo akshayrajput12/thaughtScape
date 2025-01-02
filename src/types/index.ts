@@ -24,6 +24,7 @@ export interface Poem {
     id: string;
     username: string;
     full_name: string | null;
+    avatar_url: string | null;  // Added this field
   };
   created_at: string;
   _count?: {
