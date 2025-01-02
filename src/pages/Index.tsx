@@ -10,13 +10,25 @@ import type { Poem } from "@/types";
 const Index = () => {
   const [poems, setPoems] = useState<Poem[]>([]);
   const [session, setSession] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+    const fetchUserData = async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      setSession(currentSession);
+
+      if (currentSession?.user?.id) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', currentSession.user.id)
+          .single();
+        
+        setIsAdmin(profileData?.is_admin || false);
+      }
+    };
 
     const fetchPoems = async () => {
       const { data, error } = await supabase
@@ -50,8 +62,13 @@ const Index = () => {
       setPoems(formattedPoems);
     };
 
+    fetchUserData();
     fetchPoems();
   }, []);
+
+  const handleDeletePoem = (poemId: string) => {
+    setPoems(poems.filter(poem => poem.id !== poemId));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-primary/5 to-secondary/5">
@@ -121,6 +138,8 @@ const Index = () => {
               <LuxuryPoemCard
                 poem={poem}
                 currentUserId={session?.user?.id}
+                isAdmin={isAdmin}
+                onDelete={handleDeletePoem}
               />
             </motion.div>
           ))}

@@ -9,10 +9,11 @@ import type { Poem } from "@/types";
 interface PoemCardProps {
   poem: Poem;
   currentUserId?: string;
+  isAdmin?: boolean;
   onDelete?: (poemId: string) => void;
 }
 
-export const PoemCard = ({ poem, currentUserId, onDelete }: PoemCardProps) => {
+export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardProps) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -70,9 +71,32 @@ export const PoemCard = ({ poem, currentUserId, onDelete }: PoemCardProps) => {
   };
 
   const handleDelete = async () => {
-    if (!onDelete) return;
-    onDelete(poem.id);
+    try {
+      const { error } = await supabase
+        .from('poems')
+        .delete()
+        .eq('id', poem.id);
+
+      if (error) throw error;
+
+      if (onDelete) {
+        onDelete(poem.id);
+      }
+
+      toast({
+        title: "Success",
+        description: "Poem deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not delete poem",
+        variant: "destructive",
+      });
+    }
   };
+
+  const canModify = currentUserId === poem.author.id || isAdmin;
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
@@ -105,7 +129,7 @@ export const PoemCard = ({ poem, currentUserId, onDelete }: PoemCardProps) => {
               {isFollowing ? "Following" : "Follow"}
             </Button>
           )}
-          {currentUserId === poem.author.id && (
+          {canModify && (
             <>
               <Button
                 variant="outline"
