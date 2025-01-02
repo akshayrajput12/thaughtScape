@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { PoemCard } from "@/components/PoemCard";
+import { LuxuryPoemCard } from "@/components/LuxuryPoemCard";
 import type { Poem } from "@/types";
 
 const Index = () => {
@@ -31,8 +32,7 @@ const Index = () => {
           likes (count),
           bookmarks (count)
         `)
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching poems:', error);
@@ -53,64 +53,76 @@ const Index = () => {
     fetchPoems();
   }, []);
 
-  const handleDeletePoem = async (poemId: string) => {
-    const { error } = await supabase
-      .from('poems')
-      .delete()
-      .eq('id', poemId);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Could not delete the poem",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setPoems(poems.filter(poem => poem.id !== poemId));
-    toast({
-      title: "Success",
-      description: "Poem deleted successfully",
-    });
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-primary/10">
-      <section className="container px-4 pt-20 pb-16 text-center">
-        <h1 className="text-5xl font-serif font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600">
+    <div className="min-h-screen bg-gradient-to-b from-white via-primary/5 to-secondary/5">
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="container px-4 pt-24 pb-20 text-center"
+      >
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          className="text-6xl font-serif font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600"
+        >
           Where Words Take Flight
-        </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          Join our community of poets and poetry enthusiasts. Share your verses, discover new voices, and connect through the power of words.
-        </p>
-        {!session ? (
-          <Button
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 rounded-full text-lg"
-            onClick={() => navigate('/auth')}
-          >
-            Join Now
-          </Button>
-        ) : (
-          <Button
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 rounded-full text-lg"
-            onClick={() => navigate('/write')}
-          >
-            Start Writing
-          </Button>
-        )}
-      </section>
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed"
+        >
+          Join our community of poets and poetry enthusiasts. Share your verses, discover new voices, 
+          and connect through the power of words.
+        </motion.p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.6 }}
+        >
+          {!session ? (
+            <Button
+              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground px-8 py-6 rounded-full text-lg shadow-lg hover:shadow-xl transition-all"
+              onClick={() => navigate('/auth')}
+            >
+              Join Now
+            </Button>
+          ) : (
+            <Button
+              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground px-8 py-6 rounded-full text-lg shadow-lg hover:shadow-xl transition-all"
+              onClick={() => navigate('/write')}
+            >
+              Start Writing
+            </Button>
+          )}
+        </motion.div>
+      </motion.section>
 
       <section className="container px-4 py-16">
-        <h2 className="text-3xl font-serif font-bold mb-8 text-center">Featured Poems</h2>
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-4xl font-serif font-bold mb-12 text-center bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600"
+        >
+          Featured Poems
+        </motion.h2>
         <div className="grid gap-8 max-w-4xl mx-auto">
-          {poems.map((poem) => (
-            <PoemCard
+          {poems.map((poem, index) => (
+            <motion.div
               key={poem.id}
-              poem={poem}
-              currentUserId={session?.user?.id}
-              onDelete={handleDeletePoem}
-            />
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1, duration: 0.5 }}
+            >
+              <LuxuryPoemCard
+                poem={poem}
+                currentUserId={session?.user?.id}
+              />
+            </motion.div>
           ))}
         </div>
       </section>

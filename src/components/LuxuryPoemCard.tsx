@@ -1,0 +1,88 @@
+import { motion } from "framer-motion";
+import { Heart, Bookmark, Share2, UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { Poem } from "@/types";
+
+interface LuxuryPoemCardProps {
+  poem: Poem;
+  currentUserId?: string;
+}
+
+export const LuxuryPoemCard = ({ poem, currentUserId }: LuxuryPoemCardProps) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="bg-gradient-to-br from-white to-primary/5 rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow"
+    >
+      <div className="flex justify-between items-start mb-6">
+        <div className="flex items-center gap-4">
+          <motion.img
+            whileHover={{ scale: 1.1 }}
+            src={poem.author.avatar_url || "/placeholder.svg"}
+            alt={poem.author.username}
+            className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
+          />
+          <div className="text-left">
+            <h3 className="text-2xl font-serif font-semibold bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600">
+              {poem.title}
+            </h3>
+            <p className="text-sm text-gray-600">
+              by {poem.author.full_name || poem.author.username}
+            </p>
+          </div>
+        </div>
+        {currentUserId && currentUserId !== poem.author.id && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hover:bg-primary/10 transition-colors"
+          >
+            <UserPlus className="w-4 h-4 mr-1" />
+            Follow
+          </Button>
+        )}
+      </div>
+      
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="mb-6"
+      >
+        <p className="text-gray-700 whitespace-pre-line leading-relaxed font-serif">
+          {poem.content}
+        </p>
+      </motion.div>
+
+      <div className="flex items-center justify-between text-sm text-gray-500">
+        <div className="flex items-center gap-6">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            className="flex items-center gap-2 hover:text-red-500 transition-colors"
+          >
+            <Heart className="w-5 h-5" />
+            <span>{poem._count?.likes || 0}</span>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            className="flex items-center gap-2 hover:text-blue-500 transition-colors"
+          >
+            <Bookmark className="w-5 h-5" />
+            <span>{poem._count?.bookmarks || 0}</span>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            className="hover:text-gray-700 transition-colors"
+          >
+            <Share2 className="w-5 h-5" />
+          </motion.button>
+        </div>
+        <span className="text-sm text-gray-400">
+          {new Date(poem.created_at).toLocaleDateString()}
+        </span>
+      </div>
+    </motion.div>
+  );
+};
