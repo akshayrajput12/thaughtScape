@@ -1,6 +1,7 @@
 export interface Profile {
   id: string;
   username: string;
+  email?: string;
   full_name: string | null;
   age: number | null;
   phone: string | null;

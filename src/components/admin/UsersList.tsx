@@ -70,7 +70,7 @@ const UsersList = () => {
         >
           <div>
             <h3 className="font-medium">{user.full_name || user.username}</h3>
-            <p className="text-sm text-gray-500">{user.email}</p>
+            <p className="text-sm text-gray-500">{user.username}</p>
           </div>
           <Button
             variant={user.is_admin ? "destructive" : "default"}
