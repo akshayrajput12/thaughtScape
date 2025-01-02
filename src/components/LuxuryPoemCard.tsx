@@ -1,14 +1,54 @@
 import { motion } from "framer-motion";
-import { Heart, Bookmark, Share2, UserPlus } from "lucide-react";
+import { Heart, Bookmark, Share2, UserPlus, Edit, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import type { Poem } from "@/types";
 
 interface LuxuryPoemCardProps {
   poem: Poem;
   currentUserId?: string;
+  isAdmin?: boolean;
+  onDelete?: (poemId: string) => void;
 }
 
-export const LuxuryPoemCard = ({ poem, currentUserId }: LuxuryPoemCardProps) => {
+export const LuxuryPoemCard = ({ poem, currentUserId, isAdmin, onDelete }: LuxuryPoemCardProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleEdit = () => {
+    navigate(`/edit-poem/${poem.id}`);
+  };
+
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from('poems')
+        .delete()
+        .eq('id', poem.id);
+
+      if (error) throw error;
+
+      if (onDelete) {
+        onDelete(poem.id);
+      }
+
+      toast({
+        title: "Success",
+        description: "Poem deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not delete poem",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const canModify = currentUserId === poem.author.id || isAdmin;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -33,16 +73,36 @@ export const LuxuryPoemCard = ({ poem, currentUserId }: LuxuryPoemCardProps) => 
             </p>
           </div>
         </div>
-        {currentUserId && currentUserId !== poem.author.id && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hover:bg-primary/10 transition-colors"
-          >
-            <UserPlus className="w-4 h-4 mr-1" />
-            Follow
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {currentUserId && currentUserId !== poem.author.id && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hover:bg-primary/10 transition-colors"
+            >
+              <UserPlus className="w-4 h-4 mr-1" />
+              Follow
+            </Button>
+          )}
+          {canModify && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleEdit}
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDelete}
+              >
+                <Trash className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+        </div>
       </div>
       
       <motion.div
