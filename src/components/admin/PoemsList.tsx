@@ -14,7 +14,7 @@ export const PoemsList = () => {
         .from('poems')
         .select(`
           *,
-          author:profiles(id, username, full_name)
+          author:profiles(id, username, full_name, avatar_url)
         `)
         .order('created_at', { ascending: false });
 
