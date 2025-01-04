@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Bookmark, Share2, UserPlus, Edit, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,41 @@ interface PoemCardProps {
 
 export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardProps) => {
   const [isFollowing, setIsFollowing] = useState(false);
+  const [likesCount, setLikesCount] = useState(poem._count?.likes || 0);
+  const [bookmarksCount, setBookmarksCount] = useState(poem._count?.bookmarks || 0);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (currentUserId) {
+      // Check if user has liked the poem
+      const checkLike = async () => {
+        const { data: likeData } = await supabase
+          .from('likes')
+          .select()
+          .eq('poem_id', poem.id)
+          .eq('user_id', currentUserId)
+          .single();
+        setIsLiked(!!likeData);
+      };
+
+      // Check if user has bookmarked the poem
+      const checkBookmark = async () => {
+        const { data: bookmarkData } = await supabase
+          .from('bookmarks')
+          .select()
+          .eq('poem_id', poem.id)
+          .eq('user_id', currentUserId)
+          .single();
+        setIsBookmarked(!!bookmarkData);
+      };
+
+      checkLike();
+      checkBookmark();
+    }
+  }, [poem.id, currentUserId]);
 
   const handleFollow = async () => {
     if (!currentUserId) {
@@ -61,6 +94,102 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
       toast({
         title: "Error",
         description: "Could not update follow status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLike = async () => {
+    if (!currentUserId) {
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      if (!isLiked) {
+        const { error } = await supabase
+          .from('likes')
+          .insert({
+            poem_id: poem.id,
+            user_id: currentUserId
+          });
+
+        if (error) throw error;
+
+        setLikesCount(prev => prev + 1);
+        setIsLiked(true);
+        toast({
+          title: "Success",
+          description: "Poem liked successfully",
+        });
+      } else {
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('poem_id', poem.id)
+          .eq('user_id', currentUserId);
+
+        if (error) throw error;
+
+        setLikesCount(prev => prev - 1);
+        setIsLiked(false);
+        toast({
+          title: "Success",
+          description: "Poem unliked successfully",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not update like status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBookmark = async () => {
+    if (!currentUserId) {
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      if (!isBookmarked) {
+        const { error } = await supabase
+          .from('bookmarks')
+          .insert({
+            poem_id: poem.id,
+            user_id: currentUserId
+          });
+
+        if (error) throw error;
+
+        setBookmarksCount(prev => prev + 1);
+        setIsBookmarked(true);
+        toast({
+          title: "Success",
+          description: "Poem bookmarked successfully",
+        });
+      } else {
+        const { error } = await supabase
+          .from('bookmarks')
+          .delete()
+          .eq('poem_id', poem.id)
+          .eq('user_id', currentUserId);
+
+        if (error) throw error;
+
+        setBookmarksCount(prev => prev - 1);
+        setIsBookmarked(false);
+        toast({
+          title: "Success",
+          description: "Bookmark removed successfully",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not update bookmark status",
         variant: "destructive",
       });
     }
@@ -152,13 +281,23 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
       <p className="text-gray-700 mb-4 whitespace-pre-line">{poem.content}</p>
       <div className="flex items-center justify-between text-sm text-gray-500">
         <div className="flex items-center gap-4">
-          <button className="flex items-center gap-1 hover:text-red-500 transition-colors">
-            <Heart size={18} />
-            <span>{poem._count?.likes || 0}</span>
+          <button 
+            className={`flex items-center gap-1 transition-colors ${
+              isLiked ? 'text-red-500' : 'hover:text-red-500'
+            }`}
+            onClick={handleLike}
+          >
+            <Heart size={18} className={isLiked ? 'fill-current' : ''} />
+            <span>{likesCount}</span>
           </button>
-          <button className="flex items-center gap-1 hover:text-blue-500 transition-colors">
-            <Bookmark size={18} />
-            <span>{poem._count?.bookmarks || 0}</span>
+          <button 
+            className={`flex items-center gap-1 transition-colors ${
+              isBookmarked ? 'text-blue-500' : 'hover:text-blue-500'
+            }`}
+            onClick={handleBookmark}
+          >
+            <Bookmark size={18} className={isBookmarked ? 'fill-current' : ''} />
+            <span>{bookmarksCount}</span>
           </button>
           <button className="hover:text-gray-700 transition-colors">
             <Share2 size={18} />

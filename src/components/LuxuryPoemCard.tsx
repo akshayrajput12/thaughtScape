@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Heart, Bookmark, Share2, UserPlus, Edit, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,135 @@ interface LuxuryPoemCardProps {
 export const LuxuryPoemCard = ({ poem, currentUserId, isAdmin, onDelete }: LuxuryPoemCardProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [likesCount, setLikesCount] = useState(poem._count?.likes || 0);
+  const [bookmarksCount, setBookmarksCount] = useState(poem._count?.bookmarks || 0);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  useEffect(() => {
+    if (currentUserId) {
+      // Check if user has liked the poem
+      const checkLike = async () => {
+        const { data: likeData } = await supabase
+          .from('likes')
+          .select()
+          .eq('poem_id', poem.id)
+          .eq('user_id', currentUserId)
+          .single();
+        setIsLiked(!!likeData);
+      };
+
+      // Check if user has bookmarked the poem
+      const checkBookmark = async () => {
+        const { data: bookmarkData } = await supabase
+          .from('bookmarks')
+          .select()
+          .eq('poem_id', poem.id)
+          .eq('user_id', currentUserId)
+          .single();
+        setIsBookmarked(!!bookmarkData);
+      };
+
+      checkLike();
+      checkBookmark();
+    }
+  }, [poem.id, currentUserId]);
+
+  const handleLike = async () => {
+    if (!currentUserId) {
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      if (!isLiked) {
+        const { error } = await supabase
+          .from('likes')
+          .insert({
+            poem_id: poem.id,
+            user_id: currentUserId
+          });
+
+        if (error) throw error;
+
+        setLikesCount(prev => prev + 1);
+        setIsLiked(true);
+        toast({
+          title: "Success",
+          description: "Poem liked successfully",
+        });
+      } else {
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('poem_id', poem.id)
+          .eq('user_id', currentUserId);
+
+        if (error) throw error;
+
+        setLikesCount(prev => prev - 1);
+        setIsLiked(false);
+        toast({
+          title: "Success",
+          description: "Poem unliked successfully",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not update like status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBookmark = async () => {
+    if (!currentUserId) {
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      if (!isBookmarked) {
+        const { error } = await supabase
+          .from('bookmarks')
+          .insert({
+            poem_id: poem.id,
+            user_id: currentUserId
+          });
+
+        if (error) throw error;
+
+        setBookmarksCount(prev => prev + 1);
+        setIsBookmarked(true);
+        toast({
+          title: "Success",
+          description: "Poem bookmarked successfully",
+        });
+      } else {
+        const { error } = await supabase
+          .from('bookmarks')
+          .delete()
+          .eq('poem_id', poem.id)
+          .eq('user_id', currentUserId);
+
+        if (error) throw error;
+
+        setBookmarksCount(prev => prev - 1);
+        setIsBookmarked(false);
+        toast({
+          title: "Success",
+          description: "Bookmark removed successfully",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not update bookmark status",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleEdit = () => {
     navigate(`/edit-poem/${poem.id}`);
@@ -120,17 +250,23 @@ export const LuxuryPoemCard = ({ poem, currentUserId, isAdmin, onDelete }: Luxur
         <div className="flex items-center gap-6">
           <motion.button
             whileHover={{ scale: 1.1 }}
-            className="flex items-center gap-2 hover:text-red-500 transition-colors"
+            className={`flex items-center gap-2 transition-colors ${
+              isLiked ? 'text-red-500' : 'hover:text-red-500'
+            }`}
+            onClick={handleLike}
           >
-            <Heart className="w-5 h-5" />
-            <span>{poem._count?.likes || 0}</span>
+            <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+            <span>{likesCount}</span>
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.1 }}
-            className="flex items-center gap-2 hover:text-blue-500 transition-colors"
+            className={`flex items-center gap-2 transition-colors ${
+              isBookmarked ? 'text-blue-500' : 'hover:text-blue-500'
+            }`}
+            onClick={handleBookmark}
           >
-            <Bookmark className="w-5 h-5" />
-            <span>{poem._count?.bookmarks || 0}</span>
+            <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} />
+            <span>{bookmarksCount}</span>
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.1 }}
