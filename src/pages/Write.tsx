@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,11 +9,46 @@ import { useToast } from "@/hooks/use-toast";
 const Write = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [isProfileCompleted, setIsProfileCompleted] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  useEffect(() => {
+    const checkProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        navigate('/auth');
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_profile_completed')
+        .eq('id', session.user.id)
+        .single();
+
+      if (!profile?.is_profile_completed) {
+        navigate(`/profile/${session.user.id}`);
+        return;
+      }
+
+      setIsProfileCompleted(true);
+    };
+
+    checkProfile();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isProfileCompleted) {
+      toast({
+        title: "Profile Incomplete",
+        description: "Please complete your profile before posting.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
@@ -44,6 +79,10 @@ const Write = () => {
     });
     navigate('/');
   };
+
+  if (!isProfileCompleted) {
+    return null;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">

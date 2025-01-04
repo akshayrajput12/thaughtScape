@@ -4,13 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { LuxuryPoemCard } from "@/components/LuxuryPoemCard";
+import { PoemCard } from "@/components/PoemCard";
 import type { Poem } from "@/types";
 
 const Index = () => {
   const [poems, setPoems] = useState<Poem[]>([]);
   const [session, setSession] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isProfileCompleted, setIsProfileCompleted] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -22,11 +23,12 @@ const Index = () => {
       if (currentSession?.user?.id) {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('is_admin')
+          .select('is_admin, is_profile_completed')
           .eq('id', currentSession.user.id)
           .single();
         
         setIsAdmin(profileData?.is_admin || false);
+        setIsProfileCompleted(profileData?.is_profile_completed || false);
       }
     };
 
@@ -66,6 +68,20 @@ const Index = () => {
     fetchPoems();
   }, []);
 
+  const handleAction = () => {
+    if (!session) {
+      navigate('/auth');
+      return;
+    }
+
+    if (!isProfileCompleted) {
+      navigate(`/profile/${session.user.id}`);
+      return;
+    }
+
+    navigate('/write');
+  };
+
   const handleDeletePoem = (poemId: string) => {
     setPoems(poems.filter(poem => poem.id !== poemId));
   };
@@ -100,21 +116,12 @@ const Index = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.6 }}
         >
-          {!session ? (
-            <Button
-              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground px-8 py-6 rounded-full text-lg shadow-lg hover:shadow-xl transition-all"
-              onClick={() => navigate('/auth')}
-            >
-              Join Now
-            </Button>
-          ) : (
-            <Button
-              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground px-8 py-6 rounded-full text-lg shadow-lg hover:shadow-xl transition-all"
-              onClick={() => navigate('/write')}
-            >
-              Start Writing
-            </Button>
-          )}
+          <Button
+            className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground px-8 py-6 rounded-full text-lg shadow-lg hover:shadow-xl transition-all"
+            onClick={handleAction}
+          >
+            {!session ? "Join Now" : "Start Writing"}
+          </Button>
         </motion.div>
       </motion.section>
 
@@ -135,7 +142,7 @@ const Index = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1, duration: 0.5 }}
             >
-              <LuxuryPoemCard
+              <PoemCard
                 poem={poem}
                 currentUserId={session?.user?.id}
                 isAdmin={isAdmin}
