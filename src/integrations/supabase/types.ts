@@ -338,11 +338,14 @@ export type Database = {
           city: string | null
           country: string | null
           created_at: string
+          followers_count: number | null
+          following_count: number | null
           full_name: string | null
           id: string
           is_admin: boolean | null
           is_profile_completed: boolean | null
           phone: string | null
+          posts_count: number | null
           state: string | null
           updated_at: string
           username: string
@@ -354,11 +357,14 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
+          followers_count?: number | null
+          following_count?: number | null
           full_name?: string | null
           id: string
           is_admin?: boolean | null
           is_profile_completed?: boolean | null
           phone?: string | null
+          posts_count?: number | null
           state?: string | null
           updated_at?: string
           username: string
@@ -370,11 +376,14 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
+          followers_count?: number | null
+          following_count?: number | null
           full_name?: string | null
           id?: string
           is_admin?: boolean | null
           is_profile_completed?: boolean | null
           phone?: string | null
+          posts_count?: number | null
           state?: string | null
           updated_at?: string
           username?: string
