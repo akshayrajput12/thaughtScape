@@ -3,6 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { Message, Profile } from "@/types";
 
 const Messages = () => {
@@ -18,6 +29,9 @@ const Messages = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user?.id) return;
 
+      // Get messages from the last 24 hours
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
       const { data, error } = await supabase
         .from('messages')
         .select(`
@@ -26,6 +40,7 @@ const Messages = () => {
           receiver:profiles!receiver_id(*)
         `)
         .or(`sender_id.eq.${session.user.id},receiver_id.eq.${session.user.id}`)
+        .gte('created_at', twentyFourHoursAgo)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -38,9 +53,40 @@ const Messages = () => {
       }
 
       setMessages(data);
+
+      // Get unique users from messages
+      const uniqueUsers = new Set();
+      const messageUsers = data.reduce((acc: Profile[], message: Message) => {
+        const otherUser = message.sender_id === session.user.id ? message.receiver : message.sender;
+        if (otherUser && !uniqueUsers.has(otherUser.id)) {
+          uniqueUsers.add(otherUser.id);
+          acc.push(otherUser);
+        }
+        return acc;
+      }, []);
+
+      setUsers(messageUsers);
     };
 
     fetchMessages();
+
+    // Set up real-time subscription for new messages
+    const channel = supabase
+      .channel('messages_channel')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages'
+        },
+        fetchMessages
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [toast]);
 
   const searchUsers = async (username: string) => {
@@ -114,7 +160,9 @@ const Messages = () => {
               {users.map((user) => (
                 <button
                   key={user.id}
-                  className="w-full p-4 text-left hover:bg-gray-50"
+                  className={`w-full p-4 text-left hover:bg-gray-50 ${
+                    selectedUser?.id === user.id ? 'bg-gray-100' : ''
+                  }`}
                   onClick={() => setSelectedUser(user)}
                 >
                   <div className="font-medium">{user.full_name || user.username}</div>
