@@ -26,7 +26,7 @@ export interface Poem {
   created_at: string;
   updated_at: string;
   image_url?: string;
-  author?: Profile;
+  author: Profile;
   _count?: {
     likes: number;
     bookmarks: number;

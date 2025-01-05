@@ -1,16 +1,21 @@
+import { Link } from "react-router-dom";
+import { MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Edit, Trash, User } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import type { Profile } from "@/types";
 
 interface PoemHeaderProps {
   title: string;
   author: {
     id: string;
     username: string;
-    full_name: string | null;
-    avatar_url?: string | null;
+    full_name?: string;
+    avatar_url?: string;
   };
   currentUserId?: string;
   isAdmin?: boolean;
@@ -28,53 +33,59 @@ export const PoemHeader = ({
   onEdit,
   onDelete,
   onFollow,
-  isFollowing,
+  isFollowing
 }: PoemHeaderProps) => {
-  const navigate = useNavigate();
-  const canModify = currentUserId === author.id || isAdmin;
+  const isAuthor = currentUserId === author.id;
+  const showActions = isAuthor || isAdmin;
 
   return (
-    <div className="flex justify-between items-start mb-4">
-      <div className="flex items-center gap-4">
-        <Avatar className="w-12 h-12 border-2 border-primary/20">
-          <AvatarImage src={author.avatar_url || undefined} alt={author.username} />
-          <AvatarFallback>
-            <User className="w-6 h-6 text-muted-foreground" />
-          </AvatarFallback>
-        </Avatar>
+    <div className="flex items-start justify-between mb-4">
+      <div className="flex items-center gap-3">
+        <Link to={`/profile/${author.id}`}>
+          <Avatar>
+            <AvatarImage src={author.avatar_url} alt={author.username} />
+            <AvatarFallback>{author.username[0].toUpperCase()}</AvatarFallback>
+          </Avatar>
+        </Link>
         <div>
-          <h3 className="text-2xl font-serif font-semibold bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600">
-            {title}
-          </h3>
-          <button
-            onClick={() => navigate(`/profile/${author.id}`)}
-            className="text-sm text-gray-600 hover:text-gray-800"
+          <h2 className="text-xl font-serif font-semibold">{title}</h2>
+          <Link 
+            to={`/profile/${author.id}`}
+            className="text-sm text-gray-500 hover:text-gray-700"
           >
-            by {author.full_name || author.username}
-          </button>
+            {author.full_name || author.username}
+          </Link>
         </div>
       </div>
       <div className="flex items-center gap-2">
-        {currentUserId && currentUserId !== author.id && (
+        {!isAuthor && currentUserId && onFollow && (
           <Button
-            variant={isFollowing ? "secondary" : "outline"}
+            variant="outline"
             size="sm"
             onClick={onFollow}
-            className="transition-all duration-200"
           >
-            <UserPlus className="w-4 h-4 mr-1" />
-            {isFollowing ? "Following" : "Follow"}
+            {isFollowing ? 'Unfollow' : 'Follow'}
           </Button>
         )}
-        {canModify && (
-          <>
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              <Edit className="w-4 h-4" />
-            </Button>
-            <Button variant="destructive" size="sm" onClick={onDelete}>
-              <Trash className="w-4 h-4" />
-            </Button>
-          </>
+        {showActions && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {onEdit && <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>}
+              {onDelete && (
+                <DropdownMenuItem 
+                  onClick={onDelete}
+                  className="text-red-600"
+                >
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </div>

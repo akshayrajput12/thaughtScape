@@ -22,13 +22,17 @@ const Notifications = () => {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        setNotifications(data);
+        // Ensure the notification type is one of the allowed values
+        const validNotifications = data.filter(notification => 
+          ['follow', 'like', 'comment', 'message'].includes(notification.type)
+        ) as Notification[];
+        
+        setNotifications(validNotifications);
       }
     };
 
     fetchNotifications();
 
-    // Subscribe to new notifications
     const channel = supabase
       .channel('notifications_channel')
       .on(
@@ -67,7 +71,6 @@ const Notifications = () => {
               key={notification.id}
               notification={notification}
               onFollowBack={() => {
-                // Refresh notifications after following back
                 const updatedNotifications = notifications.map(n => 
                   n.id === notification.id ? { ...n, is_read: true } : n
                 );
