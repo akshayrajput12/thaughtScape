@@ -12,12 +12,14 @@ const Index = () => {
   const [session, setSession] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isProfileCompleted, setIsProfileCompleted] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchUserData = async () => {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
+      console.log("Current session:", currentSession?.user?.id);
       setSession(currentSession);
 
       if (currentSession?.user?.id) {
@@ -30,9 +32,11 @@ const Index = () => {
         setIsAdmin(profileData?.is_admin || false);
         setIsProfileCompleted(profileData?.is_profile_completed || false);
       }
+      setLoading(false);
     };
 
     const fetchPoems = async () => {
+      console.log("Fetching poems...");
       const { data, error } = await supabase
         .from('poems')
         .select(`
@@ -41,34 +45,38 @@ const Index = () => {
             id,
             username,
             full_name,
-            avatar_url,
-            created_at,
-            updated_at
-          ),
-          likes (count),
-          bookmarks (count)
+            avatar_url
+          )
         `)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching poems:', error);
+        toast({
+          title: "Error",
+          description: "Could not load poems",
+          variant: "destructive",
+        });
         return;
       }
 
-      const formattedPoems = data.map(poem => ({
-        ...poem,
-        _count: {
-          likes: poem.likes[0]?.count || 0,
-          bookmarks: poem.bookmarks[0]?.count || 0
-        }
-      }));
-
-      setPoems(formattedPoems as Poem[]);
+      console.log("Fetched poems:", data);
+      setPoems(data as Poem[]);
     };
 
     fetchUserData();
     fetchPoems();
-  }, []);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed in Index:", _event, session?.user?.id);
+      setSession(session);
+      if (session) {
+        fetchUserData();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [toast]);
 
   const handleAction = () => {
     if (!session) {
@@ -87,6 +95,12 @@ const Index = () => {
   const handleDeletePoem = (poemId: string) => {
     setPoems(poems.filter(poem => poem.id !== poemId));
   };
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-primary/5 to-secondary/5">

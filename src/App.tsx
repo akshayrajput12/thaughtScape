@@ -49,7 +49,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log("Auth state changed:", _event, session?.user?.id);
       setSession(session);
+      
       if (session?.user) {
         const { data: profileData } = await supabase
           .from('profiles')
@@ -63,6 +65,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
             is_profile_completed: profileData.is_profile_completed || false
           });
         }
+      } else {
+        setProfile(null);
       }
     });
 
@@ -70,15 +74,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>;
   }
 
   if (!session) {
-    return <Navigate to="/auth" />;
+    return <Navigate to="/auth" replace />;
   }
 
   if (!profile?.is_profile_completed && !window.location.pathname.includes('/profile')) {
-    return <Navigate to={`/profile/${session.user.id}`} />;
+    return <Navigate to={`/profile/${session.user.id}`} replace />;
   }
 
   return <>{children}</>;
