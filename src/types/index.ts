@@ -26,11 +26,20 @@ export interface Poem {
   created_at: string;
   updated_at: string;
   image_url?: string;
-  author: Profile;
+  author: {
+    id: string;
+    username: string;
+    full_name?: string;
+    avatar_url?: string;
+    created_at: string;
+    updated_at: string;
+  };
   _count?: {
     likes: number;
     bookmarks: number;
   };
+  likes?: any[];
+  bookmarks?: any[];
 }
 
 export interface Notification {

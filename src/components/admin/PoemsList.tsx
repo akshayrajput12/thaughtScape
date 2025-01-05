@@ -14,11 +14,19 @@ export const PoemsList = () => {
         .from('poems')
         .select(`
           *,
-          author:profiles(id, username, full_name, avatar_url)
+          author:profiles(
+            id,
+            username,
+            full_name,
+            avatar_url,
+            created_at,
+            updated_at
+          )
         `)
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('Error fetching poems:', error);
         toast({
           title: "Error",
           description: "Could not fetch poems",
@@ -27,7 +35,7 @@ export const PoemsList = () => {
         return;
       }
 
-      setPoems(poemsData || []);
+      setPoems(poemsData as Poem[]);
     };
 
     fetchPoems();
@@ -40,6 +48,7 @@ export const PoemsList = () => {
       .eq('id', poemId);
 
     if (error) {
+      console.error('Error deleting poem:', error);
       toast({
         title: "Error",
         description: "Could not delete poem",
@@ -63,7 +72,7 @@ export const PoemsList = () => {
             <div>
               <h3 className="text-xl font-serif font-semibold">{poem.title}</h3>
               <p className="text-sm text-gray-500">
-                by {poem.author.full_name} (@{poem.author.username})
+                by {poem.author.full_name || poem.author.username}
               </p>
             </div>
             <Button

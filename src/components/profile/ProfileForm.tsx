@@ -18,15 +18,28 @@ export const ProfileForm = ({ profile, onSubmitSuccess }: ProfileFormProps) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    
+    // Check if required fields are filled
+    const username = formData.get('username');
+    const fullName = formData.get('full_name');
+    const bio = formData.get('bio');
+    
+    const isProfileCompleted = Boolean(
+      username && 
+      fullName && 
+      bio
+    );
+
     const updates = {
-      username: String(formData.get('username')),
-      full_name: String(formData.get('full_name')),
-      bio: String(formData.get('bio')),
+      username: String(username),
+      full_name: String(fullName),
+      bio: String(bio),
       age: formData.get('age') ? parseInt(String(formData.get('age'))) : null,
       country: String(formData.get('country')),
       state: String(formData.get('state')),
       city: String(formData.get('city')),
       avatar_url: String(formData.get('avatar_url')),
+      is_profile_completed: isProfileCompleted,
     };
 
     const { data, error } = await supabase
@@ -37,6 +50,7 @@ export const ProfileForm = ({ profile, onSubmitSuccess }: ProfileFormProps) => {
       .single();
 
     if (error) {
+      console.error('Error updating profile:', error);
       toast({
         title: "Error",
         description: "Could not update profile",
@@ -48,7 +62,9 @@ export const ProfileForm = ({ profile, onSubmitSuccess }: ProfileFormProps) => {
     onSubmitSuccess(data);
     toast({
       title: "Success",
-      description: "Profile updated successfully",
+      description: isProfileCompleted 
+        ? "Profile completed and updated successfully"
+        : "Profile updated successfully",
     });
   };
 
