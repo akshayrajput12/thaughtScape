@@ -37,11 +37,13 @@ const Index = () => {
         .from('poems')
         .select(`
           *,
-          author:profiles!poems_author_id_fkey (
+          author:profiles(
             id,
             username,
             full_name,
-            avatar_url
+            avatar_url,
+            created_at,
+            updated_at
           ),
           likes (count),
           bookmarks (count)
@@ -61,7 +63,7 @@ const Index = () => {
         }
       }));
 
-      setPoems(formattedPoems);
+      setPoems(formattedPoems as Poem[]);
     };
 
     fetchUserData();

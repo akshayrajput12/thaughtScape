@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +15,16 @@ const Profile = () => {
   const [poems, setPoems] = useState<Poem[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [session, setSession] = useState<any>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      setSession(currentSession);
+    };
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -44,11 +53,13 @@ const Profile = () => {
         .from('poems')
         .select(`
           *,
-          author:profiles!poems_author_id_fkey (
+          author:profiles(
             id,
             username,
             full_name,
-            avatar_url
+            avatar_url,
+            created_at,
+            updated_at
           )
         `)
         .eq('author_id', id)
@@ -63,11 +74,15 @@ const Profile = () => {
         return;
       }
 
-      setPoems(poemsData || []);
+      setPoems(poemsData as Poem[]);
     };
 
     fetchProfile();
   }, [id, toast]);
+
+  if (!session) {
+    return <Navigate to="/auth" replace />;
+  }
 
   if (!profile) return <div>Loading...</div>;
 
