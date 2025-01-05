@@ -11,9 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { EditUserForm } from "./EditUserForm";
+import { UserStats } from "./UserStats";
 
 export function UsersList() {
   const [users, setUsers] = useState<Profile[]>([]);
@@ -84,20 +83,18 @@ export function UsersList() {
     fetchUsers();
   };
 
-  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleEditSubmit = async (formData: FormData) => {
     if (!editingUser) return;
 
-    const formData = new FormData(e.currentTarget);
     const updates = {
-      username: formData.get('username'),
-      full_name: formData.get('full_name'),
-      bio: formData.get('bio'),
+      username: String(formData.get('username')),
+      full_name: String(formData.get('full_name')),
+      bio: String(formData.get('bio')),
       age: formData.get('age') ? parseInt(String(formData.get('age'))) : null,
-      country: formData.get('country'),
-      state: formData.get('state'),
-      city: formData.get('city'),
-      avatar_url: formData.get('avatar_url'),
+      country: String(formData.get('country')),
+      state: String(formData.get('state')),
+      city: String(formData.get('city')),
+      avatar_url: String(formData.get('avatar_url')),
       is_profile_completed: formData.get('is_profile_completed') === 'true',
     };
 
@@ -134,10 +131,10 @@ export function UsersList() {
               <div>
                 <p className="font-medium">{user.username}</p>
                 <p className="text-sm text-gray-500">ID: {user.id}</p>
-                <div className="mt-2 text-sm text-gray-600">
-                  <p>Followers: {user.followers_count || 0}</p>
-                  <p>Following: {user.following_count || 0}</p>
-                </div>
+                <UserStats 
+                  followersCount={user.followers_count || 0}
+                  followingCount={user.following_count || 0}
+                />
               </div>
               <div className="space-x-2">
                 <Dialog>
@@ -150,83 +147,12 @@ export function UsersList() {
                     <DialogHeader>
                       <DialogTitle>Edit User Profile</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleEditSubmit} className="space-y-4">
-                      <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="username">Username</Label>
-                          <Input
-                            id="username"
-                            name="username"
-                            defaultValue={user.username}
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="full_name">Full Name</Label>
-                          <Input
-                            id="full_name"
-                            name="full_name"
-                            defaultValue={user.full_name || ''}
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="bio">Bio</Label>
-                          <Textarea
-                            id="bio"
-                            name="bio"
-                            defaultValue={user.bio || ''}
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="age">Age</Label>
-                          <Input
-                            id="age"
-                            name="age"
-                            type="number"
-                            defaultValue={user.age || ''}
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="country">Country</Label>
-                          <Input
-                            id="country"
-                            name="country"
-                            defaultValue={user.country || ''}
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="state">State</Label>
-                          <Input
-                            id="state"
-                            name="state"
-                            defaultValue={user.state || ''}
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="city">City</Label>
-                          <Input
-                            id="city"
-                            name="city"
-                            defaultValue={user.city || ''}
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="avatar_url">Avatar URL</Label>
-                          <Input
-                            id="avatar_url"
-                            name="avatar_url"
-                            defaultValue={user.avatar_url || ''}
-                          />
-                        </div>
-                        <input
-                          type="hidden"
-                          name="is_profile_completed"
-                          value={String(user.is_profile_completed)}
-                        />
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button type="submit">Save Changes</Button>
-                      </div>
-                    </form>
+                    {editingUser && (
+                      <EditUserForm 
+                        user={editingUser} 
+                        onSubmit={handleEditSubmit}
+                      />
+                    )}
                   </DialogContent>
                 </Dialog>
                 <Button
