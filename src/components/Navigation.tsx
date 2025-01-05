@@ -25,6 +25,8 @@ const Navigation = () => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -50,6 +52,65 @@ const Navigation = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchUnreadCounts = async () => {
+      // Fetch unread messages
+      const { count: messagesCount } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', userId)
+        .eq('is_read', false);
+
+      // Fetch unread notifications
+      const { count: notificationsCount } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_read', false);
+
+      setUnreadMessages(messagesCount || 0);
+      setUnreadNotifications(notificationsCount || 0);
+    };
+
+    fetchUnreadCounts();
+
+    // Subscribe to changes
+    const messagesChannel = supabase
+      .channel('messages_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${userId}`
+        },
+        fetchUnreadCounts
+      )
+      .subscribe();
+
+    const notificationsChannel = supabase
+      .channel('notifications_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`
+        },
+        fetchUnreadCounts
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(notificationsChannel);
+    };
+  }, [userId]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/');
@@ -71,12 +132,26 @@ const Navigation = () => {
               <Link to="/write" className="text-gray-600 hover:text-gray-900">
                 <PenTool className="h-6 w-6" />
               </Link>
-              <Link to="/notifications" className="text-gray-600 hover:text-gray-900">
-                <Bell className="h-6 w-6" />
-              </Link>
-              <Link to="/messages" className="text-gray-600 hover:text-gray-900">
-                <MessageSquare className="h-6 w-6" />
-              </Link>
+              <div className="relative">
+                <Link to="/notifications" className="text-gray-600 hover:text-gray-900">
+                  <Bell className="h-6 w-6" />
+                  {unreadNotifications > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {unreadNotifications}
+                    </span>
+                  )}
+                </Link>
+              </div>
+              <div className="relative">
+                <Link to="/messages" className="text-gray-600 hover:text-gray-900">
+                  <MessageSquare className="h-6 w-6" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {unreadMessages}
+                    </span>
+                  )}
+                </Link>
+              </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">
