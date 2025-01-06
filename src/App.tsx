@@ -14,7 +14,14 @@ import Messages from "./pages/Messages";
 import Write from "./pages/Write";
 import type { Profile as ProfileType } from "./types";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<any>(null);
@@ -23,25 +30,42 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-
-      if (session?.user) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (profileData) {
-          setProfile({
-            ...profileData,
-            is_profile_completed: profileData.is_profile_completed || false
-          });
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          setLoading(false);
+          return;
         }
+
+        setSession(session);
+
+        if (session?.user) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profileError) {
+            console.error("Profile error:", profileError);
+            setLoading(false);
+            return;
+          }
+          
+          if (profileData) {
+            setProfile({
+              ...profileData,
+              is_profile_completed: profileData.is_profile_completed || false
+            });
+          }
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error("Unexpected error:", error);
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     checkSession();
@@ -70,7 +94,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (loading) {
