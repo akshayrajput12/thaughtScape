@@ -41,7 +41,7 @@ const Index = () => {
         .from('poems')
         .select(`
           *,
-          author:profiles(
+          author:profiles!poems_author_id_fkey (
             id,
             username,
             full_name,
