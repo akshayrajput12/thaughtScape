@@ -45,7 +45,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
           
           if (profileError) {
             console.error("Profile error:", profileError);
@@ -81,7 +81,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
         
         if (profileData) {
           setProfile({
@@ -109,7 +109,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!profile?.is_profile_completed && !window.location.pathname.includes('/profile')) {
+  // Only redirect to profile if not already on profile page and profile is not completed
+  if (!profile?.is_profile_completed && 
+      !window.location.pathname.includes('/profile') && 
+      session?.user?.id) {
     return <Navigate to={`/profile/${session.user.id}`} replace />;
   }
 

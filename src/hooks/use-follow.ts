@@ -9,6 +9,7 @@ export const useFollow = () => {
   const followUser = async (followerId: string, followingId: string) => {
     try {
       setLoading(true);
+      console.log('Following user:', { followerId, followingId });
       
       // Check if already following
       const { data: existingFollow, error: checkError } = await supabase
@@ -16,13 +17,15 @@ export const useFollow = () => {
         .select('*')
         .eq('follower_id', followerId)
         .eq('following_id', followingId)
-        .single();
+        .maybeSingle();
 
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows returned
+      if (checkError) {
+        console.error('Error checking follow status:', checkError);
         throw checkError;
       }
 
       if (existingFollow) {
+        console.log('Already following this user');
         toast({
           title: "Already following",
           description: "You are already following this user",
@@ -38,15 +41,12 @@ export const useFollow = () => {
         });
 
       if (insertError) {
-        // Handle unique constraint violation
-        if (insertError.code === '23505') {
-          toast({
-            title: "Already following",
-            description: "You are already following this user",
-          });
-        } else {
-          throw insertError;
-        }
+        console.error('Error following user:', insertError);
+        toast({
+          title: "Error",
+          description: "Could not follow user. Please try again.",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -55,7 +55,7 @@ export const useFollow = () => {
         description: "Successfully followed user",
       });
     } catch (error) {
-      console.error('Error following user:', error);
+      console.error('Error in followUser:', error);
       toast({
         title: "Error",
         description: "Failed to follow user",

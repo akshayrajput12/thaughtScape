@@ -37,7 +37,7 @@ const Navigation = () => {
           .from('profiles')
           .select('is_admin')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
         
         setIsAdmin(profile?.is_admin || false);
       }
@@ -50,7 +50,7 @@ const Navigation = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     if (!userId) return;
@@ -116,6 +116,12 @@ const Navigation = () => {
     navigate('/');
   };
 
+  const handleProfileClick = () => {
+    if (userId) {
+      navigate(`/profile/${userId}`);
+    }
+  };
+
   return (
     <nav className="bg-white shadow-sm">
       <div className="container mx-auto px-4">
@@ -159,7 +165,7 @@ const Navigation = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate(`/profile/${userId}`)}>
+                  <DropdownMenuItem onClick={handleProfileClick}>
                     Profile
                   </DropdownMenuItem>
                   {isAdmin && (
