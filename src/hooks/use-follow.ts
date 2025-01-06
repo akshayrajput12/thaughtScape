@@ -11,12 +11,16 @@ export const useFollow = () => {
       setLoading(true);
       
       // Check if already following
-      const { data: existingFollow } = await supabase
+      const { data: existingFollow, error: checkError } = await supabase
         .from('follows')
         .select('*')
         .eq('follower_id', followerId)
         .eq('following_id', followingId)
         .single();
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows returned
+        throw checkError;
+      }
 
       if (existingFollow) {
         toast({
@@ -26,21 +30,22 @@ export const useFollow = () => {
         return;
       }
 
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('follows')
         .insert({
           follower_id: followerId,
           following_id: followingId
         });
 
-      if (error) {
-        if (error.code === '23505') {
+      if (insertError) {
+        // Handle unique constraint violation
+        if (insertError.code === '23505') {
           toast({
             title: "Already following",
             description: "You are already following this user",
           });
         } else {
-          throw error;
+          throw insertError;
         }
         return;
       }
