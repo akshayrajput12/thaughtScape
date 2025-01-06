@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,10 +28,30 @@ interface UserMenuProps {
 
 export const UserMenu = ({ userId, isAdmin, onLogout }: UserMenuProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleProfileClick = () => {
     if (userId) {
       navigate(`/profile/${userId}`);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await onLogout();
+      toast({
+        title: "Success",
+        description: "Logged out successfully",
+      });
+      navigate('/');
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if the logout fails, we'll clear local state and redirect
+      toast({
+        title: "Notice",
+        description: "You have been logged out",
+      });
+      navigate('/');
     }
   };
 
@@ -65,7 +86,7 @@ export const UserMenu = ({ userId, isAdmin, onLogout }: UserMenuProps) => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={onLogout}>Logout</AlertDialogAction>
+              <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
