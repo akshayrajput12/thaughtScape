@@ -2,24 +2,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { Bell, MessageSquare, PenTool, User, LogOut, Home } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Home, PenTool } from "lucide-react";
+import { NotificationIcons } from "./navigation/NotificationIcons";
+import { UserMenu } from "./navigation/UserMenu";
 
 const Navigation = () => {
   const navigate = useNavigate();
@@ -56,14 +41,12 @@ const Navigation = () => {
     if (!userId) return;
 
     const fetchUnreadCounts = async () => {
-      // Fetch unread messages
       const { count: messagesCount } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('receiver_id', userId)
         .eq('is_read', false);
 
-      // Fetch unread notifications
       const { count: notificationsCount } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
@@ -76,7 +59,6 @@ const Navigation = () => {
 
     fetchUnreadCounts();
 
-    // Subscribe to changes
     const messagesChannel = supabase
       .channel('messages_changes')
       .on(
@@ -116,12 +98,6 @@ const Navigation = () => {
     navigate('/');
   };
 
-  const handleProfileClick = () => {
-    if (userId) {
-      navigate(`/profile/${userId}`);
-    }
-  };
-
   return (
     <nav className="bg-white shadow-sm">
       <div className="container mx-auto px-4">
@@ -138,62 +114,15 @@ const Navigation = () => {
               <Link to="/write" className="text-gray-600 hover:text-gray-900">
                 <PenTool className="h-6 w-6" />
               </Link>
-              <div className="relative">
-                <Link to="/notifications" className="text-gray-600 hover:text-gray-900">
-                  <Bell className="h-6 w-6" />
-                  {unreadNotifications > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {unreadNotifications}
-                    </span>
-                  )}
-                </Link>
-              </div>
-              <div className="relative">
-                <Link to="/messages" className="text-gray-600 hover:text-gray-900">
-                  <MessageSquare className="h-6 w-6" />
-                  {unreadMessages > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {unreadMessages}
-                    </span>
-                  )}
-                </Link>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <User className="h-6 w-6" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleProfileClick}>
-                    Profile
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <DropdownMenuItem onClick={() => navigate('/admin')}>
-                      Admin Dashboard
-                    </DropdownMenuItem>
-                  )}
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        Logout
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          You will need to login again to access your account.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <NotificationIcons
+                unreadMessages={unreadMessages}
+                unreadNotifications={unreadNotifications}
+              />
+              <UserMenu
+                userId={userId}
+                isAdmin={isAdmin}
+                onLogout={handleLogout}
+              />
             </div>
           ) : (
             <div className="flex items-center gap-4">

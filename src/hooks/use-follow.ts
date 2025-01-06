@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './use-toast';
 
 export const useFollow = () => {
   const [loading, setLoading] = useState(false);
@@ -66,8 +66,43 @@ export const useFollow = () => {
     }
   };
 
+  const unfollowUser = async (followerId: string, followingId: string) => {
+    try {
+      setLoading(true);
+      console.log('Unfollowing user:', { followerId, followingId });
+
+      const { error } = await supabase
+        .from('follows')
+        .delete()
+        .match({
+          follower_id: followerId,
+          following_id: followingId
+        });
+
+      if (error) {
+        console.error('Error unfollowing user:', error);
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Successfully unfollowed user",
+      });
+    } catch (error) {
+      console.error('Error in unfollowUser:', error);
+      toast({
+        title: "Error",
+        description: "Failed to unfollow user",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
+    loading,
     followUser,
-    loading
+    unfollowUser
   };
 };

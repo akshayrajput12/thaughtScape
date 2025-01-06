@@ -27,7 +27,7 @@ const Index = () => {
           .from('profiles')
           .select('is_admin, is_profile_completed')
           .eq('id', currentSession.user.id)
-          .single();
+          .maybeSingle();
         
         setIsAdmin(profileData?.is_admin || false);
         setIsProfileCompleted(profileData?.is_profile_completed || false);
@@ -37,31 +37,40 @@ const Index = () => {
 
     const fetchPoems = async () => {
       console.log("Fetching poems...");
-      const { data, error } = await supabase
-        .from('poems')
-        .select(`
-          *,
-          author:profiles!poems_author_id_fkey (
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('poems')
+          .select(`
+            *,
+            author:profiles!poems_author_id_fkey (
+              id,
+              username,
+              full_name,
+              avatar_url
+            )
+          `)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching poems:', error);
+        if (error) {
+          console.error('Error fetching poems:', error);
+          toast({
+            title: "Error",
+            description: "Could not load poems",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log("Fetched poems:", data);
+        setPoems(data as Poem[]);
+      } catch (error) {
+        console.error('Error in fetchPoems:', error);
         toast({
           title: "Error",
-          description: "Could not load poems",
+          description: "Failed to load poems",
           variant: "destructive",
         });
-        return;
       }
-
-      console.log("Fetched poems:", data);
-      setPoems(data as Poem[]);
     };
 
     fetchUserData();
