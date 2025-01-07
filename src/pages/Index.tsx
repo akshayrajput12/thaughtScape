@@ -54,7 +54,7 @@ const Index = () => {
             .from('profiles')
             .select('is_admin')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
           setIsAdmin(profileData?.is_admin || false);
         }
       } catch (error) {

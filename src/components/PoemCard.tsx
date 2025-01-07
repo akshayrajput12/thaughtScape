@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +28,28 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
     handleBookmark
   } = usePoemInteractions(poem.id, currentUserId);
 
+  useEffect(() => {
+    const checkFollowStatus = async () => {
+      if (!currentUserId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('follows')
+          .select('*')
+          .eq('follower_id', currentUserId)
+          .eq('following_id', poem.author.id)
+          .maybeSingle();
+
+        if (error) throw error;
+        setIsFollowing(!!data);
+      } catch (error) {
+        console.error("Error checking follow status:", error);
+      }
+    };
+
+    checkFollowStatus();
+  }, [currentUserId, poem.author.id]);
+
   const handleFollow = async () => {
     if (!currentUserId) {
       navigate('/auth');
@@ -36,6 +58,23 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
 
     try {
       if (!isFollowing) {
+        // Check if already following
+        const { data: existingFollow } = await supabase
+          .from('follows')
+          .select('*')
+          .eq('follower_id', currentUserId)
+          .eq('following_id', poem.author.id)
+          .maybeSingle();
+
+        if (existingFollow) {
+          toast({
+            title: "Already following",
+            description: `You are already following ${poem.author.username}`,
+          });
+          setIsFollowing(true);
+          return;
+        }
+
         const { error } = await supabase
           .from('follows')
           .insert({
@@ -68,6 +107,7 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
         });
       }
     } catch (error) {
+      console.error("Error updating follow status:", error);
       toast({
         title: "Error",
         description: "Could not update follow status",
