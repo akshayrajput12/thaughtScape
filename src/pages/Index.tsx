@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import Hero from "@/components/home/Hero";
-import FeaturedPoems from "@/components/home/FeaturedPoems";
+import { Hero } from "@/components/home/Hero";
+import { FeaturedPoems } from "@/components/home/FeaturedPoems";
 import type { Poem } from "@/types";
 
 const Index = () => {
   const [poems, setPoems] = useState<Poem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetchPoems = async () => {
@@ -16,6 +18,7 @@ const Index = () => {
         console.log("Fetching poems...");
         const { data: { session } } = await supabase.auth.getSession();
         console.log("Current session:", session?.user?.id);
+        setCurrentUserId(session?.user?.id);
 
         const { data: poemsData, error } = await supabase
           .from('poems')
@@ -44,6 +47,16 @@ const Index = () => {
 
         console.log("Fetched poems:", poemsData);
         setPoems(poemsData);
+
+        // Check if user is admin
+        if (session?.user?.id) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', session.user.id)
+            .single();
+          setIsAdmin(profileData?.is_admin || false);
+        }
       } catch (error) {
         console.error("Unexpected error:", error);
         toast({
@@ -80,6 +93,31 @@ const Index = () => {
     };
   }, [toast]);
 
+  const handleDeletePoem = async (poemId: string) => {
+    try {
+      const { error } = await supabase
+        .from('poems')
+        .delete()
+        .eq('id', poemId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Poem deleted successfully",
+      });
+
+      setPoems(poems.filter(poem => poem.id !== poemId));
+    } catch (error) {
+      console.error("Error deleting poem:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete poem",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -90,8 +128,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-primary/10">
-      <Hero />
-      <FeaturedPoems poems={poems} />
+      <Hero onActionClick={() => {}} isLoggedIn={!!currentUserId} />
+      <FeaturedPoems 
+        poems={poems} 
+        currentUserId={currentUserId}
+        isAdmin={isAdmin}
+        onDeletePoem={handleDeletePoem}
+      />
     </div>
   );
 };
