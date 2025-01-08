@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePoemInteractions } from "@/hooks/use-poem-interactions";
@@ -147,31 +148,51 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-      <PoemHeader
-        title={poem.title}
-        author={poem.author}
-        currentUserId={currentUserId}
-        isAdmin={isAdmin}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onFollow={handleFollow}
-        isFollowing={isFollowing}
-      />
-      <PoemContent content={poem.content} />
-      <div className="flex items-center justify-between text-sm text-gray-500">
-        <PoemInteractionButtons
-          likesCount={likesCount}
-          bookmarksCount={bookmarksCount}
-          isLiked={isLiked}
-          isBookmarked={isBookmarked}
-          onLike={handleLike}
-          onBookmark={handleBookmark}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      
+      <div className="relative p-6">
+        <PoemHeader
+          title={poem.title}
+          author={poem.author}
+          currentUserId={currentUserId}
+          isAdmin={isAdmin}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onFollow={handleFollow}
+          isFollowing={isFollowing}
         />
-        <div className="text-sm text-gray-500">
-          {new Date(poem.created_at).toLocaleDateString()}
+        
+        <div className="my-6 border-t border-gray-100" />
+        
+        <PoemContent content={poem.content} />
+        
+        <div className="mt-6 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <PoemInteractionButtons
+              likesCount={likesCount}
+              bookmarksCount={bookmarksCount}
+              isLiked={isLiked}
+              isBookmarked={isBookmarked}
+              onLike={handleLike}
+              onBookmark={handleBookmark}
+              showAnimation={true}
+            />
+            <span className="text-sm text-gray-400 font-medium">
+              {new Date(poem.created_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              })}
+            </span>
+          </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

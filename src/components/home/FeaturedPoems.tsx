@@ -12,15 +12,21 @@ interface FeaturedPoemsProps {
 export const FeaturedPoems = ({ poems, currentUserId, isAdmin, onDeletePoem }: FeaturedPoemsProps) => {
   return (
     <section className="container px-4 py-16">
-      <motion.h2
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="text-4xl font-serif font-bold mb-12 text-center bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600"
+        className="text-center mb-16"
       >
-        Featured Poems
-      </motion.h2>
-      <div className="grid gap-8 max-w-4xl mx-auto">
+        <h2 className="text-4xl font-serif font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600">
+          Featured Poems
+        </h2>
+        <p className="text-gray-600 max-w-2xl mx-auto">
+          Discover beautiful verses crafted by our talented community of poets
+        </p>
+      </motion.div>
+
+      <div className="grid gap-8 md:gap-10 max-w-4xl mx-auto">
         {poems.map((poem, index) => (
           <motion.div
             key={poem.id}
