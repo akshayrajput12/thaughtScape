@@ -31,6 +31,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const checkSession = async () => {
       try {
+        console.log("Checking session and profile...");
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) {
           console.error("Session error:", sessionError);
@@ -41,6 +42,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
 
         if (session?.user) {
+          console.log("Found session, fetching profile for user:", session.user.id);
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
@@ -54,6 +56,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           }
           
           if (profileData) {
+            console.log("Profile data:", profileData);
             setProfile({
               ...profileData,
               is_profile_completed: profileData.is_profile_completed || false
@@ -109,10 +112,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Only redirect to profile if not already on profile page and profile is not completed
-  if (!profile?.is_profile_completed && 
+  // Only redirect to profile if profile exists, is not completed, and we're not already on profile page
+  if (profile && 
+      !profile.is_profile_completed && 
       !window.location.pathname.includes('/profile') && 
       session?.user?.id) {
+    console.log("Redirecting to profile completion page");
     return <Navigate to={`/profile/${session.user.id}`} replace />;
   }
 
