@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfilePoems } from "@/components/profile/ProfilePoems";
+import { ProfileForm } from "@/components/profile/ProfileForm";
 import type { Profile, Poem } from "@/types";
 
 const Profile = () => {
@@ -12,6 +13,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [poems, setPoems] = useState<Poem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
   const [currentUserId, setCurrentUserId] = useState<string | undefined>();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -102,6 +104,19 @@ const Profile = () => {
     }
   }, [id, toast]);
 
+  const handleEditClick = () => {
+    setIsEditing(!isEditing);
+  };
+
+  const handleProfileUpdate = (updatedProfile: Profile) => {
+    setProfile(updatedProfile);
+    setIsEditing(false);
+    toast({
+      title: "Success",
+      description: "Profile updated successfully",
+    });
+  };
+
   const handleDeletePoem = async (poemId: string) => {
     try {
       const { error } = await supabase
@@ -145,15 +160,36 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-primary/10">
-      <ProfileHeader profile={profile} isOwnProfile={currentUserId === profile.id} />
-      <ProfileStats profile={profile} />
-      <ProfilePoems 
-        poems={poems} 
-        currentUserId={currentUserId}
-        isAdmin={isAdmin}
-        onDeletePoem={handleDeletePoem}
-      />
+    <div className="min-h-screen bg-gradient-to-b from-white to-primary/10 px-4 py-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <ProfileHeader 
+          profile={profile} 
+          isOwnProfile={currentUserId === profile.id}
+          isEditing={isEditing}
+          onEditClick={handleEditClick}
+        />
+        
+        {isEditing ? (
+          <ProfileForm 
+            profile={profile} 
+            onSubmitSuccess={handleProfileUpdate}
+          />
+        ) : (
+          <>
+            <ProfileStats 
+              postsCount={profile.posts_count || 0}
+              followersCount={profile.followers_count || 0}
+              followingCount={profile.following_count || 0}
+            />
+            <ProfilePoems 
+              poems={poems}
+              isOwnProfile={currentUserId === profile.id}
+              isAdmin={isAdmin}
+              onDeletePoem={handleDeletePoem}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 };
