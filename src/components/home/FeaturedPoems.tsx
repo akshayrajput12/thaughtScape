@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { PoemCard } from "@/components/PoemCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Poem } from "@/types";
 
 interface FeaturedPoemsProps {
@@ -7,9 +9,46 @@ interface FeaturedPoemsProps {
   currentUserId?: string;
   isAdmin: boolean;
   onDeletePoem: (poemId: string) => void;
+  hasMore: boolean;
+  isLoading: boolean;
+  onLoadMore: () => void;
 }
 
-export const FeaturedPoems = ({ poems, currentUserId, isAdmin, onDeletePoem }: FeaturedPoemsProps) => {
+export const FeaturedPoems = ({ 
+  poems, 
+  currentUserId, 
+  isAdmin, 
+  onDeletePoem,
+  hasMore,
+  isLoading,
+  onLoadMore 
+}: FeaturedPoemsProps) => {
+  const [isIntersecting, setIsIntersecting] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsIntersecting(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isIntersecting && hasMore && !isLoading) {
+      onLoadMore();
+    }
+  }, [isIntersecting, hasMore, isLoading, onLoadMore]);
+
   return (
     <section className="container px-4 py-16">
       <motion.div
@@ -42,6 +81,15 @@ export const FeaturedPoems = ({ poems, currentUserId, isAdmin, onDeletePoem }: F
             />
           </motion.div>
         ))}
+      </div>
+
+      <div ref={loadMoreRef} className="mt-8 flex justify-center">
+        {isLoading && (
+          <div className="space-y-4 w-full max-w-4xl">
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        )}
       </div>
     </section>
   );
