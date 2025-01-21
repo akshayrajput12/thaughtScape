@@ -1,4 +1,5 @@
 import { ContainerScroll } from "@/components/ui/container-scroll-animation";
+import { RevealImageList } from "@/components/ui/reveal-images";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 
@@ -30,6 +31,9 @@ export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
               <Sparkles className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
               {!isLoggedIn ? "Join Now" : "Start Writing"}
             </Button>
+            <div className="mt-16">
+              <RevealImageList />
+            </div>
           </>
         }
       >
