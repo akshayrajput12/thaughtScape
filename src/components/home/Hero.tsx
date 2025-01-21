@@ -34,14 +34,28 @@ export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
         }
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+          {[
+            "photo-1472396961693-142e6e269027",
+            "photo-1498936178812-4b2e558d2937",
+            "photo-1485833077593-4278bba3f11f",
+            "photo-1441057206919-63d19fac2369",
+            "photo-1469041797191-50ace28483c3",
+            "photo-1452378174528-3090a4bba7b2"
+          ].map((imageId, i) => (
             <div
               key={i}
-              className="bg-white dark:bg-zinc-800 rounded-lg p-4 hover:shadow-xl transition-shadow"
+              className="relative group overflow-hidden rounded-lg transition-all hover:scale-105"
             >
-              <div className="h-32 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 rounded-md mb-4" />
-              <div className="h-4 w-3/4 bg-gray-200 dark:bg-zinc-700 rounded mb-2" />
-              <div className="h-4 w-1/2 bg-gray-200 dark:bg-zinc-700 rounded" />
+              <img
+                src={`https://images.unsplash.com/${imageId}?auto=format&fit=crop&w=800&q=80`}
+                alt={`Inspiration ${i + 1}`}
+                className="w-full h-48 object-cover transition-transform group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute bottom-4 left-4 right-4">
+                  <p className="text-white text-sm font-medium truncate">Discover inspiring poetry</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>
