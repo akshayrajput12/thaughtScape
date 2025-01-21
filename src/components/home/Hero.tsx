@@ -10,28 +10,28 @@ interface HeroProps {
 
 export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
   return (
-    <div className="flex flex-col overflow-hidden">
+    <div className="flex flex-col overflow-hidden -mt-16 pt-16">
       <ContainerScroll
         titleComponent={
           <>
-            <h1 className="text-4xl font-serif font-bold text-black dark:text-white mb-8">
+            <h1 className="text-4xl font-serif font-bold mb-8 relative z-0">
               Welcome to <br />
-              <span className="text-4xl md:text-[6rem] font-bold mt-1 leading-none bg-clip-text text-transparent bg-gradient-to-r from-primary via-secondary to-accent">
+              <span className="text-4xl md:text-[8rem] font-bold mt-1 leading-none bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] via-[#E5DEFF] to-[#7E69AB] relative -z-10 block">
                 Poetic Parley
               </span>
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl text-[#6E59A5] dark:text-[#D6BCFA] mb-12 max-w-2xl mx-auto leading-relaxed relative z-10">
               Join our community of poets and poetry enthusiasts. Share your verses, discover new voices, 
               and connect through the power of words.
             </p>
             <Button
-              className="group bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 text-primary-foreground px-8 py-6 rounded-full text-lg shadow-lg hover:shadow-xl transition-all"
+              className="group bg-gradient-to-r from-[#9b87f5] via-[#7E69AB] to-[#6E59A5] hover:opacity-90 text-white px-8 py-6 rounded-full text-lg shadow-lg hover:shadow-xl transition-all relative z-10"
               onClick={onActionClick}
             >
               <Sparkles className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
               {!isLoggedIn ? "Join Now" : "Start Writing"}
             </Button>
-            <div className="mt-16">
+            <div className="mt-16 relative z-10">
               <RevealImageList />
             </div>
           </>
