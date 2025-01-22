@@ -10,7 +10,7 @@ interface HeroProps {
 
 export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
   return (
-    <div className="flex flex-col overflow-hidden -mt-16 pt-16">
+    <div className="flex flex-col overflow-hidden -mt-8 pt-24">
       <ContainerScroll
         titleComponent={
           <>
