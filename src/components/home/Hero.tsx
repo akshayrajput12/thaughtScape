@@ -1,7 +1,8 @@
+
 import { ContainerScroll } from "@/components/ui/container-scroll-animation";
 import { RevealImageList } from "@/components/ui/reveal-images";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { LightbulbIcon } from "lucide-react";
 
 interface HeroProps {
   onActionClick: () => void;
@@ -10,26 +11,26 @@ interface HeroProps {
 
 export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
   return (
-    <div className="flex flex-col overflow-hidden -mt-8 pt-24">
+    <div className="flex flex-col overflow-hidden -mt-8 pt-32">
       <ContainerScroll
         titleComponent={
           <>
             <h1 className="text-4xl font-serif font-bold mb-8 relative z-0">
               Welcome to <br />
-              <span className="text-4xl md:text-[8rem] font-bold mt-1 leading-none bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] via-[#E5DEFF] to-[#7E69AB] relative -z-10 block">
-                Poetic Parley
+              <span className="text-4xl md:text-[7rem] font-bold mt-1 leading-none bg-clip-text text-transparent bg-gradient-to-r from-slate-800 via-slate-600 to-slate-900 relative -z-10 block font-serif">
+                Thoughtscape
               </span>
             </h1>
-            <p className="text-xl text-[#6E59A5] dark:text-[#D6BCFA] mb-12 max-w-2xl mx-auto leading-relaxed relative z-10">
-              Join our community of poets and poetry enthusiasts. Share your verses, discover new voices, 
-              and connect through the power of words.
+            <p className="text-xl text-slate-600 dark:text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed relative z-10">
+              A serene space for sharing your thoughts, ideas, and reflections. 
+              Connect with minds that inspire and stories that resonate.
             </p>
             <Button
-              className="group bg-gradient-to-r from-[#9b87f5] via-[#7E69AB] to-[#6E59A5] hover:opacity-90 text-white px-8 py-6 rounded-full text-lg shadow-lg hover:shadow-xl transition-all relative z-10"
+              className="group bg-slate-800 hover:bg-slate-700 text-white px-8 py-6 rounded-lg text-lg shadow-lg hover:shadow-xl transition-all relative z-10"
               onClick={onActionClick}
             >
-              <Sparkles className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
-              {!isLoggedIn ? "Join Now" : "Start Writing"}
+              <LightbulbIcon className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
+              {!isLoggedIn ? "Share Your Thoughts" : "Start Writing"}
             </Button>
             <div className="mt-16 relative z-10">
               <RevealImageList />
@@ -37,27 +38,27 @@ export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
           </>
         }
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
           {[
-            "photo-1472396961693-142e6e269027",
-            "photo-1498936178812-4b2e558d2937",
-            "photo-1485833077593-4278bba3f11f",
-            "photo-1441057206919-63d19fac2369",
-            "photo-1469041797191-50ace28483c3",
-            "photo-1452378174528-3090a4bba7b2"
+            "photo-1488590528505-98d2b5aba04b",
+            "photo-1486312338219-ce68d2c6f44d",
+            "photo-1605810230434-7631ac76ec81",
+            "photo-1649972904349-6e44c42644a7",
+            "photo-1487058792275-0ad4aaf24ca7",
+            "photo-1649972904349-6e44c42644a7"
           ].map((imageId, i) => (
             <div
               key={i}
-              className="relative group overflow-hidden rounded-lg transition-all hover:scale-105"
+              className="relative group overflow-hidden rounded-lg transition-all hover:scale-105 bg-white shadow-md"
             >
               <img
                 src={`https://images.unsplash.com/${imageId}?auto=format&fit=crop&w=800&q=80`}
                 alt={`Inspiration ${i + 1}`}
                 className="w-full h-48 object-cover transition-transform group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="absolute bottom-4 left-4 right-4">
-                  <p className="text-white text-sm font-medium truncate">Discover inspiring poetry</p>
+                  <p className="text-white text-sm font-medium truncate">Share your unique perspective</p>
                 </div>
               </div>
             </div>

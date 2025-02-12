@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -44,7 +45,7 @@ const Write = () => {
     if (!isProfileCompleted) {
       toast({
         title: "Profile Incomplete",
-        description: "Please complete your profile before posting.",
+        description: "Please complete your profile before sharing thoughts.",
         variant: "destructive",
       });
       return;
@@ -57,7 +58,7 @@ const Write = () => {
     }
 
     const { error } = await supabase
-      .from('poems')
+      .from('thoughts')
       .insert({
         title,
         content,
@@ -67,7 +68,7 @@ const Write = () => {
     if (error) {
       toast({
         title: "Error",
-        description: "Could not create poem",
+        description: "Could not create thought",
         variant: "destructive",
       });
       return;
@@ -75,7 +76,7 @@ const Write = () => {
 
     toast({
       title: "Success",
-      description: "Poem created successfully",
+      description: "Thought shared successfully",
     });
     navigate('/');
   };
@@ -87,26 +88,32 @@ const Write = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-serif font-bold mb-8">Write a Poem</h1>
+        <h1 className="text-3xl font-serif font-bold mb-8 text-slate-800">Share a Thought</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <Input
-              placeholder="Title"
+              placeholder="Title your thought..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              className="border-slate-200 focus:border-slate-400 focus:ring-slate-400"
             />
           </div>
           <div>
             <Textarea
-              placeholder="Write your poem..."
+              placeholder="Express your thoughts..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
               required
-              className="min-h-[300px]"
+              className="min-h-[300px] border-slate-200 focus:border-slate-400 focus:ring-slate-400"
             />
           </div>
-          <Button type="submit">Publish</Button>
+          <Button 
+            type="submit"
+            className="bg-slate-800 hover:bg-slate-700 text-white"
+          >
+            Share
+          </Button>
         </form>
       </div>
     </div>

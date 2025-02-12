@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,19 +100,19 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="bg-white shadow-sm fixed w-full top-0 z-50">
+    <nav className="bg-white/80 backdrop-blur-sm shadow-sm fixed w-full top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="text-2xl font-serif font-bold relative z-50">
-            Poetic Parley
+          <Link to="/" className="text-2xl font-serif font-bold relative z-50 text-slate-800">
+            Thoughtscape
           </Link>
           
           {userId ? (
             <div className="flex items-center gap-4 relative z-50">
-              <Link to="/" className="text-gray-600 hover:text-gray-900">
+              <Link to="/" className="text-slate-600 hover:text-slate-900">
                 <Home className="h-6 w-6" />
               </Link>
-              <Link to="/write" className="text-gray-600 hover:text-gray-900">
+              <Link to="/write" className="text-slate-600 hover:text-slate-900">
                 <PenTool className="h-6 w-6" />
               </Link>
               <NotificationIcons
@@ -127,7 +128,12 @@ const Navigation = () => {
           ) : (
             <div className="flex items-center gap-4 relative z-50">
               <Link to="/auth">
-                <Button variant="ghost">Login</Button>
+                <Button 
+                  variant="outline" 
+                  className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                >
+                  Login
+                </Button>
               </Link>
             </div>
           )}

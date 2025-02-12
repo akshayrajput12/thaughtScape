@@ -12,25 +12,25 @@ export type Database = {
       bookmarks: {
         Row: {
           created_at: string
-          poem_id: string
+          thought_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          poem_id: string
+          thought_id: string
           user_id: string
         }
         Update: {
           created_at?: string
-          poem_id?: string
+          thought_id?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "bookmarks_poem_id_fkey"
-            columns: ["poem_id"]
+            foreignKeyName: "bookmarks_thought_id_fkey"
+            columns: ["thought_id"]
             isOneToOne: false
-            referencedRelation: "poems"
+            referencedRelation: "thoughts"
             referencedColumns: ["id"]
           },
           {
@@ -47,7 +47,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
-          poem_id: string
+          thought_id: string
           updated_at: string
           user_id: string
         }
@@ -55,7 +55,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
-          poem_id: string
+          thought_id: string
           updated_at?: string
           user_id: string
         }
@@ -63,16 +63,16 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
-          poem_id?: string
+          thought_id?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "comments_poem_id_fkey"
-            columns: ["poem_id"]
+            foreignKeyName: "comments_thought_id_fkey"
+            columns: ["thought_id"]
             isOneToOne: false
-            referencedRelation: "poems"
+            referencedRelation: "thoughts"
             referencedColumns: ["id"]
           },
           {
@@ -120,25 +120,25 @@ export type Database = {
       likes: {
         Row: {
           created_at: string
-          poem_id: string
+          thought_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          poem_id: string
+          thought_id: string
           user_id: string
         }
         Update: {
           created_at?: string
-          poem_id?: string
+          thought_id?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "likes_poem_id_fkey"
-            columns: ["poem_id"]
+            foreignKeyName: "likes_thought_id_fkey"
+            columns: ["thought_id"]
             isOneToOne: false
-            referencedRelation: "poems"
+            referencedRelation: "thoughts"
             referencedColumns: ["id"]
           },
           {
@@ -198,7 +198,7 @@ export type Database = {
           created_at: string
           id: string
           is_read: boolean | null
-          related_poem_id: string | null
+          related_thought_id: string | null
           related_user_id: string | null
           type: string
           user_id: string
@@ -208,7 +208,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean | null
-          related_poem_id?: string | null
+          related_thought_id?: string | null
           related_user_id?: string | null
           type: string
           user_id: string
@@ -218,17 +218,17 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean | null
-          related_poem_id?: string | null
+          related_thought_id?: string | null
           related_user_id?: string | null
           type?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "notifications_related_poem_id_fkey"
-            columns: ["related_poem_id"]
+            foreignKeyName: "notifications_related_thought_id_fkey"
+            columns: ["related_thought_id"]
             isOneToOne: false
-            referencedRelation: "poems"
+            referencedRelation: "thoughts"
             referencedColumns: ["id"]
           },
           {
@@ -246,89 +246,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      poem_tags: {
-        Row: {
-          poem_id: string
-          tag_id: string
-        }
-        Insert: {
-          poem_id: string
-          tag_id: string
-        }
-        Update: {
-          poem_id?: string
-          tag_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "poem_tags_poem_id_fkey"
-            columns: ["poem_id"]
-            isOneToOne: false
-            referencedRelation: "poems"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "poem_tags_tag_id_fkey"
-            columns: ["tag_id"]
-            isOneToOne: false
-            referencedRelation: "tags"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      poems: {
-        Row: {
-          author_id: string
-          content: string
-          created_at: string
-          id: string
-          image_url: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          author_id: string
-          content: string
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          author_id?: string
-          content?: string
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "poems_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      poetry_genres: {
-        Row: {
-          id: string
-          name: string
-        }
-        Insert: {
-          id?: string
-          name: string
-        }
-        Update: {
-          id?: string
-          name?: string
-        }
-        Relationships: []
       }
       profiles: {
         Row: {
@@ -405,6 +322,89 @@ export type Database = {
         }
         Relationships: []
       }
+      thought_categories: {
+        Row: {
+          id: string
+          name: string
+        }
+        Insert: {
+          id?: string
+          name: string
+        }
+        Update: {
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      thought_tags: {
+        Row: {
+          tag_id: string
+          thought_id: string
+        }
+        Insert: {
+          tag_id: string
+          thought_id: string
+        }
+        Update: {
+          tag_id?: string
+          thought_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poem_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thought_tags_thought_id_fkey"
+            columns: ["thought_id"]
+            isOneToOne: false
+            referencedRelation: "thoughts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      thoughts: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poems_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_genres: {
         Row: {
           genre_id: string
@@ -423,7 +423,7 @@ export type Database = {
             foreignKeyName: "user_genres_genre_id_fkey"
             columns: ["genre_id"]
             isOneToOne: false
-            referencedRelation: "poetry_genres"
+            referencedRelation: "thought_categories"
             referencedColumns: ["id"]
           },
           {
