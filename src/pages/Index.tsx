@@ -3,12 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Hero } from "@/components/home/Hero";
 import { FeaturedPoems } from "@/components/home/FeaturedPoems";
-import type { Poem } from "@/types";
+import type { Thought } from "@/types";
 
-const POEMS_PER_PAGE = 6;
+const THOUGHTS_PER_PAGE = 6;
 
 const Index = () => {
-  const [poems, setPoems] = useState<Poem[]>([]);
+  const [thoughts, setThoughts] = useState<Thought[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -17,19 +17,19 @@ const Index = () => {
   const [currentUserId, setCurrentUserId] = useState<string | undefined>();
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const fetchPoems = useCallback(async (pageNumber: number) => {
+  const fetchThoughts = useCallback(async (pageNumber: number) => {
     try {
-      console.log(`Fetching poems for page ${pageNumber}...`);
+      console.log(`Fetching thoughts for page ${pageNumber}...`);
       setLoadingMore(true);
 
-      const from = pageNumber * POEMS_PER_PAGE;
-      const to = from + POEMS_PER_PAGE - 1;
+      const from = pageNumber * THOUGHTS_PER_PAGE;
+      const to = from + THOUGHTS_PER_PAGE - 1;
 
-      const { data: poemsData, error } = await supabase
-        .from('poems')
+      const { data: thoughtsData, error } = await supabase
+        .from('thoughts')
         .select(`
           *,
-          author:profiles!poems_author_id_fkey (
+          author:profiles!thoughts_author_id_fkey (
             id,
             username,
             full_name,
@@ -42,25 +42,25 @@ const Index = () => {
         .range(from, to);
 
       if (error) {
-        console.error("Error fetching poems:", error);
+        console.error("Error fetching thoughts:", error);
         toast({
           title: "Error",
-          description: "Failed to load poems",
+          description: "Failed to load thoughts",
           variant: "destructive",
         });
         return;
       }
 
-      console.log(`Fetched ${poemsData.length} poems`);
+      console.log(`Fetched ${thoughtsData.length} thoughts`);
       
-      if (poemsData.length < POEMS_PER_PAGE) {
+      if (thoughtsData.length < THOUGHTS_PER_PAGE) {
         setHasMore(false);
       }
 
       if (pageNumber === 0) {
-        setPoems(poemsData);
+        setThoughts(thoughtsData);
       } else {
-        setPoems(prev => [...prev, ...poemsData]);
+        setThoughts(prev => [...prev, ...thoughtsData]);
       }
     } catch (error) {
       console.error("Unexpected error:", error);
@@ -90,60 +90,60 @@ const Index = () => {
         setIsAdmin(profileData?.is_admin || false);
       }
 
-      fetchPoems(0);
+      fetchThoughts(0);
     };
 
     initializeData();
 
-    const poemsSubscription = supabase
-      .channel('poems_changes')
+    const thoughtsSubscription = supabase
+      .channel('thoughts_changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'poems'
+          table: 'thoughts'
         },
         () => {
-          console.log("Poems updated, refreshing...");
-          fetchPoems(0);
+          console.log("Thoughts updated, refreshing...");
+          fetchThoughts(0);
         }
       )
       .subscribe();
 
     return () => {
-      poemsSubscription.unsubscribe();
+      thoughtsSubscription.unsubscribe();
     };
-  }, [fetchPoems]);
+  }, [fetchThoughts]);
 
   const handleLoadMore = useCallback(() => {
     if (!loadingMore && hasMore) {
       const nextPage = page + 1;
       setPage(nextPage);
-      fetchPoems(nextPage);
+      fetchThoughts(nextPage);
     }
-  }, [fetchPoems, loadingMore, hasMore, page]);
+  }, [fetchThoughts, loadingMore, hasMore, page]);
 
-  const handleDeletePoem = async (poemId: string) => {
+  const handleDeleteThought = async (thoughtId: string) => {
     try {
       const { error } = await supabase
-        .from('poems')
+        .from('thoughts')
         .delete()
-        .eq('id', poemId);
+        .eq('id', thoughtId);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Poem deleted successfully",
+        description: "Thought deleted successfully",
       });
 
-      setPoems(poems.filter(poem => poem.id !== poemId));
+      setThoughts(thoughts.filter(thought => thought.id !== thoughtId));
     } catch (error) {
-      console.error("Error deleting poem:", error);
+      console.error("Error deleting thought:", error);
       toast({
         title: "Error",
-        description: "Failed to delete poem",
+        description: "Failed to delete thought",
         variant: "destructive",
       });
     }
@@ -161,10 +161,10 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-b from-white to-primary/10">
       <Hero onActionClick={() => {}} isLoggedIn={!!currentUserId} />
       <FeaturedPoems 
-        poems={poems} 
+        thoughts={thoughts} 
         currentUserId={currentUserId}
         isAdmin={isAdmin}
-        onDeletePoem={handleDeletePoem}
+        onDeleteThought={handleDeleteThought}
         hasMore={hasMore}
         isLoading={loadingMore}
         onLoadMore={handleLoadMore}

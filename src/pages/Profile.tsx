@@ -6,12 +6,13 @@ import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfilePoems } from "@/components/profile/ProfilePoems";
 import { ProfileForm } from "@/components/profile/ProfileForm";
-import type { Profile, Poem } from "@/types";
+import type { Profile, Poem, Thought } from "@/types";
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [poems, setPoems] = useState<Poem[]>([]);
+  const [thoughts, setThoughts] = useState<Thought[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();

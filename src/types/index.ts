@@ -1,3 +1,4 @@
+
 export interface Profile {
   id: string;
   username: string;
@@ -18,7 +19,7 @@ export interface Profile {
   posts_count?: number;
 }
 
-export interface Poem {
+export interface Thought {
   id: string;
   title: string;
   content: string;
