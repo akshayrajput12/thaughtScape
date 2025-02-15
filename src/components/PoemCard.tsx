@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -6,6 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useThoughtInteractions } from "@/hooks/use-thought-interactions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
 import { PoemHeader } from "./poem/PoemHeader";
 import { PoemContent } from "./poem/PoemContent";
 import { PoemInteractionButtons } from "./poem/PoemInteractionButtons";
@@ -32,11 +40,6 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
     handleLike,
     handleBookmark
   } = useThoughtInteractions(poem.id, currentUserId);
-
-  const navigateToProfile = (e: React.MouseEvent, userId: string) => {
-    e.stopPropagation();
-    navigate(`/profile/${userId}`);
-  };
 
   useEffect(() => {
     const fetchFollowers = async () => {
@@ -131,20 +134,44 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="group relative max-w-2xl mx-auto bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 cursor-pointer transform hover:scale-[1.02]"
-      onClick={() => navigate(`/profile/${poem.author.id}`)}
+      className="group relative max-w-2xl mx-auto bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100"
     >
       <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-transparent to-pink-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       
       <div className="relative p-6">
-        <PoemHeader
-          title={poem.title}
-          author={poem.author}
-          currentUserId={currentUserId}
-          isAdmin={isAdmin}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex items-center gap-3">
+            <img
+              src={poem.author.avatar_url || '/placeholder.svg'}
+              alt={poem.author.username}
+              className="w-10 h-10 rounded-full"
+            />
+            <div>
+              <h3 className="font-medium">{poem.author.username}</h3>
+              <p className="text-sm text-gray-500">{poem.title}</p>
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="p-2 rounded-full hover:bg-gray-100">
+              <MoreVertical className="h-5 w-5 text-gray-500" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => navigate(`/profile/${poem.author.id}`)}>
+                View Profile
+              </DropdownMenuItem>
+              {(currentUserId === poem.author.id || isAdmin) && (
+                <>
+                  <DropdownMenuItem onClick={handleEdit}>
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDelete} className="text-red-500">
+                    Delete
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
         
         <div className="my-6">
           <PoemContent content={poem.content} />
