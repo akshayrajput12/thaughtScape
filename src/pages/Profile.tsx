@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,12 +7,11 @@ import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfilePoems } from "@/components/profile/ProfilePoems";
 import { ProfileForm } from "@/components/profile/ProfileForm";
-import type { Profile, Poem, Thought } from "@/types";
+import type { Profile, Thought } from "@/types";
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [poems, setPoems] = useState<Poem[]>([]);
   const [thoughts, setThoughts] = useState<Thought[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -20,9 +20,9 @@ const Profile = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const fetchProfileAndPoems = async () => {
+    const fetchProfileAndThoughts = async () => {
       try {
-        console.log("Fetching profile and poems for user:", id);
+        console.log("Fetching profile and thoughts for user:", id);
         setLoading(true);
 
         // Get current session
@@ -63,12 +63,12 @@ const Profile = () => {
           setIsAdmin(adminData?.is_admin || false);
         }
 
-        // Fetch poems with author information
-        const { data: poemsData, error: poemsError } = await supabase
-          .from('poems')
+        // Fetch thoughts with author information
+        const { data: thoughtsData, error: thoughtsError } = await supabase
+          .from('thoughts')
           .select(`
             *,
-            author:profiles!poems_author_id_fkey (
+            author:profiles!thoughts_author_id_fkey(
               id,
               username,
               full_name,
@@ -80,13 +80,13 @@ const Profile = () => {
           .eq('author_id', id)
           .order('created_at', { ascending: false });
 
-        if (poemsError) {
-          console.error("Error fetching poems:", poemsError);
-          throw poemsError;
+        if (thoughtsError) {
+          console.error("Error fetching thoughts:", thoughtsError);
+          throw thoughtsError;
         }
 
-        console.log("Fetched poems:", poemsData);
-        setPoems(poemsData);
+        console.log("Fetched thoughts:", thoughtsData);
+        setThoughts(thoughtsData);
 
       } catch (error) {
         console.error("Unexpected error:", error);
@@ -101,7 +101,7 @@ const Profile = () => {
     };
 
     if (id) {
-      fetchProfileAndPoems();
+      fetchProfileAndThoughts();
     }
   }, [id, toast]);
 
@@ -118,26 +118,26 @@ const Profile = () => {
     });
   };
 
-  const handleDeletePoem = async (poemId: string) => {
+  const handleDeleteThought = async (thoughtId: string) => {
     try {
       const { error } = await supabase
-        .from('poems')
+        .from('thoughts')
         .delete()
-        .eq('id', poemId);
+        .eq('id', thoughtId);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Poem deleted successfully",
+        description: "Thought deleted successfully",
       });
 
-      setPoems(poems.filter(poem => poem.id !== poemId));
+      setThoughts(thoughts.filter(thought => thought.id !== thoughtId));
     } catch (error) {
-      console.error("Error deleting poem:", error);
+      console.error("Error deleting thought:", error);
       toast({
         title: "Error",
-        description: "Failed to delete poem",
+        description: "Failed to delete thought",
         variant: "destructive",
       });
     }
@@ -183,10 +183,10 @@ const Profile = () => {
               followingCount={profile.following_count || 0}
             />
             <ProfilePoems 
-              poems={poems}
+              poems={thoughts}
               isOwnProfile={currentUserId === profile.id}
               isAdmin={isAdmin}
-              onDeletePoem={handleDeletePoem}
+              onDeletePoem={handleDeleteThought}
             />
           </>
         )}

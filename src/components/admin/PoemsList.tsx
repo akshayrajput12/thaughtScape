@@ -15,7 +15,7 @@ export const PoemsList = () => {
         .from('thoughts')
         .select(`
           *,
-          author:profiles(
+          author:profiles!thoughts_author_id_fkey(
             id,
             username,
             full_name,
@@ -36,7 +36,7 @@ export const PoemsList = () => {
         return;
       }
 
-      setThoughts(thoughtsData as Thought[]);
+      setThoughts(thoughtsData);
     };
 
     fetchThoughts();

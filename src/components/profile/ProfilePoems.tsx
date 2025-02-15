@@ -1,10 +1,11 @@
+
 import { motion } from "framer-motion";
 import { Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Poem } from "@/types";
+import type { Thought } from "@/types";
 
 interface ProfilePoemsProps {
-  poems: Poem[];
+  poems: Thought[];
   isOwnProfile: boolean;
   isAdmin: boolean;
   onDeletePoem: (poemId: string) => void;
@@ -13,9 +14,9 @@ interface ProfilePoemsProps {
 export const ProfilePoems = ({ poems, isOwnProfile, isAdmin, onDeletePoem }: ProfilePoemsProps) => {
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-serif font-bold text-gray-800">Poems</h2>
+      <h2 className="text-2xl font-serif font-bold text-gray-800">Thoughts</h2>
       {poems.length === 0 ? (
-        <p className="text-center text-gray-500 py-8">No poems yet</p>
+        <p className="text-center text-gray-500 py-8">No thoughts yet</p>
       ) : (
         <div className="grid gap-6">
           {poems.map((poem, index) => (
