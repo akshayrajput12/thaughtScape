@@ -3,17 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { usePoemInteractions } from "@/hooks/use-poem-interactions";
+import { useThoughtInteractions } from "@/hooks/use-thought-interactions";
 import { PoemHeader } from "./poem/PoemHeader";
 import { PoemContent } from "./poem/PoemContent";
 import { PoemInteractionButtons } from "./poem/PoemInteractionButtons";
-import type { Poem } from "@/types";
+import type { Thought } from "@/types";
 
 interface PoemCardProps {
-  poem: Poem;
+  poem: Thought;
   currentUserId?: string;
   isAdmin?: boolean;
-  onDelete?: (poemId: string) => void;
+  onDelete?: (thoughtId: string) => void;
 }
 
 export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardProps) => {
@@ -27,7 +27,7 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
     isBookmarked,
     handleLike,
     handleBookmark
-  } = usePoemInteractions(poem.id, currentUserId);
+  } = useThoughtInteractions(poem.id, currentUserId);
 
   useEffect(() => {
     const checkFollowStatus = async () => {
@@ -118,13 +118,13 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
   };
 
   const handleEdit = () => {
-    navigate(`/edit-poem/${poem.id}`);
+    navigate(`/edit-thought/${poem.id}`);
   };
 
   const handleDelete = async () => {
     try {
       const { error } = await supabase
-        .from('poems')
+        .from('thoughts')
         .delete()
         .eq('id', poem.id);
 
@@ -136,12 +136,12 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
 
       toast({
         title: "Success",
-        description: "Poem deleted successfully",
+        description: "Thought deleted successfully",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Could not delete poem",
+        description: "Could not delete thought",
         variant: "destructive",
       });
     }

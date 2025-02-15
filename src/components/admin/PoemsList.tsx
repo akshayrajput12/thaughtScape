@@ -1,17 +1,18 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import type { Poem } from "@/types";
+import type { Thought } from "@/types";
 
 export const PoemsList = () => {
-  const [poems, setPoems] = useState<Poem[]>([]);
+  const [thoughts, setThoughts] = useState<Thought[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchPoems = async () => {
-      const { data: poemsData, error } = await supabase
-        .from('poems')
+    const fetchThoughts = async () => {
+      const { data: thoughtsData, error } = await supabase
+        .from('thoughts')
         .select(`
           *,
           author:profiles(
@@ -26,66 +27,66 @@ export const PoemsList = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching poems:', error);
+        console.error('Error fetching thoughts:', error);
         toast({
           title: "Error",
-          description: "Could not fetch poems",
+          description: "Could not fetch thoughts",
           variant: "destructive",
         });
         return;
       }
 
-      setPoems(poemsData as Poem[]);
+      setThoughts(thoughtsData as Thought[]);
     };
 
-    fetchPoems();
+    fetchThoughts();
   }, [toast]);
 
-  const handleDeletePoem = async (poemId: string) => {
+  const handleDeleteThought = async (thoughtId: string) => {
     const { error } = await supabase
-      .from('poems')
+      .from('thoughts')
       .delete()
-      .eq('id', poemId);
+      .eq('id', thoughtId);
 
     if (error) {
-      console.error('Error deleting poem:', error);
+      console.error('Error deleting thought:', error);
       toast({
         title: "Error",
-        description: "Could not delete poem",
+        description: "Could not delete thought",
         variant: "destructive",
       });
       return;
     }
 
-    setPoems(poems.filter(poem => poem.id !== poemId));
+    setThoughts(thoughts.filter(thought => thought.id !== thoughtId));
     toast({
       title: "Success",
-      description: "Poem deleted successfully",
+      description: "Thought deleted successfully",
     });
   };
 
   return (
     <div className="space-y-6">
-      {poems.map((poem) => (
-        <div key={poem.id} className="bg-white rounded-lg shadow-md p-6">
+      {thoughts.map((thought) => (
+        <div key={thought.id} className="bg-white rounded-lg shadow-md p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h3 className="text-xl font-serif font-semibold">{poem.title}</h3>
+              <h3 className="text-xl font-serif font-semibold">{thought.title}</h3>
               <p className="text-sm text-gray-500">
-                by {poem.author.full_name || poem.author.username}
+                by {thought.author.full_name || thought.author.username}
               </p>
             </div>
             <Button
               variant="destructive"
               size="sm"
-              onClick={() => handleDeletePoem(poem.id)}
+              onClick={() => handleDeleteThought(thought.id)}
             >
               Delete
             </Button>
           </div>
-          <p className="text-gray-700 whitespace-pre-line">{poem.content}</p>
+          <p className="text-gray-700 whitespace-pre-line">{thought.content}</p>
           <div className="mt-4 text-sm text-gray-500">
-            {new Date(poem.created_at).toLocaleDateString()}
+            {new Date(thought.created_at).toLocaleDateString()}
           </div>
         </div>
       ))}
