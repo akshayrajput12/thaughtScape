@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -179,48 +178,18 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
         
         <div className="mt-6 pt-4 border-t border-gray-100">
           <div className="flex items-center justify-between text-sm text-gray-500">
-            <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-              <DialogTrigger asChild>
-                <div>
-                  <PoemInteractionButtons
-                    likesCount={likesCount}
-                    bookmarksCount={bookmarksCount}
-                    isLiked={isLiked}
-                    isBookmarked={isBookmarked}
-                    onLike={handleLike}
-                    onBookmark={handleBookmark}
-                    onShare={() => setShowShareDialog(true)}
-                    showAnimation={true}
-                  />
-                </div>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Share Thought</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  {followers.length === 0 ? (
-                    <p className="text-center text-gray-500">You're not following anyone yet</p>
-                  ) : (
-                    followers.map((follower) => (
-                      <Button
-                        key={follower.id}
-                        variant="outline"
-                        className="flex items-center gap-2 w-full"
-                        onClick={() => handleShare(follower.id)}
-                      >
-                        <img
-                          src={follower.avatar_url || '/placeholder.svg'}
-                          alt={follower.username}
-                          className="w-8 h-8 rounded-full"
-                        />
-                        <span>{follower.full_name || follower.username}</span>
-                      </Button>
-                    ))
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
+            <div>
+              <PoemInteractionButtons
+                likesCount={likesCount}
+                bookmarksCount={bookmarksCount}
+                isLiked={isLiked}
+                isBookmarked={isBookmarked}
+                onLike={handleLike}
+                onBookmark={handleBookmark}
+                onShare={() => setShowShareDialog(true)}
+                showAnimation={true}
+              />
+            </div>
             <span className="text-sm text-gray-400">
               {new Date(poem.created_at).toLocaleDateString('en-US', {
                 month: 'short',
@@ -231,6 +200,35 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
           </div>
         </div>
       </div>
+
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Thought</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {followers.length === 0 ? (
+              <p className="text-center text-gray-500">You're not following anyone yet</p>
+            ) : (
+              followers.map((follower) => (
+                <Button
+                  key={follower.id}
+                  variant="outline"
+                  className="flex items-center gap-2 w-full"
+                  onClick={() => handleShare(follower.id)}
+                >
+                  <img
+                    src={follower.avatar_url || '/placeholder.svg'}
+                    alt={follower.username}
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <span>{follower.full_name || follower.username}</span>
+                </Button>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };
