@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,28 +8,24 @@ import { Input } from "@/components/ui/input";
 import { Send, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+interface User {
+  id: string;
+  username: string;
+  avatar_url?: string;
+}
+
 interface Message {
   id: string;
   content: string;
   sender_id: string;
   receiver_id: string;
   created_at: string;
-  sender: {
-    username: string;
-    avatar_url?: string;
-  };
-  receiver: {
-    username: string;
-    avatar_url?: string;
-  };
+  sender: User;
+  receiver: User;
 }
 
 interface Conversation {
-  user: {
-    id: string;
-    username: string;
-    avatar_url?: string;
-  };
+  user: User;
   lastMessage: Message;
   unreadCount: number;
 }
@@ -38,7 +33,7 @@ interface Conversation {
 const Messages = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedUser, setSelectedUser] = useState<Conversation["user"] | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");

@@ -4,6 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { PoemCard } from "@/components/PoemCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Thought } from "@/types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface FeaturedPoemsProps {
   thoughts: Thought[];
@@ -26,6 +34,7 @@ export const FeaturedPoems = ({
 }: FeaturedPoemsProps) => {
   const [isIntersecting, setIsIntersecting] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -74,12 +83,24 @@ export const FeaturedPoems = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, duration: 0.5 }}
           >
-            <PoemCard
-              poem={thought}
-              currentUserId={currentUserId}
-              isAdmin={isAdmin}
-              onDelete={onDeleteThought}
-            />
+            <div className="relative">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100">
+                  <MoreVertical className="h-5 w-5 text-gray-500" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => navigate(`/profile/${thought.author.id}`)}>
+                    View Profile
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <PoemCard
+                poem={thought}
+                currentUserId={currentUserId}
+                isAdmin={isAdmin}
+                onDelete={onDeleteThought}
+              />
+            </div>
           </motion.div>
         ))}
       </div>
