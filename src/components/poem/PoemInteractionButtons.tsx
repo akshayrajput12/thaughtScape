@@ -1,3 +1,4 @@
+
 import { Heart, Bookmark, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -8,6 +9,7 @@ interface PoemInteractionButtonsProps {
   isBookmarked: boolean;
   onLike: () => void;
   onBookmark: () => void;
+  onShare?: () => void;
   showAnimation?: boolean;
 }
 
@@ -18,6 +20,7 @@ export const PoemInteractionButtons = ({
   isBookmarked,
   onLike,
   onBookmark,
+  onShare,
   showAnimation = false
 }: PoemInteractionButtonsProps) => {
   const ButtonWrapper = showAnimation ? motion.button : 'button';
@@ -25,31 +28,35 @@ export const PoemInteractionButtons = ({
   return (
     <div className="flex items-center gap-4">
       <ButtonWrapper
-        className={`flex items-center gap-1 transition-colors ${
-          isLiked ? 'text-red-500' : 'hover:text-red-500'
+        className={`flex items-center gap-1.5 transition-colors ${
+          isLiked ? 'text-pink-500' : 'hover:text-pink-500'
         }`}
         onClick={onLike}
         {...(showAnimation && { whileHover: { scale: 1.1 } })}
       >
         <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-        <span>{likesCount}</span>
+        <span className="text-sm font-medium">{likesCount}</span>
       </ButtonWrapper>
       <ButtonWrapper
-        className={`flex items-center gap-1 transition-colors ${
-          isBookmarked ? 'text-blue-500' : 'hover:text-blue-500'
+        className={`flex items-center gap-1.5 transition-colors ${
+          isBookmarked ? 'text-purple-500' : 'hover:text-purple-500'
         }`}
         onClick={onBookmark}
         {...(showAnimation && { whileHover: { scale: 1.1 } })}
       >
         <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} />
-        <span>{bookmarksCount}</span>
+        <span className="text-sm font-medium">{bookmarksCount}</span>
       </ButtonWrapper>
-      <ButtonWrapper
-        className="hover:text-gray-700 transition-colors"
-        {...(showAnimation && { whileHover: { scale: 1.1 } })}
-      >
-        <Share2 className="w-5 h-5" />
-      </ButtonWrapper>
+      {onShare && (
+        <ButtonWrapper
+          className="hover:text-purple-500 transition-colors flex items-center gap-1.5"
+          onClick={onShare}
+          {...(showAnimation && { whileHover: { scale: 1.1 } })}
+        >
+          <Share2 className="w-5 h-5" />
+          <span className="text-sm font-medium">Share</span>
+        </ButtonWrapper>
+      )}
     </div>
   );
 };
