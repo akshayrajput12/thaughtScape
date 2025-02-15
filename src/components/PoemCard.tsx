@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -33,6 +32,11 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
     handleLike,
     handleBookmark
   } = useThoughtInteractions(poem.id, currentUserId);
+
+  const navigateToProfile = (e: React.MouseEvent, userId: string) => {
+    e.stopPropagation();
+    navigate(`/profile/${userId}`);
+  };
 
   useEffect(() => {
     const fetchFollowers = async () => {
@@ -127,7 +131,8 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100"
+      className="group relative max-w-2xl mx-auto bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 cursor-pointer transform hover:scale-[1.02]"
+      onClick={() => navigate(`/profile/${poem.author.id}`)}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-transparent to-pink-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       

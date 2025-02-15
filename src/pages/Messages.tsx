@@ -1,210 +1,253 @@
+
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import type { Message, Profile } from "@/types";
+import { Send, Search } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface Message {
+  id: string;
+  content: string;
+  sender_id: string;
+  receiver_id: string;
+  created_at: string;
+  sender: {
+    username: string;
+    avatar_url?: string;
+  };
+  receiver: {
+    username: string;
+    avatar_url?: string;
+  };
+}
+
+interface Conversation {
+  user: {
+    id: string;
+    username: string;
+    avatar_url?: string;
+  };
+  lastMessage: Message;
+  unreadCount: number;
+}
 
 const Messages = () => {
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedUser, setSelectedUser] = useState<Conversation["user"] | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [users, setUsers] = useState<Profile[]>([]);
-  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [searchUsername, setSearchUsername] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchMessages = async () => {
+    const fetchCurrentUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.id) return;
+      if (!session?.user) {
+        navigate("/auth");
+        return;
+      }
+      setCurrentUserId(session.user.id);
+    };
 
-      // Get messages from the last 24 hours
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    fetchCurrentUser();
+  }, [navigate]);
 
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const fetchConversations = async () => {
       const { data, error } = await supabase
         .from('messages')
         .select(`
           *,
-          sender:profiles!sender_id(*),
-          receiver:profiles!receiver_id(*)
+          sender:profiles!messages_sender_id_fkey(id, username, avatar_url),
+          receiver:profiles!messages_receiver_id_fkey(id, username, avatar_url)
         `)
-        .or(`sender_id.eq.${session.user.id},receiver_id.eq.${session.user.id}`)
-        .gte('created_at', twentyFourHoursAgo)
+        .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
         .order('created_at', { ascending: false });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: "Could not fetch messages",
-          variant: "destructive",
-        });
+        console.error('Error fetching messages:', error);
+        return;
+      }
+
+      const conversationsMap = new Map<string, Conversation>();
+
+      data.forEach((message: Message) => {
+        const otherUser = message.sender_id === currentUserId ? message.receiver : message.sender;
+        const existingConv = conversationsMap.get(otherUser.id);
+
+        if (!existingConv || new Date(message.created_at) > new Date(existingConv.lastMessage.created_at)) {
+          conversationsMap.set(otherUser.id, {
+            user: otherUser,
+            lastMessage: message,
+            unreadCount: message.receiver_id === currentUserId ? 1 : 0,
+          });
+        }
+      });
+
+      setConversations(Array.from(conversationsMap.values()));
+    };
+
+    fetchConversations();
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (!currentUserId || !selectedUser) return;
+
+    const fetchMessages = async () => {
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          sender:profiles!messages_sender_id_fkey(id, username, avatar_url),
+          receiver:profiles!messages_receiver_id_fkey(id, username, avatar_url)
+        `)
+        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUserId})`)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
         return;
       }
 
       setMessages(data);
-
-      // Get unique users from messages
-      const uniqueUsers = new Set();
-      const messageUsers = data.reduce((acc: Profile[], message: Message) => {
-        const otherUser = message.sender_id === session.user.id ? message.receiver : message.sender;
-        if (otherUser && !uniqueUsers.has(otherUser.id)) {
-          uniqueUsers.add(otherUser.id);
-          acc.push(otherUser);
-        }
-        return acc;
-      }, []);
-
-      setUsers(messageUsers);
     };
 
     fetchMessages();
-
-    // Set up real-time subscription for new messages
-    const channel = supabase
-      .channel('messages_channel')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages'
-        },
-        fetchMessages
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [toast]);
-
-  const searchUsers = async (username: string) => {
-    if (!username) return;
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .ilike('username', `%${username}%`)
-      .limit(5);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Could not search users",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setUsers(data);
-  };
+  }, [currentUserId, selectedUser]);
 
   const sendMessage = async () => {
-    if (!selectedUser || !newMessage.trim()) return;
+    if (!currentUserId || !selectedUser || !newMessage.trim()) return;
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) return;
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          content: newMessage.trim(),
+          sender_id: currentUserId,
+          receiver_id: selectedUser.id,
+        });
 
-    const { error } = await supabase
-      .from('messages')
-      .insert({
-        sender_id: session.user.id,
-        receiver_id: selectedUser.id,
-        content: newMessage.trim()
+      if (error) throw error;
+
+      setNewMessage("");
+      toast({
+        title: "Success",
+        description: "Message sent successfully",
       });
-
-    if (error) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Could not send message",
+        description: "Failed to send message",
         variant: "destructive",
       });
-      return;
     }
-
-    setNewMessage("");
-    toast({
-      title: "Success",
-      description: "Message sent successfully",
-    });
   };
 
+  const filteredConversations = conversations.filter(conv =>
+    conv.user.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md">
-        <div className="grid grid-cols-3 min-h-[600px]">
-          {/* Users list */}
-          <div className="border-r">
-            <div className="p-4">
-              <Input
-                placeholder="Search users..."
-                value={searchUsername}
-                onChange={(e) => {
-                  setSearchUsername(e.target.value);
-                  searchUsers(e.target.value);
-                }}
-              />
+    <div className="min-h-screen bg-gradient-to-b from-white to-primary/10 p-4">
+      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="grid grid-cols-3 min-h-[80vh]">
+          {/* Conversations List */}
+          <div className="border-r border-gray-200">
+            <div className="p-4 border-b border-gray-200">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search conversations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
-            <div className="divide-y">
-              {users.map((user) => (
-                <button
-                  key={user.id}
-                  className={`w-full p-4 text-left hover:bg-gray-50 ${
-                    selectedUser?.id === user.id ? 'bg-gray-100' : ''
-                  }`}
-                  onClick={() => setSelectedUser(user)}
-                >
-                  <div className="font-medium">{user.full_name || user.username}</div>
-                  <div className="text-sm text-gray-500">@{user.username}</div>
-                </button>
-              ))}
+            <div className="overflow-y-auto h-[calc(80vh-73px)]">
+              <AnimatePresence>
+                {filteredConversations.map((conv) => (
+                  <motion.div
+                    key={conv.user.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                      selectedUser?.id === conv.user.id ? 'bg-gray-50' : ''
+                    }`}
+                    onClick={() => setSelectedUser(conv.user)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={conv.user.avatar_url || undefined} />
+                        <AvatarFallback>{conv.user.username[0].toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{conv.user.username}</p>
+                        <p className="text-sm text-gray-500 truncate">{conv.lastMessage.content}</p>
+                      </div>
+                      {conv.unreadCount > 0 && (
+                        <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                          <span className="text-xs text-white">{conv.unreadCount}</span>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </div>
 
-          {/* Messages */}
+          {/* Messages Area */}
           <div className="col-span-2 flex flex-col">
             {selectedUser ? (
               <>
-                <div className="p-4 border-b">
-                  <h2 className="font-medium">{selectedUser.full_name || selectedUser.username}</h2>
+                <div className="p-4 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={selectedUser.avatar_url || undefined} />
+                      <AvatarFallback>{selectedUser.username[0].toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{selectedUser.username}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 p-4 overflow-y-auto space-y-4">
-                  {messages
-                    .filter(m => 
-                      (m.sender_id === selectedUser.id) || 
-                      (m.receiver_id === selectedUser.id)
-                    )
-                    .map((message) => (
-                      <div
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  <AnimatePresence>
+                    {messages.map((message) => (
+                      <motion.div
                         key={message.id}
-                        className={`flex ${
-                          message.sender_id === selectedUser.id ? 'justify-start' : 'justify-end'
-                        }`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        className={`flex ${message.sender_id === currentUserId ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
                           className={`max-w-[70%] p-3 rounded-lg ${
-                            message.sender_id === selectedUser.id
-                              ? 'bg-gray-100'
-                              : 'bg-blue-500 text-white'
+                            message.sender_id === currentUserId
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-gray-100 text-gray-900'
                           }`}
                         >
-                          {message.content}
+                          <p>{message.content}</p>
+                          <p className="text-xs opacity-70 mt-1">
+                            {new Date(message.created_at).toLocaleTimeString()}
+                          </p>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
+                  </AnimatePresence>
                 </div>
-                <div className="p-4 border-t">
+                <div className="p-4 border-t border-gray-200">
                   <div className="flex gap-2">
                     <Input
                       placeholder="Type a message..."
@@ -212,13 +255,15 @@ const Messages = () => {
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                     />
-                    <Button onClick={sendMessage}>Send</Button>
+                    <Button onClick={sendMessage}>
+                      <Send className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
-                Select a user to start messaging
+                Select a conversation to start messaging
               </div>
             )}
           </div>

@@ -181,6 +181,7 @@ const Profile = () => {
               postsCount={profile.posts_count || 0}
               followersCount={profile.followers_count || 0}
               followingCount={profile.following_count || 0}
+              userId={profile.id}
             />
             <ProfilePoems 
               poems={thoughts}
