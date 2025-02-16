@@ -5,18 +5,11 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useThoughtInteractions } from "@/hooks/use-thought-interactions";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreVertical, UserPlus, UserMinus } from "lucide-react";
 import { PoemContent } from "./poem/PoemContent";
 import { PoemInteractionButtons } from "./poem/PoemInteractionButtons";
 import { CommentSection } from "./poem/CommentSection";
+import { PoemHeader } from "./poem/PoemHeader";
+import { ShareDialog } from "./poem/ShareDialog";
 import type { Thought, Profile } from "@/types";
 
 interface PoemCardProps {
@@ -93,7 +86,6 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
 
         if (error) throw error;
 
-        // Create notification for followed user
         await supabase
           .from('notifications')
           .insert({
@@ -189,67 +181,16 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
       <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 via-transparent to-pink-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       
       <div className="relative p-6 sm:p-8">
-        <motion.div 
-          className="flex justify-between items-start mb-6"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="flex items-center gap-4">
-            <motion.img
-              whileHover={{ scale: 1.1 }}
-              src={poem.author.avatar_url || '/placeholder.svg'}
-              alt={poem.author.username}
-              className="w-12 h-12 rounded-full border-2 border-purple-200"
-            />
-            <div>
-              <h3 className="font-serif text-lg font-medium text-gray-800">{poem.author.username}</h3>
-              <p className="text-sm text-gray-500">{poem.title}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {currentUserId && currentUserId !== poem.author.id && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleFollowToggle}
-                className="flex items-center gap-1 hover:bg-purple-50 transition-colors"
-              >
-                {isFollowing ? (
-                  <>
-                    <UserMinus className="w-4 h-4 text-purple-500" />
-                    <span className="text-purple-700">Unfollow</span>
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="w-4 h-4 text-purple-500" />
-                    <span className="text-purple-700">Follow</span>
-                  </>
-                )}
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="p-2 rounded-full hover:bg-purple-50 transition-colors">
-                <MoreVertical className="h-5 w-5 text-gray-500" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => navigate(`/profile/${poem.author.id}`)}>
-                  View Profile
-                </DropdownMenuItem>
-                {(currentUserId === poem.author.id || isAdmin) && (
-                  <>
-                    <DropdownMenuItem onClick={handleEdit}>
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDelete} className="text-red-500">
-                      Delete
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </motion.div>
+        <PoemHeader
+          author={poem.author}
+          title={poem.title}
+          currentUserId={currentUserId}
+          isAdmin={isAdmin}
+          isFollowing={isFollowing}
+          onFollowToggle={handleFollowToggle}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
         
         <motion.div 
           className="my-6"
@@ -296,34 +237,12 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
         </motion.div>
       </div>
 
-      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl font-serif">Share Thought</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {followers.length === 0 ? (
-              <p className="text-center text-gray-500">You're not following anyone yet</p>
-            ) : (
-              followers.map((follower) => (
-                <Button
-                  key={follower.id}
-                  variant="outline"
-                  className="flex items-center gap-3 w-full p-4 hover:bg-purple-50 transition-colors"
-                  onClick={() => handleShare(follower.id)}
-                >
-                  <img
-                    src={follower.avatar_url || '/placeholder.svg'}
-                    alt={follower.username}
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <span className="font-medium">{follower.full_name || follower.username}</span>
-                </Button>
-              ))
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        followers={followers}
+        onShare={handleShare}
+      />
     </motion.div>
   );
 };
