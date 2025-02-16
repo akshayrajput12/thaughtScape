@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +18,7 @@ interface LuxuryPoemCardProps {
 }
 
 export const LuxuryPoemCard = ({ poem, currentUserId, isAdmin, onDelete }: LuxuryPoemCardProps) => {
+  const [isFollowing, setIsFollowing] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const {
@@ -27,6 +29,82 @@ export const LuxuryPoemCard = ({ poem, currentUserId, isAdmin, onDelete }: Luxur
     handleLike,
     handleBookmark
   } = useThoughtInteractions(poem.id, currentUserId);
+
+  useEffect(() => {
+    const checkFollowStatus = async () => {
+      if (!currentUserId || currentUserId === poem.author.id) return;
+
+      const { data, error } = await supabase
+        .from('follows')
+        .select()
+        .eq('follower_id', currentUserId)
+        .eq('following_id', poem.author.id)
+        .maybeSingle();
+
+      if (!error) {
+        setIsFollowing(!!data);
+      }
+    };
+
+    checkFollowStatus();
+  }, [currentUserId, poem.author.id]);
+
+  const handleFollowToggle = async () => {
+    if (!currentUserId) {
+      navigate('/auth');
+      return;
+    }
+
+    if (currentUserId === poem.author.id) return;
+
+    try {
+      if (isFollowing) {
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', currentUserId)
+          .eq('following_id', poem.author.id);
+
+        if (error) throw error;
+
+        setIsFollowing(false);
+        toast({
+          title: "Success",
+          description: "Unfollowed successfully",
+        });
+      } else {
+        const { error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: currentUserId,
+            following_id: poem.author.id
+          });
+
+        if (error) throw error;
+
+        await supabase
+          .from('notifications')
+          .insert({
+            type: 'follow',
+            user_id: poem.author.id,
+            content: 'Someone started following you',
+            related_user_id: currentUserId
+          });
+
+        setIsFollowing(true);
+        toast({
+          title: "Success",
+          description: "Followed successfully",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not update follow status",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleEdit = () => {
     navigate(`/edit-thought/${poem.id}`);
@@ -70,6 +148,8 @@ export const LuxuryPoemCard = ({ poem, currentUserId, isAdmin, onDelete }: Luxur
         author={poem.author}
         currentUserId={currentUserId}
         isAdmin={isAdmin}
+        isFollowing={isFollowing}
+        onFollowToggle={handleFollowToggle}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
