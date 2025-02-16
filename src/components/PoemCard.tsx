@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -183,20 +184,26 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="group relative max-w-2xl mx-auto bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100"
+      className="group relative max-w-2xl mx-auto bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-purple-100/50"
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-transparent to-pink-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 via-transparent to-pink-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       
-      <div className="relative p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex items-center gap-3">
-            <img
+      <div className="relative p-6 sm:p-8">
+        <motion.div 
+          className="flex justify-between items-start mb-6"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="flex items-center gap-4">
+            <motion.img
+              whileHover={{ scale: 1.1 }}
               src={poem.author.avatar_url || '/placeholder.svg'}
               alt={poem.author.username}
-              className="w-10 h-10 rounded-full"
+              className="w-12 h-12 rounded-full border-2 border-purple-200"
             />
             <div>
-              <h3 className="font-medium">{poem.author.username}</h3>
+              <h3 className="font-serif text-lg font-medium text-gray-800">{poem.author.username}</h3>
               <p className="text-sm text-gray-500">{poem.title}</p>
             </div>
           </div>
@@ -206,23 +213,23 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
                 variant="ghost"
                 size="sm"
                 onClick={handleFollowToggle}
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 hover:bg-purple-50 transition-colors"
               >
                 {isFollowing ? (
                   <>
-                    <UserMinus className="w-4 h-4" />
-                    <span>Unfollow</span>
+                    <UserMinus className="w-4 h-4 text-purple-500" />
+                    <span className="text-purple-700">Unfollow</span>
                   </>
                 ) : (
                   <>
-                    <UserPlus className="w-4 h-4" />
-                    <span>Follow</span>
+                    <UserPlus className="w-4 h-4 text-purple-500" />
+                    <span className="text-purple-700">Follow</span>
                   </>
                 )}
               </Button>
             )}
             <DropdownMenu>
-              <DropdownMenuTrigger className="p-2 rounded-full hover:bg-gray-100">
+              <DropdownMenuTrigger className="p-2 rounded-full hover:bg-purple-50 transition-colors">
                 <MoreVertical className="h-5 w-5 text-gray-500" />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -242,13 +249,23 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </div>
+        </motion.div>
         
-        <div className="my-6">
+        <motion.div 
+          className="my-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
           <PoemContent content={poem.content} />
-        </div>
+        </motion.div>
         
-        <div className="mt-6 pt-4 border-t border-gray-100">
+        <motion.div 
+          className="mt-6 pt-4 border-t border-purple-100"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
           <div className="flex items-center justify-between text-sm text-gray-500">
             <div>
               <PoemInteractionButtons
@@ -262,7 +279,7 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
                 showAnimation={true}
               />
             </div>
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-gray-400 font-medium">
               {new Date(poem.created_at).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
@@ -276,13 +293,13 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
             currentUserId={currentUserId}
             thoughtAuthorId={poem.author.id}
           />
-        </div>
+        </motion.div>
       </div>
 
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Share Thought</DialogTitle>
+            <DialogTitle className="text-center text-xl font-serif">Share Thought</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {followers.length === 0 ? (
@@ -292,15 +309,15 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
                 <Button
                   key={follower.id}
                   variant="outline"
-                  className="flex items-center gap-2 w-full"
+                  className="flex items-center gap-3 w-full p-4 hover:bg-purple-50 transition-colors"
                   onClick={() => handleShare(follower.id)}
                 >
                   <img
                     src={follower.avatar_url || '/placeholder.svg'}
                     alt={follower.username}
-                    className="w-8 h-8 rounded-full"
+                    className="w-10 h-10 rounded-full"
                   />
-                  <span>{follower.full_name || follower.username}</span>
+                  <span className="font-medium">{follower.full_name || follower.username}</span>
                 </Button>
               ))
             )}
