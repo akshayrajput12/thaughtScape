@@ -1,3 +1,12 @@
+export interface CallRequest {
+  callId: string;
+  caller: {
+    id: string;
+    username: string;
+    avatar_url?: string;
+  };
+  isVideo: boolean;
+}
 
 export class WebRTCConnection {
   private peerConnection: RTCPeerConnection | null = null;
@@ -119,5 +128,53 @@ export class WebRTCConnection {
         videoTrack.enabled = enabled;
       }
     }
+  }
+
+  async initiateCall(callerId: string, receiverId: string, isVideo: boolean): Promise<string> {
+    const callId = `${callerId}-${receiverId}-${Date.now()}`;
+    const channel = supabase.channel(`call:${callId}`);
+    
+    await channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        channel.send({
+          type: 'broadcast',
+          event: 'call-request',
+          payload: {
+            callId,
+            isVideo
+          }
+        });
+      }
+    });
+
+    return callId;
+  }
+
+  async acceptCall(callId: string) {
+    if (!this.peerConnection) return;
+
+    const channel = supabase.channel(`call:${callId}`);
+    await channel.subscribe();
+
+    channel.send({
+      type: 'broadcast',
+      event: 'call-accepted',
+      payload: {
+        callId
+      }
+    });
+  }
+
+  async rejectCall(callId: string) {
+    const channel = supabase.channel(`call:${callId}`);
+    await channel.subscribe();
+
+    channel.send({
+      type: 'broadcast',
+      event: 'call-rejected',
+      payload: {
+        callId
+      }
+    });
   }
 }

@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CallControls } from "@/components/messages/CallControls";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CallView } from '@/components/messages/CallView';
+import { IncomingCallDialog } from '@/components/messages/IncomingCallDialog';
+import { CallRequest } from '@/utils/webrtc';
 
 interface User {
   id: string;
@@ -52,6 +54,7 @@ const Messages = () => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const [activeTab, setActiveTab] = useState("chats");
+  const [incomingCall, setIncomingCall] = useState<CallRequest | null>(null);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -189,52 +192,91 @@ const Messages = () => {
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, currentUserId]);
 
-  const handleStartCall = async (withVideo: boolean) => {
-    if (!selectedUser) return;
-    
-    setIsVideo(withVideo);
-    setIsInCall(true);
-    setIsMuted(false);
+  useEffect(() => {
+    if (!currentUserId) return;
 
+    const channel = supabase.channel(`user:${currentUserId}`)
+      .on('broadcast', { event: 'call-request' }, ({ payload }) => {
+        setIncomingCall({
+          callId: payload.callId,
+          caller: payload.caller,
+          isVideo: payload.isVideo
+        });
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [currentUserId]);
+
+  const handleStartCall = async (withVideo: boolean) => {
+    if (!selectedUser || !currentUserId) return;
+    
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: withVideo,
-        audio: true
+      const rtcConnection = new WebRTCConnection((remoteStream) => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStream;
+        }
       });
 
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
+      const callId = await rtcConnection.initiateCall(currentUserId, selectedUser.id, withVideo);
+
+      setIsVideo(withVideo);
+      setIsInCall(true);
+      setIsMuted(false);
 
       toast({
-        title: "Call Started",
-        description: `${withVideo ? "Video" : "Audio"} call started with ${selectedUser.username}`,
+        title: "Calling...",
+        description: `Waiting for ${selectedUser.username} to accept`,
       });
     } catch (error) {
-      console.error("Error accessing media devices:", error);
+      console.error("Error starting call:", error);
       toast({
         title: "Error",
-        description: "Could not access camera/microphone",
+        description: "Could not start the call",
         variant: "destructive",
       });
-      setIsInCall(false);
     }
   };
 
-  const handleEndCall = () => {
-    setIsInCall(false);
-    setIsVideo(false);
-    setIsMuted(false);
+  const handleAcceptCall = async () => {
+    if (!incomingCall) return;
 
-    if (localVideoRef.current?.srcObject) {
-      const tracks = (localVideoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => track.stop());
+    try {
+      setIsInCall(true);
+      setIsVideo(incomingCall.isVideo);
+      setIsMuted(false);
+
+      const rtcConnection = new WebRTCConnection((remoteStream) => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStream;
+        }
+      });
+
+      await rtcConnection.acceptCall(incomingCall.callId);
+      setIncomingCall(null);
+
+    } catch (error) {
+      console.error("Error accepting call:", error);
+      toast({
+        title: "Error",
+        description: "Could not accept the call",
+        variant: "destructive",
+      });
     }
+  };
 
-    toast({
-      title: "Call Ended",
-      description: "The call has been ended",
-    });
+  const handleRejectCall = async () => {
+    if (!incomingCall) return;
+
+    try {
+      const rtcConnection = new WebRTCConnection(() => {});
+      await rtcConnection.rejectCall(incomingCall.callId);
+      setIncomingCall(null);
+    } catch (error) {
+      console.error("Error rejecting call:", error);
+    }
   };
 
   const toggleAudio = () => {
@@ -292,208 +334,215 @@ const Messages = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-primary/10 pt-20">
-      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="grid grid-cols-3 min-h-[80vh]">
-          <div className="border-r border-gray-200">
-            <Tabs defaultValue="chats" className="w-full" onValueChange={setActiveTab}>
-              <div className="p-4 border-b border-gray-200">
-                <TabsList className="w-full mb-4">
-                  <TabsTrigger value="chats" className="flex-1">
-                    <Mail className="w-4 h-4 mr-2" />
-                    Chats
-                  </TabsTrigger>
-                  <TabsTrigger value="users" className="flex-1">
-                    <Users className="w-4 h-4 mr-2" />
-                    Users
-                  </TabsTrigger>
-                </TabsList>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder={activeTab === "chats" ? "Search conversations..." : "Search users..."}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <TabsContent value="chats" className="m-0">
-                <div className="overflow-y-auto h-[calc(80vh-130px)]">
-                  <AnimatePresence>
-                    {filteredConversations.map((conv) => (
-                      <motion.div
-                        key={conv.user.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                          selectedUser?.id === conv.user.id ? 'bg-gray-50' : ''
-                        }`}
-                        onClick={() => setSelectedUser(conv.user)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={conv.user.avatar_url || undefined} />
-                            <AvatarFallback>{conv.user.username[0].toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">
-                              {conv.user.full_name || conv.user.username}
-                            </p>
-                            <p className="text-sm text-gray-500 truncate">
-                              {conv.lastMessage.content}
-                            </p>
-                          </div>
-                          {conv.unreadCount > 0 && (
-                            <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                              <span className="text-xs text-white">{conv.unreadCount}</span>
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="users" className="m-0">
-                <div className="overflow-y-auto h-[calc(80vh-130px)]">
-                  <AnimatePresence>
-                    {searchResults.map((user) => (
-                      <motion.div
-                        key={user.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => setSelectedUser(user)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={user.avatar_url || undefined} />
-                            <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">
-                              {user.full_name || user.username}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {user.is_following ? 'Following' : ''}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedUser(user);
-                            }}
-                          >
-                            <UserPlus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          <div className="col-span-2 flex flex-col">
-            {selectedUser ? (
-              <>
+    <>
+      <div className="min-h-screen bg-gradient-to-b from-white to-primary/10 pt-20">
+        <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="grid grid-cols-3 min-h-[80vh]">
+            <div className="border-r border-gray-200">
+              <Tabs defaultValue="chats" className="w-full" onValueChange={setActiveTab}>
                 <div className="p-4 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={selectedUser.avatar_url || undefined} />
-                        <AvatarFallback>{selectedUser.username[0].toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{selectedUser.username}</p>
-                      </div>
-                    </div>
-                    <CallControls
-                      isInCall={isInCall}
-                      isVideo={isVideo}
-                      isMuted={isMuted}
-                      onToggleAudio={toggleAudio}
-                      onToggleVideo={toggleVideo}
-                      onStartCall={handleStartCall}
-                      onEndCall={handleEndCall}
+                  <TabsList className="w-full mb-4">
+                    <TabsTrigger value="chats" className="flex-1">
+                      <Mail className="w-4 h-4 mr-2" />
+                      Chats
+                    </TabsTrigger>
+                    <TabsTrigger value="users" className="flex-1">
+                      <Users className="w-4 h-4 mr-2" />
+                      Users
+                    </TabsTrigger>
+                  </TabsList>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder={activeTab === "chats" ? "Search conversations..." : "Search users..."}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
                     />
                   </div>
                 </div>
 
-                <div className="relative flex-1 overflow-hidden">
-                  {isInCall ? (
-                    <CallView
-                      isInCall={isInCall}
-                      isVideo={isVideo}
-                      isMuted={isMuted}
-                      selectedUserId={selectedUser.id}
-                      currentUserId={currentUserId!}
-                      onToggleAudio={toggleAudio}
-                      onToggleVideo={toggleVideo}
-                      onCallEnd={handleEndCall}
-                    />
-                  ) : (
-                    <>
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        <AnimatePresence>
-                          {messages.map((message) => (
-                            <motion.div
-                              key={message.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 20 }}
-                              className={`flex ${message.sender_id === currentUserId ? 'justify-end' : 'justify-start'}`}
-                            >
-                              <div
-                                className={`max-w-[70%] p-3 rounded-lg ${
-                                  message.sender_id === currentUserId
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-gray-100 text-gray-900'
-                                }`}
-                              >
-                                <p>{message.content}</p>
-                                <p className="text-xs opacity-70 mt-1">
-                                  {new Date(message.created_at).toLocaleTimeString()}
-                                </p>
+                <TabsContent value="chats" className="m-0">
+                  <div className="overflow-y-auto h-[calc(80vh-130px)]">
+                    <AnimatePresence>
+                      {filteredConversations.map((conv) => (
+                        <motion.div
+                          key={conv.user.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                            selectedUser?.id === conv.user.id ? 'bg-gray-50' : ''
+                          }`}
+                          onClick={() => setSelectedUser(conv.user)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage src={conv.user.avatar_url || undefined} />
+                              <AvatarFallback>{conv.user.username[0].toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">
+                                {conv.user.full_name || conv.user.username}
+                              </p>
+                              <p className="text-sm text-gray-500 truncate">
+                                {conv.lastMessage.content}
+                              </p>
+                            </div>
+                            {conv.unreadCount > 0 && (
+                              <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                                <span className="text-xs text-white">{conv.unreadCount}</span>
                               </div>
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                      </div>
-                      <div className="p-4 border-t border-gray-200">
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Type a message..."
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                          />
-                          <Button onClick={sendMessage}>
-                            <Send className="h-4 w-4" />
-                          </Button>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="users" className="m-0">
+                  <div className="overflow-y-auto h-[calc(80vh-130px)]">
+                    <AnimatePresence>
+                      {searchResults.map((user) => (
+                        <motion.div
+                          key={user.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => setSelectedUser(user)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage src={user.avatar_url || undefined} />
+                              <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">
+                                {user.full_name || user.username}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {user.is_following ? 'Following' : ''}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedUser(user);
+                              }}
+                            >
+                              <UserPlus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            <div className="col-span-2 flex flex-col">
+              {selectedUser ? (
+                <>
+                  <div className="p-4 border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={selectedUser.avatar_url || undefined} />
+                          <AvatarFallback>{selectedUser.username[0].toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{selectedUser.username}</p>
                         </div>
                       </div>
-                    </>
-                  )}
+                      <CallControls
+                        isInCall={isInCall}
+                        isVideo={isVideo}
+                        isMuted={isMuted}
+                        onToggleAudio={toggleAudio}
+                        onToggleVideo={toggleVideo}
+                        onStartCall={handleStartCall}
+                        onEndCall={handleEndCall}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="relative flex-1 overflow-hidden">
+                    {isInCall ? (
+                      <CallView
+                        isInCall={isInCall}
+                        isVideo={isVideo}
+                        isMuted={isMuted}
+                        selectedUserId={selectedUser.id}
+                        currentUserId={currentUserId!}
+                        onToggleAudio={toggleAudio}
+                        onToggleVideo={toggleVideo}
+                        onCallEnd={handleEndCall}
+                      />
+                    ) : (
+                      <>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                          <AnimatePresence>
+                            {messages.map((message) => (
+                              <motion.div
+                                key={message.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 20 }}
+                                className={`flex ${message.sender_id === currentUserId ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div
+                                  className={`max-w-[70%] p-3 rounded-lg ${
+                                    message.sender_id === currentUserId
+                                      ? 'bg-primary text-primary-foreground'
+                                      : 'bg-gray-100 text-gray-900'
+                                  }`}
+                                >
+                                  <p>{message.content}</p>
+                                  <p className="text-xs opacity-70 mt-1">
+                                    {new Date(message.created_at).toLocaleTimeString()}
+                                  </p>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+                        </div>
+                        <div className="p-4 border-t border-gray-200">
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Type a message..."
+                              value={newMessage}
+                              onChange={(e) => setNewMessage(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                            />
+                            <Button onClick={sendMessage}>
+                              <Send className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  Select a conversation to start messaging
                 </div>
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                Select a conversation to start messaging
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      <IncomingCallDialog
+        call={incomingCall}
+        onAccept={handleAcceptCall}
+        onReject={handleRejectCall}
+      />
+    </>
   );
 };
 

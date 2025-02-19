@@ -57,7 +57,7 @@ export const CallView = ({
         localVideoRef.current.srcObject = localStream;
       }
 
-      // Subscribe to signaling channel
+      // Subscribe to call events
       const channel = supabase.channel(`call:${currentUserId}-${selectedUserId}`)
         .on('broadcast', { event: 'call-signal' }, async ({ payload }) => {
           if (!rtcConnectionRef.current) return;
@@ -76,6 +76,8 @@ export const CallView = ({
               await rtcConnectionRef.current.handleAnswer(payload.answer);
             } else if (payload.type === 'candidate') {
               await rtcConnectionRef.current.handleCandidate(payload.candidate);
+            } else if (payload.type === 'end-call') {
+              onCallEnd();
             }
           } catch (error) {
             console.error('Error handling WebRTC signal:', error);
