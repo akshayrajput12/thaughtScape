@@ -5,13 +5,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Search, Mail, Users, UserPlus } from "lucide-react";
+import { Send, Search, Mail, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CallControls } from "@/components/messages/CallControls";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CallView } from '@/components/messages/CallView';
 import { IncomingCallDialog } from '@/components/messages/IncomingCallDialog';
-import { CallRequest } from '@/utils/webrtc';
+import { CallRequest, WebRTCConnection } from '@/utils/webrtc';
 
 interface User {
   id: string;
@@ -45,16 +45,19 @@ const Messages = () => {
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isInCall, setIsInCall] = useState(false);
   const [isVideo, setIsVideo] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const [activeTab, setActiveTab] = useState("chats");
   const [incomingCall, setIncomingCall] = useState<CallRequest | null>(null);
+  const [callDuration, setCallDuration] = useState<number>(0);
+  const callDurationInterval = useRef<NodeJS.Timeout>();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const rtcConnectionRef = useRef<WebRTCConnection | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -210,17 +213,54 @@ const Messages = () => {
     };
   }, [currentUserId]);
 
+  useEffect(() => {
+    const audio = new Audio('/ringtone.mp3');
+    audioRef.current = audio;
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (incomingCall && audioRef.current) {
+      audioRef.current.loop = true;
+      audioRef.current.play().catch(console.error);
+    } else if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, [incomingCall]);
+
+  useEffect(() => {
+    if (isInCall) {
+      callDurationInterval.current = setInterval(() => {
+        setCallDuration(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (callDurationInterval.current) {
+        clearInterval(callDurationInterval.current);
+      }
+      setCallDuration(0);
+    }
+    return () => {
+      if (callDurationInterval.current) {
+        clearInterval(callDurationInterval.current);
+      }
+    };
+  }, [isInCall]);
+
   const handleStartCall = async (withVideo: boolean) => {
     if (!selectedUser || !currentUserId) return;
     
     try {
-      const rtcConnection = new WebRTCConnection((remoteStream) => {
+      rtcConnectionRef.current = new WebRTCConnection((remoteStream) => {
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = remoteStream;
         }
       });
 
-      const callId = await rtcConnection.initiateCall(currentUserId, selectedUser.id, withVideo);
+      const callId = await rtcConnectionRef.current.initiateCall(currentUserId, selectedUser.id, withVideo);
 
       setIsVideo(withVideo);
       setIsInCall(true);
@@ -240,22 +280,35 @@ const Messages = () => {
     }
   };
 
+  const handleEndCall = () => {
+    if (rtcConnectionRef.current) {
+      rtcConnectionRef.current.closeConnection();
+      rtcConnectionRef.current = null;
+    }
+    setIsInCall(false);
+    setIsVideo(false);
+    setIsMuted(false);
+    if (callDurationInterval.current) {
+      clearInterval(callDurationInterval.current);
+    }
+    setCallDuration(0);
+  };
+
   const handleAcceptCall = async () => {
     if (!incomingCall) return;
 
     try {
-      setIsInCall(true);
-      setIsVideo(incomingCall.isVideo);
-      setIsMuted(false);
-
-      const rtcConnection = new WebRTCConnection((remoteStream) => {
+      rtcConnectionRef.current = new WebRTCConnection((remoteStream) => {
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = remoteStream;
         }
       });
 
-      await rtcConnection.acceptCall(incomingCall.callId);
+      await rtcConnectionRef.current.acceptCall(incomingCall.callId);
       setIncomingCall(null);
+      setIsInCall(true);
+      setIsVideo(incomingCall.isVideo);
+      setIsMuted(false);
 
     } catch (error) {
       console.error("Error accepting call:", error);
@@ -271,8 +324,8 @@ const Messages = () => {
     if (!incomingCall) return;
 
     try {
-      const rtcConnection = new WebRTCConnection(() => {});
-      await rtcConnection.rejectCall(incomingCall.callId);
+      rtcConnectionRef.current = new WebRTCConnection(() => {});
+      await rtcConnectionRef.current.rejectCall(incomingCall.callId);
       setIncomingCall(null);
     } catch (error) {
       console.error("Error rejecting call:", error);
@@ -281,23 +334,15 @@ const Messages = () => {
 
   const toggleAudio = () => {
     setIsMuted(!isMuted);
-    if (localVideoRef.current?.srcObject) {
-      const audioTrack = (localVideoRef.current.srcObject as MediaStream)
-        .getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = isMuted;
-      }
+    if (rtcConnectionRef.current) {
+      rtcConnectionRef.current.toggleAudio(!isMuted);
     }
   };
 
   const toggleVideo = () => {
     setIsVideo(!isVideo);
-    if (localVideoRef.current?.srcObject) {
-      const videoTrack = (localVideoRef.current.srcObject as MediaStream)
-        .getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !isVideo;
-      }
+    if (rtcConnectionRef.current) {
+      rtcConnectionRef.current.toggleVideo(!isVideo);
     }
   };
 
@@ -457,6 +502,11 @@ const Messages = () => {
                         </Avatar>
                         <div>
                           <p className="font-medium">{selectedUser.username}</p>
+                          {isInCall && (
+                            <p className="text-sm text-gray-500">
+                              {new Date(callDuration * 1000).toISOString().substr(11, 8)}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <CallControls
