@@ -9,6 +9,7 @@ import { Send, Search, Mail, Users, UserPlus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CallControls } from "@/components/messages/CallControls";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CallView } from '@/components/messages/CallView';
 
 interface User {
   id: string;
@@ -428,67 +429,59 @@ const Messages = () => {
                 </div>
 
                 <div className="relative flex-1 overflow-hidden">
-                  {isInCall && (
-                    <div className="absolute inset-0 bg-gray-900">
-                      <video
-                        ref={remoteVideoRef}
-                        className="w-full h-full object-cover"
-                        autoPlay
-                        playsInline
-                      />
-                      {isVideo && (
-                        <video
-                          ref={localVideoRef}
-                          className="absolute bottom-4 right-4 w-48 h-36 rounded-lg object-cover"
-                          autoPlay
-                          playsInline
-                          muted
-                        />
-                      )}
-                    </div>
-                  )}
-
-                  <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${isInCall ? 'hidden' : ''}`}>
-                    <AnimatePresence>
-                      {messages.map((message) => (
-                        <motion.div
-                          key={message.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 20 }}
-                          className={`flex ${message.sender_id === currentUserId ? 'justify-end' : 'justify-start'}`}
-                        >
-                          <div
-                            className={`max-w-[70%] p-3 rounded-lg ${
-                              message.sender_id === currentUserId
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-gray-100 text-gray-900'
-                            }`}
-                          >
-                            <p>{message.content}</p>
-                            <p className="text-xs opacity-70 mt-1">
-                              {new Date(message.created_at).toLocaleTimeString()}
-                            </p>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-
-                  {!isInCall && (
-                    <div className="p-4 border-t border-gray-200">
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Type a message..."
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                        />
-                        <Button onClick={sendMessage}>
-                          <Send className="h-4 w-4" />
-                        </Button>
+                  {isInCall ? (
+                    <CallView
+                      isInCall={isInCall}
+                      isVideo={isVideo}
+                      isMuted={isMuted}
+                      selectedUserId={selectedUser.id}
+                      currentUserId={currentUserId!}
+                      onToggleAudio={toggleAudio}
+                      onToggleVideo={toggleVideo}
+                      onCallEnd={handleEndCall}
+                    />
+                  ) : (
+                    <>
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        <AnimatePresence>
+                          {messages.map((message) => (
+                            <motion.div
+                              key={message.id}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 20 }}
+                              className={`flex ${message.sender_id === currentUserId ? 'justify-end' : 'justify-start'}`}
+                            >
+                              <div
+                                className={`max-w-[70%] p-3 rounded-lg ${
+                                  message.sender_id === currentUserId
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-gray-100 text-gray-900'
+                                }`}
+                              >
+                                <p>{message.content}</p>
+                                <p className="text-xs opacity-70 mt-1">
+                                  {new Date(message.created_at).toLocaleTimeString()}
+                                </p>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
                       </div>
-                    </div>
+                      <div className="p-4 border-t border-gray-200">
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Type a message..."
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                          />
+                          <Button onClick={sendMessage}>
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               </>
