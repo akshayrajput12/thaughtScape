@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { CallControls } from "@/components/messages/CallControls";
 
 interface User {
   id: string;
@@ -39,6 +40,12 @@ const Messages = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const [isInCall, setIsInCall] = useState(false);
+  const [isVideo, setIsVideo] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -146,15 +153,84 @@ const Messages = () => {
     }
   };
 
+  const handleStartCall = async (withVideo: boolean) => {
+    if (!selectedUser) return;
+    
+    setIsVideo(withVideo);
+    setIsInCall(true);
+    setIsMuted(false);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: withVideo,
+        audio: true
+      });
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+
+      toast({
+        title: "Call Started",
+        description: `${withVideo ? "Video" : "Audio"} call started with ${selectedUser.username}`,
+      });
+    } catch (error) {
+      console.error("Error accessing media devices:", error);
+      toast({
+        title: "Error",
+        description: "Could not access camera/microphone",
+        variant: "destructive",
+      });
+      setIsInCall(false);
+    }
+  };
+
+  const handleEndCall = () => {
+    setIsInCall(false);
+    setIsVideo(false);
+    setIsMuted(false);
+
+    if (localVideoRef.current?.srcObject) {
+      const tracks = (localVideoRef.current.srcObject as MediaStream).getTracks();
+      tracks.forEach(track => track.stop());
+    }
+
+    toast({
+      title: "Call Ended",
+      description: "The call has been ended",
+    });
+  };
+
+  const toggleAudio = () => {
+    setIsMuted(!isMuted);
+    if (localVideoRef.current?.srcObject) {
+      const audioTrack = (localVideoRef.current.srcObject as MediaStream)
+        .getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = isMuted;
+      }
+    }
+  };
+
+  const toggleVideo = () => {
+    setIsVideo(!isVideo);
+    if (localVideoRef.current?.srcObject) {
+      const videoTrack = (localVideoRef.current.srcObject as MediaStream)
+        .getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !isVideo;
+      }
+    }
+  };
+
   const filteredConversations = conversations.filter(conv =>
     conv.user.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-primary/10 p-4">
+    <div className="min-h-screen bg-gradient-to-b from-white to-primary/10 pt-20">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="grid grid-cols-3 min-h-[80vh]">
-          {/* Conversations List */}
           <div className="border-r border-gray-200">
             <div className="p-4 border-b border-gray-200">
               <div className="relative">
@@ -201,59 +277,95 @@ const Messages = () => {
             </div>
           </div>
 
-          {/* Messages Area */}
           <div className="col-span-2 flex flex-col">
             {selectedUser ? (
               <>
                 <div className="p-4 border-b border-gray-200">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={selectedUser.avatar_url || undefined} />
-                      <AvatarFallback>{selectedUser.username[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{selectedUser.username}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={selectedUser.avatar_url || undefined} />
+                        <AvatarFallback>{selectedUser.username[0].toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{selectedUser.username}</p>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  <AnimatePresence>
-                    {messages.map((message) => (
-                      <motion.div
-                        key={message.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
-                        className={`flex ${message.sender_id === currentUserId ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[70%] p-3 rounded-lg ${
-                            message.sender_id === currentUserId
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-gray-100 text-gray-900'
-                          }`}
-                        >
-                          <p>{message.content}</p>
-                          <p className="text-xs opacity-70 mt-1">
-                            {new Date(message.created_at).toLocaleTimeString()}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-                <div className="p-4 border-t border-gray-200">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Type a message..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                    <CallControls
+                      isInCall={isInCall}
+                      isVideo={isVideo}
+                      isMuted={isMuted}
+                      onToggleAudio={toggleAudio}
+                      onToggleVideo={toggleVideo}
+                      onStartCall={handleStartCall}
+                      onEndCall={handleEndCall}
                     />
-                    <Button onClick={sendMessage}>
-                      <Send className="h-4 w-4" />
-                    </Button>
                   </div>
+                </div>
+
+                <div className="relative flex-1 overflow-hidden">
+                  {isInCall && (
+                    <div className="absolute inset-0 bg-gray-900">
+                      <video
+                        ref={remoteVideoRef}
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        playsInline
+                      />
+                      {isVideo && (
+                        <video
+                          ref={localVideoRef}
+                          className="absolute bottom-4 right-4 w-48 h-36 rounded-lg object-cover"
+                          autoPlay
+                          playsInline
+                          muted
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${isInCall ? 'hidden' : ''}`}>
+                    <AnimatePresence>
+                      {messages.map((message) => (
+                        <motion.div
+                          key={message.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 20 }}
+                          className={`flex ${message.sender_id === currentUserId ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[70%] p-3 rounded-lg ${
+                              message.sender_id === currentUserId
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-gray-100 text-gray-900'
+                            }`}
+                          >
+                            <p>{message.content}</p>
+                            <p className="text-xs opacity-70 mt-1">
+                              {new Date(message.created_at).toLocaleTimeString()}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+
+                  {!isInCall && (
+                    <div className="p-4 border-t border-gray-200">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Type a message..."
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                        />
+                        <Button onClick={sendMessage}>
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
