@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { Home, PenTool, Compass } from "lucide-react";
+import { Home, PenTool } from "lucide-react";
 import { NotificationIcons } from "./navigation/NotificationIcons";
 import { UserMenu } from "./navigation/UserMenu";
 
@@ -114,9 +114,6 @@ const Navigation = () => {
                   <Link to="/" className="text-slate-600 hover:text-slate-900 transition-colors">
                     <Home className="h-5 w-5" />
                   </Link>
-                  <Link to="/explore" className="text-slate-600 hover:text-slate-900 transition-colors">
-                    <Compass className="h-5 w-5" />
-                  </Link>
                   <Link to="/write" className="text-slate-600 hover:text-slate-900 transition-colors">
                     <PenTool className="h-5 w-5" />
                   </Link>
@@ -146,7 +143,7 @@ const Navigation = () => {
           </div>
         </div>
       </nav>
-      <div className="h-16" />
+      <div className="h-16" /> {/* Spacer to prevent content overlap */}
     </>
   );
 };
