@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Phone, Video, MicOff, Mic, VideoOff, PhoneOff } from "lucide-react";
 import { motion } from "framer-motion";

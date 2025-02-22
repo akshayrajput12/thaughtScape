@@ -1,6 +1,4 @@
 
-import { supabase } from "@/integrations/supabase/client";
-
 export interface CallRequest {
   callId: string;
   caller: {
@@ -20,7 +18,7 @@ export class WebRTCConnection {
     this.onRemoteStream = onRemoteStream;
   }
 
-  async initializeConnection(isVideo: boolean) {
+  async initializeConnection(isVideo: boolean): Promise<MediaStream> {
     try {
       // Get local media stream
       this.localStream = await navigator.mediaDevices.getUserMedia({
@@ -54,7 +52,7 @@ export class WebRTCConnection {
     }
   }
 
-  async createOffer() {
+  async createOffer(): Promise<RTCSessionDescriptionInit | null> {
     if (!this.peerConnection) return null;
     
     try {
@@ -67,18 +65,7 @@ export class WebRTCConnection {
     }
   }
 
-  async handleAnswer(answer: RTCSessionDescriptionInit) {
-    if (!this.peerConnection) return;
-    
-    try {
-      await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-    } catch (error) {
-      console.error('Error handling answer:', error);
-      throw error;
-    }
-  }
-
-  async handleOffer(offer: RTCSessionDescriptionInit) {
+  async handleOffer(offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit | null> {
     if (!this.peerConnection) return null;
     
     try {
@@ -92,7 +79,18 @@ export class WebRTCConnection {
     }
   }
 
-  async handleCandidate(candidate: RTCIceCandidateInit) {
+  async handleAnswer(answer: RTCSessionDescriptionInit): Promise<void> {
+    if (!this.peerConnection) return;
+    
+    try {
+      await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    } catch (error) {
+      console.error('Error handling answer:', error);
+      throw error;
+    }
+  }
+
+  async handleCandidate(candidate: RTCIceCandidateInit): Promise<void> {
     if (!this.peerConnection) return;
     
     try {
@@ -103,7 +101,7 @@ export class WebRTCConnection {
     }
   }
 
-  closeConnection() {
+  closeConnection(): void {
     if (this.localStream) {
       this.localStream.getTracks().forEach(track => track.stop());
       this.localStream = null;
@@ -115,7 +113,7 @@ export class WebRTCConnection {
     }
   }
 
-  toggleAudio(enabled: boolean) {
+  toggleAudio(enabled: boolean): void {
     if (this.localStream) {
       const audioTrack = this.localStream.getAudioTracks()[0];
       if (audioTrack) {
@@ -124,60 +122,12 @@ export class WebRTCConnection {
     }
   }
 
-  toggleVideo(enabled: boolean) {
+  toggleVideo(enabled: boolean): void {
     if (this.localStream) {
       const videoTrack = this.localStream.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.enabled = enabled;
       }
     }
-  }
-
-  async initiateCall(callerId: string, receiverId: string, isVideo: boolean): Promise<string> {
-    const callId = `${callerId}-${receiverId}-${Date.now()}`;
-    const channel = supabase.channel(`call:${callId}`);
-    
-    await channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        channel.send({
-          type: 'broadcast',
-          event: 'call-request',
-          payload: {
-            callId,
-            isVideo
-          }
-        });
-      }
-    });
-
-    return callId;
-  }
-
-  async acceptCall(callId: string) {
-    if (!this.peerConnection) return;
-
-    const channel = supabase.channel(`call:${callId}`);
-    await channel.subscribe();
-
-    channel.send({
-      type: 'broadcast',
-      event: 'call-accepted',
-      payload: {
-        callId
-      }
-    });
-  }
-
-  async rejectCall(callId: string) {
-    const channel = supabase.channel(`call:${callId}`);
-    await channel.subscribe();
-
-    channel.send({
-      type: 'broadcast',
-      event: 'call-rejected',
-      payload: {
-        callId
-      }
-    });
   }
 }
