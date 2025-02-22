@@ -451,6 +451,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_suggested_users: {
+        Args: {
+          user_id: string
+        }
+        Returns: {
+          id: string
+          username: string
+          full_name: string
+          avatar_url: string
+          created_at: string
+          updated_at: string
+          is_following: boolean
+          followers_count: number
+          following_count: number
+          posts_count: number
+        }[]
+      }
       gtrgm_compress: {
         Args: {
           "": unknown

@@ -47,33 +47,12 @@ const Explore = () => {
         if (thoughtsError) throw thoughtsError;
         setThoughts(thoughtsData || []);
 
-        // Fetch suggested users with custom function
+        // Fetch suggested users using the new function
         const { data: suggestedData, error: suggestedError } = await supabase
-          .from('profiles')
-          .select('*, followers_count, following_count, posts_count')
-          .neq('id', session.user.id)
-          .limit(5);
+          .rpc('get_suggested_users', { user_id: session.user.id });
 
         if (suggestedError) throw suggestedError;
-        
-        // Add is_following property
-        const suggestedWithFollowing = await Promise.all(
-          (suggestedData || []).map(async (user) => {
-            const { data: isFollowing } = await supabase
-              .from('follows')
-              .select('*')
-              .eq('follower_id', session.user.id)
-              .eq('following_id', user.id)
-              .maybeSingle();
-            
-            return {
-              ...user,
-              is_following: !!isFollowing
-            };
-          })
-        );
-
-        setSuggestedUsers(suggestedWithFollowing);
+        setSuggestedUsers(suggestedData || []);
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -112,13 +91,31 @@ const Explore = () => {
 
     try {
       const { data, error } = await supabase
-        .rpc('search_users', { 
-          search_query: query,
-          current_user_id: currentUserId
-        });
+        .from('profiles')
+        .select('*')
+        .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
+        .limit(5);
 
       if (error) throw error;
-      setSuggestedUsers(data || []);
+
+      if (data) {
+        const usersWithFollowing = await Promise.all(
+          data.map(async (user) => {
+            const { data: followData } = await supabase
+              .from('follows')
+              .select('*')
+              .eq('follower_id', currentUserId)
+              .eq('following_id', user.id)
+              .maybeSingle();
+
+            return {
+              ...user,
+              is_following: !!followData
+            } as SuggestedUser;
+          })
+        );
+        setSuggestedUsers(usersWithFollowing);
+      }
     } catch (error) {
       console.error('Error searching:', error);
     }
