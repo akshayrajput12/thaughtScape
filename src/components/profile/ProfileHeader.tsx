@@ -13,12 +13,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileHeaderProps {
   profile: Profile;
   isOwnProfile: boolean;
   isEditing: boolean;
   onEditClick: () => void;
+}
+
+interface Genre {
+  id: string;
+  name: string;
+}
+
+interface UserGenre {
+  genre_id: string;
+  genre: {
+    name: string;
+  };
 }
 
 export const ProfileHeader = ({ 
@@ -28,52 +41,79 @@ export const ProfileHeader = ({
   onEditClick 
 }: ProfileHeaderProps) => {
   const [userGenres, setUserGenres] = useState<string[]>([]);
-  const [availableGenres, setAvailableGenres] = useState<{id: string, name: string}[]>([]);
+  const [availableGenres, setAvailableGenres] = useState<Genre[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchGenres = async () => {
-      // Fetch available genres
-      const { data: genres } = await supabase
-        .from('genres')
-        .select('*')
-        .order('name');
-      
-      if (genres) {
-        setAvailableGenres(genres);
-      }
+      try {
+        // Fetch available genres
+        const { data: genres, error: genresError } = await supabase
+          .from('genres')
+          .select('id, name')
+          .order('name');
+        
+        if (genresError) throw genresError;
+        if (genres) {
+          setAvailableGenres(genres);
+        }
 
-      // Fetch user's genres
-      const { data: userGenresData } = await supabase
-        .from('user_genres')
-        .select(`
-          genre_id,
-          genres (
-            name
-          )
-        `)
-        .eq('user_id', profile.id);
+        // Fetch user's genres
+        const { data: userGenresData, error: userGenresError } = await supabase
+          .from('user_genres')
+          .select(`
+            genre_id,
+            genre:genres(name)
+          `)
+          .eq('user_id', profile.id);
 
-      if (userGenresData) {
-        setUserGenres(userGenresData.map(g => g.genres.name));
+        if (userGenresError) throw userGenresError;
+        if (userGenresData) {
+          const genreNames = userGenresData
+            .filter((ug): ug is UserGenre => ug.genre !== null)
+            .map(ug => ug.genre.name);
+          setUserGenres(genreNames);
+        }
+      } catch (error) {
+        console.error('Error fetching genres:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load genres",
+          variant: "destructive",
+        });
       }
     };
 
     fetchGenres();
-  }, [profile.id]);
+  }, [profile.id, toast]);
 
   const handleAddGenre = async (genreId: string) => {
-    const { error } = await supabase
-      .from('user_genres')
-      .insert({
-        user_id: profile.id,
-        genre_id: genreId
-      });
+    try {
+      const { error } = await supabase
+        .from('user_genres')
+        .insert({
+          user_id: profile.id,
+          genre_id: genreId
+        });
 
-    if (!error) {
+      if (error) throw error;
+
       const selectedGenre = availableGenres.find(g => g.id === genreId);
       if (selectedGenre) {
-        setUserGenres([...userGenres, selectedGenre.name]);
+        setUserGenres(prev => [...prev, selectedGenre.name]);
       }
+
+      toast({
+        title: "Success",
+        description: "Genre added successfully",
+      });
+    } catch (error) {
+      console.error('Error adding genre:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add genre",
+        variant: "destructive",
+      });
     }
   };
 
