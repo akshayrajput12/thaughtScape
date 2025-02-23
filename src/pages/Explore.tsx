@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
@@ -39,8 +38,7 @@ const Explore = () => {
         if (session?.user?.id) {
           const { data: suggestedData, error: suggestedError } = await supabase
             .rpc('get_suggested_users', {
-              current_user_id: session.user.id,
-              limit_count: 5
+              user_id: session.user.id
             });
 
           if (!suggestedError && suggestedData) {
