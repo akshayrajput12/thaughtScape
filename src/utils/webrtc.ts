@@ -11,6 +11,13 @@ export interface CallRequest {
   isVideo: boolean;
 }
 
+interface CallSignalPayload {
+  type: 'offer' | 'answer' | 'candidate' | 'reject';
+  offer?: RTCSessionDescriptionInit;
+  answer?: RTCSessionDescriptionInit;
+  candidate?: RTCIceCandidateInit;
+}
+
 export class WebRTCConnection {
   private peerConnection: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
@@ -136,11 +143,12 @@ export class WebRTCConnection {
   async initiateCall(callerId: string, receiverId: string, isVideo: boolean): Promise<string> {
     const callId = `${callerId}-${receiverId}-${Date.now()}`;
     const channel = supabase.channel(`call:${callId}`)
-      .on('broadcast', { event: 'call-signal' }, async (payload) => {
-        if (payload.type === 'answer' && this.peerConnection) {
-          await this.handleAnswer(payload.answer);
-        } else if (payload.type === 'candidate' && this.peerConnection) {
-          await this.handleCandidate(payload.candidate);
+      .on('broadcast', { event: 'call-signal' }, async ({ payload }) => {
+        const signalPayload = payload as CallSignalPayload;
+        if (signalPayload.type === 'answer' && this.peerConnection && signalPayload.answer) {
+          await this.handleAnswer(signalPayload.answer);
+        } else if (signalPayload.type === 'candidate' && this.peerConnection && signalPayload.candidate) {
+          await this.handleCandidate(signalPayload.candidate);
         }
       });
     
@@ -152,7 +160,10 @@ export class WebRTCConnection {
       await channel.send({
         type: 'broadcast',
         event: 'call-signal',
-        payload: { type: 'offer', offer }
+        payload: {
+          type: 'offer',
+          offer
+        } as CallSignalPayload
       });
     }
 
@@ -163,18 +174,22 @@ export class WebRTCConnection {
     if (!this.peerConnection) return;
 
     const channel = supabase.channel(`call:${callId}`)
-      .on('broadcast', { event: 'call-signal' }, async (payload) => {
-        if (payload.type === 'offer' && this.peerConnection) {
-          const answer = await this.handleOffer(payload.offer);
+      .on('broadcast', { event: 'call-signal' }, async ({ payload }) => {
+        const signalPayload = payload as CallSignalPayload;
+        if (signalPayload.type === 'offer' && this.peerConnection && signalPayload.offer) {
+          const answer = await this.handleOffer(signalPayload.offer);
           if (answer) {
             await channel.send({
               type: 'broadcast',
               event: 'call-signal',
-              payload: { type: 'answer', answer }
+              payload: {
+                type: 'answer',
+                answer
+              } as CallSignalPayload
             });
           }
-        } else if (payload.type === 'candidate' && this.peerConnection) {
-          await this.handleCandidate(payload.candidate);
+        } else if (signalPayload.type === 'candidate' && this.peerConnection && signalPayload.candidate) {
+          await this.handleCandidate(signalPayload.candidate);
         }
       });
 
@@ -188,7 +203,9 @@ export class WebRTCConnection {
     await channel.send({
       type: 'broadcast',
       event: 'call-signal',
-      payload: { type: 'reject' }
+      payload: {
+        type: 'reject'
+      } as CallSignalPayload
     });
 
     channel.unsubscribe();
