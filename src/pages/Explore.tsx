@@ -145,7 +145,7 @@ const Explore = () => {
           </div>
 
           {/* Sidebar - Suggested Users */}
-          <div className="space-y-6 lg:sticky lg:top-24">
+          <div className="space-y-6 lg:sticky lg:top-6">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
