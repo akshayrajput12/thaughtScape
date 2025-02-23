@@ -2,16 +2,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { Home, PenTool, Search } from "lucide-react";
+import { Home, PenTool, Search, Menu, X } from "lucide-react";
 import { NotificationIcons } from "./navigation/NotificationIcons";
 import { UserMenu } from "./navigation/UserMenu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Navigation = () => {
-  const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -98,27 +99,55 @@ const Navigation = () => {
     navigate('/');
   };
 
+  const NavLinks = () => (
+    <div className="flex items-center gap-6">
+      <Link to="/" className="text-slate-600 hover:text-slate-900 transition-colors">
+        <Home className="h-5 w-5" />
+      </Link>
+      <Link to="/explore" className="text-slate-600 hover:text-slate-900 transition-colors">
+        <Search className="h-5 w-5" />
+      </Link>
+      <Link to="/write" className="text-slate-600 hover:text-slate-900 transition-colors">
+        <PenTool className="h-5 w-5" />
+      </Link>
+    </div>
+  );
+
   return (
     <>
       <nav className="fixed w-full top-0 z-50">
         <div className="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-16">
+              <div className="flex lg:hidden">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="lg:hidden">
+                      <Menu className="h-6 w-6" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                    <div className="flex flex-col h-full">
+                      <Link to="/" className="text-2xl font-serif font-bold text-slate-800 mb-8">
+                        Thoughtscape
+                      </Link>
+                      <nav className="flex flex-col gap-4">
+                        <NavLinks />
+                      </nav>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+
               <Link to="/" className="text-2xl font-serif font-bold text-slate-800 hover:text-slate-700 transition-colors">
                 Thoughtscape
               </Link>
               
               {userId ? (
                 <div className="flex items-center gap-6">
-                  <Link to="/" className="text-slate-600 hover:text-slate-900 transition-colors">
-                    <Home className="h-5 w-5" />
-                  </Link>
-                  <Link to="/explore" className="text-slate-600 hover:text-slate-900 transition-colors">
-                    <Search className="h-5 w-5" />
-                  </Link>
-                  <Link to="/write" className="text-slate-600 hover:text-slate-900 transition-colors">
-                    <PenTool className="h-5 w-5" />
-                  </Link>
+                  <div className="hidden lg:flex">
+                    <NavLinks />
+                  </div>
                   <NotificationIcons
                     unreadMessages={unreadMessages}
                     unreadNotifications={unreadNotifications}
