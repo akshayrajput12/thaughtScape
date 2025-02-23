@@ -1,3 +1,4 @@
+
 import { Routes, Route } from "react-router-dom";
 import { AppProviders } from "@/components/AppProviders";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -8,6 +9,7 @@ import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import Messages from "./pages/Messages";
 import Write from "./pages/Write";
+import Explore from "./pages/Explore";
 
 const App = () => (
   <AppProviders>
@@ -44,6 +46,14 @@ const App = () => (
         element={
           <ProtectedRoute>
             <Write />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/explore"
+        element={
+          <ProtectedRoute>
+            <Explore />
           </ProtectedRoute>
         }
       />
