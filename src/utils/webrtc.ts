@@ -1,4 +1,6 @@
 
+import { supabase } from "@/integrations/supabase/client";
+
 export interface CallRequest {
   callId: string;
   caller: {
@@ -129,5 +131,66 @@ export class WebRTCConnection {
         videoTrack.enabled = enabled;
       }
     }
+  }
+
+  async initiateCall(callerId: string, receiverId: string, isVideo: boolean): Promise<string> {
+    const callId = `${callerId}-${receiverId}-${Date.now()}`;
+    const channel = supabase.channel(`call:${callId}`)
+      .on('broadcast', { event: 'call-signal' }, async (payload) => {
+        if (payload.type === 'answer' && this.peerConnection) {
+          await this.handleAnswer(payload.answer);
+        } else if (payload.type === 'candidate' && this.peerConnection) {
+          await this.handleCandidate(payload.candidate);
+        }
+      });
+    
+    await channel.subscribe();
+
+    // Create and send offer
+    const offer = await this.createOffer();
+    if (offer) {
+      await channel.send({
+        type: 'broadcast',
+        event: 'call-signal',
+        payload: { type: 'offer', offer }
+      });
+    }
+
+    return callId;
+  }
+
+  async acceptCall(callId: string): Promise<void> {
+    if (!this.peerConnection) return;
+
+    const channel = supabase.channel(`call:${callId}`)
+      .on('broadcast', { event: 'call-signal' }, async (payload) => {
+        if (payload.type === 'offer' && this.peerConnection) {
+          const answer = await this.handleOffer(payload.offer);
+          if (answer) {
+            await channel.send({
+              type: 'broadcast',
+              event: 'call-signal',
+              payload: { type: 'answer', answer }
+            });
+          }
+        } else if (payload.type === 'candidate' && this.peerConnection) {
+          await this.handleCandidate(payload.candidate);
+        }
+      });
+
+    await channel.subscribe();
+  }
+
+  async rejectCall(callId: string): Promise<void> {
+    const channel = supabase.channel(`call:${callId}`);
+    await channel.subscribe();
+
+    await channel.send({
+      type: 'broadcast',
+      event: 'call-signal',
+      payload: { type: 'reject' }
+    });
+
+    channel.unsubscribe();
   }
 }
