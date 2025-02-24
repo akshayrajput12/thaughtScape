@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { User, X } from "lucide-react";
@@ -32,14 +31,6 @@ interface Genre {
   name: string;
 }
 
-interface UserGenreWithGenre {
-  genre_id: string;
-  genres: {
-    id: string;
-    name: string;
-  } | null;
-}
-
 export const ProfileHeader = ({ 
   profile, 
   isOwnProfile, 
@@ -65,31 +56,27 @@ export const ProfileHeader = ({
           setAvailableGenres(genres);
         }
 
-        // Fetch user's genres
-        const { data, error: userGenresError } = await supabase
+        // Fetch user's genres with a different approach
+        const { data: userGenresData, error: userGenresError } = await supabase
           .from('user_genres')
-          .select(`
-            genre_id,
-            genres (
-              id,
-              name
-            )
-          `)
+          .select('genre_id')
           .eq('user_id', profile.id);
 
         if (userGenresError) throw userGenresError;
         
-        if (data) {
-          const validGenres = (data as UserGenreWithGenre[])
-            .filter((ug): ug is UserGenreWithGenre & { genres: NonNullable<UserGenreWithGenre['genres']> } => 
-              ug.genres !== null
-            )
-            .map(ug => ({
-              id: ug.genres.id,
-              name: ug.genres.name
-            }));
+        if (userGenresData && userGenresData.length > 0) {
+          // Get the genre details for each user genre
+          const genreIds = userGenresData.map(ug => ug.genre_id);
+          const { data: genreDetails, error: genreDetailsError } = await supabase
+            .from('genres')
+            .select('id, name')
+            .in('id', genreIds);
+
+          if (genreDetailsError) throw genreDetailsError;
           
-          setUserGenres(validGenres);
+          if (genreDetails) {
+            setUserGenres(genreDetails);
+          }
         }
       } catch (error) {
         console.error('Error fetching genres:', error);
