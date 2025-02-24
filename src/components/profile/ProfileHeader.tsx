@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { User, X } from "lucide-react";
@@ -31,6 +32,14 @@ interface Genre {
   name: string;
 }
 
+interface UserGenreWithGenre {
+  genre_id: string;
+  genres: {
+    id: string;
+    name: string;
+  } | null;
+}
+
 export const ProfileHeader = ({ 
   profile, 
   isOwnProfile, 
@@ -56,23 +65,28 @@ export const ProfileHeader = ({
           setAvailableGenres(genres);
         }
 
-        // Fetch user's genres using a simpler query approach
-        const { data: userGenresData, error: userGenresError } = await supabase
+        // Fetch user's genres
+        const { data, error: userGenresError } = await supabase
           .from('user_genres')
           .select(`
             genre_id,
-            genres:genres(id, name)
+            genres (
+              id,
+              name
+            )
           `)
           .eq('user_id', profile.id);
 
         if (userGenresError) throw userGenresError;
         
-        if (userGenresData) {
-          const validGenres = userGenresData
-            .filter(ug => ug.genres !== null)
+        if (data) {
+          const validGenres = (data as UserGenreWithGenre[])
+            .filter((ug): ug is UserGenreWithGenre & { genres: NonNullable<UserGenreWithGenre['genres']> } => 
+              ug.genres !== null
+            )
             .map(ug => ({
-              id: ug.genre_id,
-              name: (ug.genres as Genre).name
+              id: ug.genres.id,
+              name: ug.genres.name
             }));
           
           setUserGenres(validGenres);
