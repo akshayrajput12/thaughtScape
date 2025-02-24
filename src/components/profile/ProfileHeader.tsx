@@ -27,9 +27,10 @@ interface Genre {
   name: string;
 }
 
-interface UserGenre {
+interface UserGenreWithDetails {
   genre_id: string;
-  genre: {
+  genres: {
+    id: string;
     name: string;
   };
 }
@@ -58,20 +59,25 @@ export const ProfileHeader = ({
           setAvailableGenres(genres);
         }
 
-        // Fetch user's genres
+        // Fetch user's genres using a join
         const { data: userGenresData, error: userGenresError } = await supabase
           .from('user_genres')
           .select(`
             genre_id,
-            genre:genres(name)
+            genres (
+              id,
+              name
+            )
           `)
           .eq('user_id', profile.id);
 
         if (userGenresError) throw userGenresError;
         if (userGenresData) {
           const genreNames = userGenresData
-            .filter((ug): ug is UserGenre => ug.genre !== null)
-            .map(ug => ug.genre.name);
+            .filter((ug): ug is UserGenreWithDetails => 
+              ug.genres !== null && typeof ug.genres.name === 'string'
+            )
+            .map(ug => ug.genres.name);
           setUserGenres(genreNames);
         }
       } catch (error) {

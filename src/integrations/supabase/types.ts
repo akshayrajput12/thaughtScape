@@ -276,6 +276,7 @@ export type Database = {
           followers_count: number | null
           following_count: number | null
           full_name: string | null
+          genres: string[] | null
           id: string
           is_admin: boolean | null
           is_profile_completed: boolean | null
@@ -295,6 +296,7 @@ export type Database = {
           followers_count?: number | null
           following_count?: number | null
           full_name?: string | null
+          genres?: string[] | null
           id: string
           is_admin?: boolean | null
           is_profile_completed?: boolean | null
@@ -314,6 +316,7 @@ export type Database = {
           followers_count?: number | null
           following_count?: number | null
           full_name?: string | null
+          genres?: string[] | null
           id?: string
           is_admin?: boolean | null
           is_profile_completed?: boolean | null
