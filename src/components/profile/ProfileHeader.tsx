@@ -32,6 +32,11 @@ interface Genre {
   name: string;
 }
 
+interface UserGenreResponse {
+  genre_id: string;
+  genres: Genre | null;
+}
+
 export const ProfileHeader = ({ 
   profile, 
   isOwnProfile, 
@@ -61,6 +66,7 @@ export const ProfileHeader = ({
         const { data: userGenresData, error: userGenresError } = await supabase
           .from('user_genres')
           .select(`
+            genre_id,
             genres (
               id,
               name
@@ -70,10 +76,16 @@ export const ProfileHeader = ({
 
         if (userGenresError) throw userGenresError;
         if (userGenresData) {
-          const genresList = userGenresData
-            .map(ug => ug.genres)
-            .filter((g): g is Genre => g !== null);
-          setUserGenres(genresList);
+          const validGenres = userGenresData
+            .filter((ug): ug is UserGenreResponse & { genres: Genre } => 
+              ug.genres !== null && 
+              typeof ug.genres === 'object' &&
+              'id' in ug.genres &&
+              'name' in ug.genres
+            )
+            .map(ug => ug.genres);
+          
+          setUserGenres(validGenres);
         }
       } catch (error) {
         console.error('Error fetching genres:', error);
