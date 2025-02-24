@@ -1,18 +1,23 @@
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { User } from "lucide-react";
+import { User, X } from "lucide-react";
 import type { Profile } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProfileHeaderProps {
@@ -27,22 +32,15 @@ interface Genre {
   name: string;
 }
 
-interface UserGenreWithDetails {
-  genre_id: string;
-  genres: {
-    id: string;
-    name: string;
-  };
-}
-
 export const ProfileHeader = ({ 
   profile, 
   isOwnProfile, 
   isEditing, 
   onEditClick 
 }: ProfileHeaderProps) => {
-  const [userGenres, setUserGenres] = useState<string[]>([]);
+  const [userGenres, setUserGenres] = useState<Genre[]>([]);
   const [availableGenres, setAvailableGenres] = useState<Genre[]>([]);
+  const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -59,11 +57,10 @@ export const ProfileHeader = ({
           setAvailableGenres(genres);
         }
 
-        // Fetch user's genres using a join
+        // Fetch user's genres
         const { data: userGenresData, error: userGenresError } = await supabase
           .from('user_genres')
           .select(`
-            genre_id,
             genres (
               id,
               name
@@ -73,12 +70,10 @@ export const ProfileHeader = ({
 
         if (userGenresError) throw userGenresError;
         if (userGenresData) {
-          const genreNames = userGenresData
-            .filter((ug): ug is UserGenreWithDetails => 
-              ug.genres !== null && typeof ug.genres.name === 'string'
-            )
-            .map(ug => ug.genres.name);
-          setUserGenres(genreNames);
+          const genresList = userGenresData
+            .map(ug => ug.genres)
+            .filter((g): g is Genre => g !== null);
+          setUserGenres(genresList);
         }
       } catch (error) {
         console.error('Error fetching genres:', error);
@@ -95,6 +90,9 @@ export const ProfileHeader = ({
 
   const handleAddGenre = async (genreId: string) => {
     try {
+      const selectedGenre = availableGenres.find(g => g.id === genreId);
+      if (!selectedGenre) return;
+
       const { error } = await supabase
         .from('user_genres')
         .insert({
@@ -104,20 +102,43 @@ export const ProfileHeader = ({
 
       if (error) throw error;
 
-      const selectedGenre = availableGenres.find(g => g.id === genreId);
-      if (selectedGenre) {
-        setUserGenres(prev => [...prev, selectedGenre.name]);
-      }
+      setUserGenres(prev => [...prev, selectedGenre]);
+      setOpen(false);
 
       toast({
         title: "Success",
-        description: "Genre added successfully",
+        description: "Interest added successfully",
       });
     } catch (error) {
       console.error('Error adding genre:', error);
       toast({
         title: "Error",
-        description: "Failed to add genre",
+        description: "Failed to add interest",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRemoveGenre = async (genreId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_genres')
+        .delete()
+        .eq('user_id', profile.id)
+        .eq('genre_id', genreId);
+
+      if (error) throw error;
+
+      setUserGenres(prev => prev.filter(g => g.id !== genreId));
+      toast({
+        title: "Success",
+        description: "Interest removed successfully",
+      });
+    } catch (error) {
+      console.error('Error removing genre:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove interest",
         variant: "destructive",
       });
     }
@@ -178,33 +199,55 @@ export const ProfileHeader = ({
             </div>
 
             <div className="border-t border-purple-100/50 pt-4 mt-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Interests</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-700">Interests</h3>
+                {isOwnProfile && (
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8">
+                        Add interests
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0" side="right" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search interests..." />
+                        <CommandEmpty>No interests found.</CommandEmpty>
+                        <CommandGroup>
+                          {availableGenres
+                            .filter(genre => !userGenres.some(g => g.id === genre.id))
+                            .map(genre => (
+                              <CommandItem
+                                key={genre.id}
+                                value={genre.name}
+                                onSelect={() => handleAddGenre(genre.id)}
+                              >
+                                {genre.name}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2">
                 {userGenres.map((genre) => (
                   <Badge 
-                    key={genre}
+                    key={genre.id}
                     variant="secondary" 
-                    className="bg-purple-50 text-purple-700 hover:bg-purple-100"
+                    className="bg-purple-50 text-purple-700 hover:bg-purple-100 pl-3 pr-2 py-1 flex items-center gap-1"
                   >
-                    {genre}
+                    {genre.name}
+                    {isOwnProfile && (
+                      <button
+                        onClick={() => handleRemoveGenre(genre.id)}
+                        className="hover:bg-purple-200 rounded-full p-0.5 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
                   </Badge>
                 ))}
-                {isOwnProfile && (
-                  <Select onValueChange={handleAddGenre}>
-                    <SelectTrigger className="w-[140px] h-7">
-                      <SelectValue placeholder="Add interest" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableGenres
-                        .filter(genre => !userGenres.includes(genre.name))
-                        .map(genre => (
-                          <SelectItem key={genre.id} value={genre.id}>
-                            {genre.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                )}
               </div>
             </div>
           </>
