@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -40,7 +39,11 @@ const Freelancing = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      return (data || []).map(project => ({
+        ...project,
+        status: project.status as 'open' | 'closed' | 'in_progress'
+      }));
     },
   });
 
@@ -252,7 +255,12 @@ const Freelancing = () => {
                     <Dialog open={isApplicationDialogOpen} onOpenChange={setIsApplicationDialogOpen}>
                       <DialogTrigger asChild>
                         <Button
-                          onClick={() => setSelectedProject(project)}
+                          onClick={() => {
+                            setSelectedProject({
+                              ...project,
+                              status: project.status as 'open' | 'closed' | 'in_progress'
+                            });
+                          }}
                           variant="outline"
                         >
                           Apply Now
