@@ -10,6 +10,7 @@ import Admin from "./pages/Admin";
 import Messages from "./pages/Messages";
 import Write from "./pages/Write";
 import Explore from "./pages/Explore";
+import Freelancing from "./pages/Freelancing";
 
 const App = () => (
   <AppProviders>
@@ -54,6 +55,14 @@ const App = () => (
         element={
           <ProtectedRoute>
             <Explore />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/freelancing"
+        element={
+          <ProtectedRoute>
+            <Freelancing />
           </ProtectedRoute>
         }
       />

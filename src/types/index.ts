@@ -19,6 +19,31 @@ export interface Profile {
   posts_count?: number;
 }
 
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  required_skills: string[];
+  budget: number;
+  deadline: string;
+  attachment_url?: string;
+  status: 'open' | 'closed' | 'in_progress';
+  author_id: string;
+  created_at: string;
+  updated_at: string;
+  author?: Profile;
+}
+
+export interface ProjectApplication {
+  id: string;
+  project_id: string;
+  applicant_id: string;
+  message: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  applicant?: Profile;
+}
+
 export interface Thought {
   id: string;
   title: string;

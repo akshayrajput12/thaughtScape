@@ -328,6 +328,98 @@ export type Database = {
         }
         Relationships: []
       }
+      project_applications: {
+        Row: {
+          applicant_id: string
+          created_at: string
+          id: string
+          message: string
+          project_id: string
+          status: string | null
+        }
+        Insert: {
+          applicant_id: string
+          created_at?: string
+          id?: string
+          message: string
+          project_id: string
+          status?: string | null
+        }
+        Update: {
+          applicant_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          project_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_applications_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_applications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          attachment_url: string | null
+          author_id: string
+          budget: number | null
+          created_at: string
+          deadline: string | null
+          description: string
+          id: string
+          required_skills: string[] | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          author_id: string
+          budget?: number | null
+          created_at?: string
+          deadline?: string | null
+          description: string
+          id?: string
+          required_skills?: string[] | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          author_id?: string
+          budget?: number | null
+          created_at?: string
+          deadline?: string | null
+          description?: string
+          id?: string
+          required_skills?: string[] | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tags: {
         Row: {
           id: string
@@ -518,6 +610,13 @@ export type Database = {
           "": unknown
         }
         Returns: unknown
+      }
+      has_user_applied: {
+        Args: {
+          project_id: string
+          user_id: string
+        }
+        Returns: boolean
       }
       search_users: {
         Args: {
