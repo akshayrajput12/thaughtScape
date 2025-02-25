@@ -4,6 +4,10 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { motion } from "framer-motion";
+import { FiMail, FiLock, FiGithub, FiTwitter } from "react-icons/fi";
+import { FcGoogle } from "react-icons/fc";
+import { RiQuillPenLine } from "react-icons/ri";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -28,21 +32,51 @@ const Auth = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-pink-50 p-4">
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      transition={{ duration: 0.5 }}
+      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#E5DEFF] via-white to-[#FDE1D3] p-4"
+    >
       <div className="w-full max-w-md">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 space-y-6 border border-purple-100">
-          <div className="text-center space-y-2 mb-8">
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }} 
+          animate={{ y: 0, opacity: 1 }} 
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-8 space-y-6 border border-purple-100 relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+          <motion.div 
+            initial={{ y: 10, opacity: 0 }} 
+            animate={{ y: 0, opacity: 1 }} 
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="text-center space-y-4 mb-8"
+          >
+            <div className="flex justify-center mb-4">
+              <motion.div
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.5 }}
+                className="p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full"
+              >
+                <RiQuillPenLine className="w-8 h-8 text-white" />
+              </motion.div>
+            </div>
             <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Welcome Back
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 text-lg">
               Connect with creative minds and share your thoughts
             </p>
-          </div>
+          </motion.div>
 
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg blur-xl opacity-30"></div>
-            <div className="relative">
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }} 
+            animate={{ y: 0, opacity: 1 }} 
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="relative"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl blur-xl opacity-40"></div>
+            <div className="relative space-y-4">
               <SupabaseAuth 
                 supabaseClient={supabase} 
                 appearance={{ 
@@ -79,30 +113,66 @@ const Auth = () => {
                   },
                   className: {
                     container: 'space-y-4',
-                    button: 'w-full px-4 py-2 text-sm font-medium transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500',
-                    input: 'w-full px-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500',
-                    label: 'block text-sm font-medium text-gray-700 mb-1',
-                    anchor: 'text-sm text-purple-600 hover:text-purple-700 font-medium',
+                    button: 'group w-full px-4 py-3 text-sm font-medium transition-all duration-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]',
+                    input: 'w-full pl-10 pr-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200',
+                    label: 'block text-sm font-medium text-gray-700 mb-1 flex items-center space-x-2',
+                    anchor: 'text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200',
                   },
                 }}
                 providers={[]}
               />
+              <div className="mt-6 flex justify-center space-x-4">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+                >
+                  <FcGoogle className="w-5 h-5" />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+                >
+                  <FiGithub className="w-5 h-5 text-gray-600" />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+                >
+                  <FiTwitter className="w-5 h-5 text-gray-600" />
+                </motion.button>
+              </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
-        <div className="mt-8 text-center text-sm text-gray-500">
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }} 
+          animate={{ y: 0, opacity: 1 }} 
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="mt-8 text-center text-sm text-gray-500"
+        >
           By signing in, you agree to our{' '}
-          <a href="#" className="text-purple-600 hover:text-purple-700 font-medium">
+          <motion.a 
+            whileHover={{ color: '#7C3AED' }}
+            href="#" 
+            className="text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200"
+          >
             Terms of Service
-          </a>{' '}
+          </motion.a>{' '}
           and{' '}
-          <a href="#" className="text-purple-600 hover:text-purple-700 font-medium">
+          <motion.a 
+            whileHover={{ color: '#7C3AED' }}
+            href="#" 
+            className="text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200"
+          >
             Privacy Policy
-          </a>
-        </div>
+          </motion.a>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

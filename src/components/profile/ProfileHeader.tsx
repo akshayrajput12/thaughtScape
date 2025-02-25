@@ -217,17 +217,19 @@ export const ProfileHeader = ({
                         <CommandInput placeholder="Search interests..." />
                         <CommandEmpty>No interests found.</CommandEmpty>
                         <CommandGroup>
-                          {availableGenres
-                            .filter(genre => !userGenres.some(g => g.id === genre.id))
-                            .map(genre => (
-                              <CommandItem
-                                key={genre.id}
-                                value={genre.name}
-                                onSelect={() => handleAddGenre(genre.id)}
-                              >
-                                {genre.name}
-                              </CommandItem>
-                            ))}
+                          {availableGenres && availableGenres.length > 0 ? (
+                            availableGenres
+                              .filter(genre => !userGenres?.some(g => g.id === genre.id))
+                              .map(genre => (
+                                <CommandItem
+                                  key={genre.id}
+                                  value={genre.name}
+                                  onSelect={() => handleAddGenre(genre.id)}
+                                >
+                                  {genre.name}
+                                </CommandItem>
+                              ))
+                          ) : null}
                         </CommandGroup>
                       </Command>
                     </PopoverContent>
