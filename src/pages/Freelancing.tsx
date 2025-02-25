@@ -25,6 +25,82 @@ import {
 } from "@/components/ui/tabs";
 import type { Project, ProjectApplication } from "@/types";
 
+const queryFunctions = {
+  fetchProjects: async () => {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        author:profiles(*)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching projects:', error);
+      throw error;
+    }
+
+    return data?.map(project => ({
+      ...project,
+      status: project.status as 'open' | 'closed' | 'in_progress'
+    })) || [];
+  },
+
+  fetchUserApplications: async (userId: string) => {
+    const { data, error } = await supabase
+      .from('project_applications')
+      .select('project_id')
+      .eq('applicant_id', userId);
+
+    if (error) {
+      console.error('Error fetching user applications:', error);
+      throw error;
+    }
+
+    return data.map(app => app.project_id);
+  },
+
+  fetchAppliedProjects: async (userId: string) => {
+    const { data, error } = await supabase
+      .from('project_applications')
+      .select(`
+        *,
+        project:projects(
+          *,
+          author:profiles(*)
+        )
+      `)
+      .eq('applicant_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching applied projects:', error);
+      throw error;
+    }
+
+    return data || [];
+  },
+
+  fetchReceivedApplications: async (userId: string) => {
+    const { data, error } = await supabase
+      .from('project_applications')
+      .select(`
+        *,
+        applicant:profiles(*),
+        project:projects(*)
+      `)
+      .eq('project.author_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching received applications:', error);
+      throw error;
+    }
+
+    return data || [];
+  }
+};
+
 const Freelancing = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -35,80 +111,60 @@ const Freelancing = () => {
 
   const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
     queryKey: ['projects'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('projects')
-        .select(`
-          *,
-          author:profiles(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return (data || []).map(project => ({
-        ...project,
-        status: project.status as 'open' | 'closed' | 'in_progress'
-      }));
+    queryFn: queryFunctions.fetchProjects,
+    staleTime: 1000 * 60 * 5,
+    retry: 2,
+    onError: (error) => {
+      console.error('Failed to fetch projects:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load projects. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
   const { data: appliedProjects = [], isLoading: isLoadingAppliedProjects } = useQuery({
-    queryKey: ['applied-projects'],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('project_applications')
-        .select(`
-          *,
-          project:projects(
-            *,
-            author:profiles(*)
-          )
-        `)
-        .eq('applicant_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    },
+    queryKey: ['applied-projects', user?.id],
+    queryFn: () => queryFunctions.fetchAppliedProjects(user!.id),
     enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+    retry: 2,
+    onError: (error) => {
+      console.error('Failed to fetch applied projects:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load your applications. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const { data: receivedApplications = [], isLoading: isLoadingReceivedApplications } = useQuery({
-    queryKey: ['received-applications'],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('project_applications')
-        .select(`
-          *,
-          applicant:profiles(*),
-          project:projects(*)
-        `)
-        .eq('project.author_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    },
+    queryKey: ['received-applications', user?.id],
+    queryFn: () => queryFunctions.fetchReceivedApplications(user!.id),
     enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+    retry: 2,
+    onError: (error) => {
+      console.error('Failed to fetch received applications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load received applications. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const { data: userApplications = [] } = useQuery({
-    queryKey: ['user-applications'],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('project_applications')
-        .select('project_id')
-        .eq('applicant_id', user.id);
-
-      if (error) throw error;
-      return data.map(app => app.project_id);
-    },
+    queryKey: ['user-applications', user?.id],
+    queryFn: () => queryFunctions.fetchUserApplications(user!.id),
     enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+    retry: 2,
+    onError: (error) => {
+      console.error('Failed to fetch user applications:', error);
+    },
   });
 
   const createProjectMutation = useMutation({
