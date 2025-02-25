@@ -33,7 +33,7 @@ const Profile = () => {
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
-  const { data: thoughtsData, isLoading: thoughtsLoading } = useQuery({
+  const { data: thoughtsData = [], isLoading: thoughtsLoading } = useQuery({
     queryKey: ['thoughts', id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -53,7 +53,7 @@ const Profile = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
@@ -69,12 +69,10 @@ const Profile = () => {
         .maybeSingle();
       
       if (error) throw error;
-      return data;
+      return data || { is_admin: false };
     },
     enabled: !!user?.id,
   });
-
-
 
   const handleEditClick = () => {
     setIsEditing(!isEditing);
@@ -162,7 +160,7 @@ const Profile = () => {
               userId={profileData.id}
             />
             <ProfilePoems 
-              poems={thoughtsData || []}
+              poems={thoughtsData}
               isOwnProfile={user?.id === profileData.id}
               isAdmin={adminData?.is_admin || false}
               onDeletePoem={handleDeleteThought}
