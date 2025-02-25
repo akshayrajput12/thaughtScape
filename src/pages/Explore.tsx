@@ -1,65 +1,64 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PoemCard } from "@/components/PoemCard";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/components/auth/AuthProvider";
 import type { Profile, Thought } from "@/types";
 
 const Explore = () => {
-  const [thoughts, setThoughts] = useState<Thought[]>([]);
-  const [suggestedUsers, setSuggestedUsers] = useState<Profile[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { user } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setCurrentUserId(session?.user?.id || null);
+  // Fetch thoughts with React Query
+  const { data: thoughts = [], isLoading: thoughtsLoading } = useQuery({
+    queryKey: ['thoughts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('thoughts')
+        .select(`
+          *,
+          author:profiles!thoughts_author_id_fkey(*)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-        // Fetch thoughts
-        const { data: thoughtsData, error: thoughtsError } = await supabase
-          .from('thoughts')
-          .select(`
-            *,
-            author:profiles!thoughts_author_id_fkey(*)
-          `)
-          .order('created_at', { ascending: false })
-          .limit(20);
-
-        if (thoughtsError) throw thoughtsError;
-        setThoughts(thoughtsData);
-
-        // Fetch suggested users if logged in
-        if (session?.user?.id) {
-          const { data: suggestedData, error: suggestedError } = await supabase
-            .rpc('get_suggested_users', {
-              user_id: session.user.id
-            });
-
-          if (!suggestedError && suggestedData) {
-            setSuggestedUsers(suggestedData);
-          }
-        }
-
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching data:', error);
+      if (error) {
         toast({
           title: "Error",
-          description: "Failed to load content",
+          description: "Failed to load thoughts",
           variant: "destructive",
         });
+        throw error;
       }
-    };
+      return data || [];
+    }
+  });
 
-    fetchInitialData();
-  }, []);
+  // Fetch suggested users with React Query
+  const { data: suggestedUsers = [], isLoading: suggestedUsersLoading } = useQuery({
+    queryKey: ['suggestedUsers', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .rpc('get_suggested_users', {
+          user_id: user.id
+        });
+
+      if (error) {
+        console.error('Error fetching suggested users:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -73,14 +72,33 @@ const Explore = () => {
         .limit(5);
 
       if (error) throw error;
-      setSuggestedUsers(data);
+      // Do something with the search results if needed
     } catch (error) {
       console.error('Error searching users:', error);
     }
   };
 
   const handleDelete = async (thoughtId: string) => {
-    setThoughts(prev => prev.filter(t => t.id !== thoughtId));
+    try {
+      const { error } = await supabase
+        .from('thoughts')
+        .delete()
+        .eq('id', thoughtId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Thought deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting thought:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete thought",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -125,23 +143,40 @@ const Explore = () => {
             >
               Latest Thoughts
             </motion.h2>
-            <div className="grid gap-6">
-              {thoughts.map((thought, index) => (
-                <motion.div
-                  key={thought.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="transform hover:-translate-y-1 transition-all duration-300"
-                >
-                  <PoemCard
-                    poem={thought}
-                    currentUserId={currentUserId}
-                    onDelete={handleDelete}
-                  />
-                </motion.div>
-              ))}
-            </div>
+            {thoughtsLoading ? (
+              <div className="space-y-6">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg p-6 shadow-md">
+                    <div className="flex items-center space-x-4 mb-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-24 w-full" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {thoughts.map((thought, index) => (
+                  <motion.div
+                    key={thought.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="transform hover:-translate-y-1 transition-all duration-300"
+                  >
+                    <PoemCard
+                      poem={thought}
+                      currentUserId={user?.id || null}
+                      onDelete={handleDelete}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Sidebar - Suggested Users */}
@@ -155,42 +190,56 @@ const Explore = () => {
                 <span className="h-2 w-2 rounded-full bg-purple-400" />
                 Suggested Users
               </h3>
-              <div className="space-y-4">
-                {suggestedUsers.map((user, index) => (
-                  <motion.div
-                    key={user.id}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="group flex items-center justify-between gap-4 p-4 rounded-xl hover:bg-purple-50/80 transition-all duration-300 border border-transparent hover:border-purple-100"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-sm opacity-0 group-hover:opacity-50 transition-opacity" />
-                        <img
-                          src={user.avatar_url || "/placeholder.svg"}
-                          alt={user.username}
-                          className="relative w-12 h-12 rounded-full object-cover border-2 border-white"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800 group-hover:text-purple-700 transition-colors">
-                          {user.username}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {user.followers_count} followers
-                        </p>
+              {suggestedUsersLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center space-x-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3 w-16" />
                       </div>
                     </div>
-                    <button
-                      onClick={() => {/* Add follow logic */}}
-                      className="px-4 py-2 text-sm font-medium text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-full transition-colors"
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {suggestedUsers.map((user: Profile, index) => (
+                    <motion.div
+                      key={user.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="group flex items-center justify-between gap-4 p-4 rounded-xl hover:bg-purple-50/80 transition-all duration-300 border border-transparent hover:border-purple-100"
                     >
-                      Follow
-                    </button>
-                  </motion.div>
-                ))}
-              </div>
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-sm opacity-0 group-hover:opacity-50 transition-opacity" />
+                          <img
+                            src={user.avatar_url || "/placeholder.svg"}
+                            alt={user.username}
+                            className="relative w-12 h-12 rounded-full object-cover border-2 border-white"
+                          />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-800 group-hover:text-purple-700 transition-colors">
+                            {user.username}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {user.followers_count} followers
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {/* Add follow logic */}}
+                        className="px-4 py-2 text-sm font-medium text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-full transition-colors"
+                      >
+                        Follow
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           </div>
         </div>
