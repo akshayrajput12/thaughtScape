@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "lucide-react";
+import { Briefcase } from "lucide-react";
 import type { Project, ProjectApplication } from "@/types";
 
 const Freelancing = () => {
@@ -144,55 +145,117 @@ const Freelancing = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50/20 py-12 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Freelance Projects</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent">
+            Freelance Projects
+          </h1>
           <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
             <DialogTrigger asChild>
-              <Button>Post New Project</Button>
+              <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                <Briefcase className="w-5 h-5 mr-2" />
+                Post New Project
+              </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>Create New Project</DialogTitle>
-                <DialogDescription>
-                  Fill in the details of your project below.
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent">
+                  Create New Project
+                </DialogTitle>
+                <DialogDescription className="text-gray-600">
+                  Share your project details and find the perfect freelancer.
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleCreateProject} className="space-y-4">
-                <div>
+              <form onSubmit={handleCreateProject} className="space-y-6">
+                <div className="space-y-2">
                   <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                    Title
+                    Project Title
                   </label>
-                  <Input id="title" name="title" required />
+                  <Input 
+                    id="title" 
+                    name="title" 
+                    required 
+                    className="w-full px-4 py-2 border-2 border-purple-100 focus:border-purple-500 rounded-lg shadow-sm transition-all duration-300"
+                    placeholder="Enter a clear, descriptive title..."
+                  />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                    Description
+                    Project Description
                   </label>
-                  <Textarea id="description" name="description" required />
+                  <Textarea 
+                    id="description" 
+                    name="description" 
+                    required
+                    className="w-full px-4 py-2 border-2 border-purple-100 focus:border-purple-500 rounded-lg shadow-sm transition-all duration-300"
+                    placeholder="Describe your project requirements in detail..."
+                    rows={5}
+                  />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <label htmlFor="required_skills" className="block text-sm font-medium text-gray-700">
-                    Required Skills (comma-separated)
+                    Required Skills
                   </label>
-                  <Input id="required_skills" name="required_skills" required />
+                  <Input 
+                    id="required_skills" 
+                    name="required_skills" 
+                    required
+                    className="w-full px-4 py-2 border-2 border-purple-100 focus:border-purple-500 rounded-lg shadow-sm transition-all duration-300"
+                    placeholder="e.g., React, TypeScript, Node.js..."
+                  />
                 </div>
-                <div>
-                  <label htmlFor="budget" className="block text-sm font-medium text-gray-700">
-                    Budget ($)
-                  </label>
-                  <Input id="budget" name="budget" type="number" min="0" step="0.01" required />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="budget" className="block text-sm font-medium text-gray-700">
+                      Budget ($)
+                    </label>
+                    <Input 
+                      id="budget" 
+                      name="budget" 
+                      type="number" 
+                      min="0" 
+                      step="0.01" 
+                      required
+                      className="w-full px-4 py-2 border-2 border-purple-100 focus:border-purple-500 rounded-lg shadow-sm transition-all duration-300"
+                      placeholder="Enter your budget..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="deadline" className="block text-sm font-medium text-gray-700">
+                      Deadline
+                    </label>
+                    <Input 
+                      id="deadline" 
+                      name="deadline" 
+                      type="datetime-local" 
+                      required
+                      className="w-full px-4 py-2 border-2 border-purple-100 focus:border-purple-500 rounded-lg shadow-sm transition-all duration-300"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label htmlFor="deadline" className="block text-sm font-medium text-gray-700">
-                    Deadline
-                  </label>
-                  <Input id="deadline" name="deadline" type="datetime-local" required />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setIsNewProjectDialogOpen(false)}>
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => setIsNewProjectDialogOpen(false)}
+                    className="border-2 border-purple-200 hover:border-purple-300 transition-all duration-300"
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={createProjectMutation.isPending}>
-                    {createProjectMutation.isPending ? "Creating..." : "Create Project"}
+                  <Button 
+                    type="submit" 
+                    disabled={createProjectMutation.isPending}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    {createProjectMutation.isPending ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating...
+                      </span>
+                    ) : (
+                      "Create Project"
+                    )}
                   </Button>
                 </div>
               </form>
