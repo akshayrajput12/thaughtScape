@@ -18,54 +18,36 @@ const App = () => (
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
-      <Route
-        path="/profile/:id"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <Admin />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/messages"
-        element={
-          <ProtectedRoute>
-            <Messages />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/write"
-        element={
-          <ProtectedRoute>
-            <Write />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/explore"
-        element={
-          <ProtectedRoute>
-            <Explore />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/freelancing"
-        element={
-          <ProtectedRoute>
-            <Freelancing />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/explore" element={
+        <ProtectedRoute>
+          <Explore />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile/:id" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin" element={
+        <ProtectedRoute>
+          <Admin />
+        </ProtectedRoute>
+      } />
+      <Route path="/messages" element={
+        <ProtectedRoute>
+          <Messages />
+        </ProtectedRoute>
+      } />
+      <Route path="/write" element={
+        <ProtectedRoute>
+          <Write />
+        </ProtectedRoute>
+      } />
+      <Route path="/freelancing" element={
+        <ProtectedRoute>
+          <Freelancing />
+        </ProtectedRoute>
+      } />
     </Routes>
   </AppProviders>
 );
