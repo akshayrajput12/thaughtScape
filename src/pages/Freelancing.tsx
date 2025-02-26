@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -114,14 +114,10 @@ const Freelancing = () => {
     queryFn: queryFunctions.fetchProjects,
     staleTime: 1000 * 60 * 5,
     retry: 2,
-    onError: (error) => {
-      console.error('Failed to fetch projects:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load projects. Please try again.",
-        variant: "destructive",
-      });
+    meta: {
+      errorMessage: "Failed to load projects"
     },
+    networkMode: 'always'
   });
 
   const { data: appliedProjects = [], isLoading: isLoadingAppliedProjects } = useQuery({
@@ -130,14 +126,10 @@ const Freelancing = () => {
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
     retry: 2,
-    onError: (error) => {
-      console.error('Failed to fetch applied projects:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load your applications. Please try again.",
-        variant: "destructive",
-      });
+    meta: {
+      errorMessage: "Failed to load your applications"
     },
+    networkMode: 'always'
   });
 
   const { data: receivedApplications = [], isLoading: isLoadingReceivedApplications } = useQuery({
@@ -146,14 +138,10 @@ const Freelancing = () => {
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
     retry: 2,
-    onError: (error) => {
-      console.error('Failed to fetch received applications:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load received applications. Please try again.",
-        variant: "destructive",
-      });
+    meta: {
+      errorMessage: "Failed to load received applications"
     },
+    networkMode: 'always'
   });
 
   const { data: userApplications = [] } = useQuery({
@@ -162,10 +150,27 @@ const Freelancing = () => {
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
     retry: 2,
-    onError: (error) => {
-      console.error('Failed to fetch user applications:', error);
+    meta: {
+      errorMessage: "Failed to fetch user applications"
     },
+    networkMode: 'always'
   });
+
+  useEffect(() => {
+    const unsubscribe = queryClient.getQueryCache().subscribe(event => {
+      if (event.type === 'error' && event.query.meta?.errorMessage) {
+        toast({
+          title: "Error",
+          description: event.query.meta.errorMessage as string,
+          variant: "destructive",
+        });
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [queryClient, toast]);
 
   const createProjectMutation = useMutation({
     mutationFn: async (formData: FormData) => {
