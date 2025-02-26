@@ -109,6 +109,24 @@ const Freelancing = () => {
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
+  useEffect(() => {
+    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      const queryEvent = event as any;
+      if (queryEvent.type === 'observerResultsUpdated' && queryEvent.query?.state.error) {
+        const errorMessage = queryEvent.query?.meta?.errorMessage || "An error occurred";
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [queryClient, toast]);
+
   const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
     queryKey: ['projects'],
     queryFn: queryFunctions.fetchProjects,
@@ -155,22 +173,6 @@ const Freelancing = () => {
     },
     networkMode: 'always'
   });
-
-  useEffect(() => {
-    const unsubscribe = queryClient.getQueryCache().subscribe(event => {
-      if (event.type === 'error' && event.query.meta?.errorMessage) {
-        toast({
-          title: "Error",
-          description: event.query.meta.errorMessage as string,
-          variant: "destructive",
-        });
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [queryClient, toast]);
 
   const createProjectMutation = useMutation({
     mutationFn: async (formData: FormData) => {
