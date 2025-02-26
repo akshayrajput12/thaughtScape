@@ -46,16 +46,18 @@ const Freelancing = () => {
         .select(`
           *,
           author:profiles(id, username, full_name, avatar_url, created_at, updated_at),
-          _count:project_applications(count)
+          applications:project_applications(count),
+          comments:project_applications(count)
         `)
         .order("created_at", { ascending: false });
       
       if (error) throw error;
+
       return data.map(project => ({
         ...project,
         _count: {
-          comments: project._count,
-          applications: project._count
+          comments: project.comments?.[0]?.count || 0,
+          applications: project.applications?.[0]?.count || 0
         }
       })) as Project[];
     },
