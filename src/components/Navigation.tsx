@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -155,6 +154,7 @@ const Navigation = () => {
                   <NotificationIcons
                     unreadMessages={unreadMessages}
                     unreadNotifications={unreadNotifications}
+                    userId={userId}
                   />
                   <UserMenu
                     userId={userId}

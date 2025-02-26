@@ -45,13 +45,19 @@ const Freelancing = () => {
         .from("projects")
         .select(`
           *,
-          author:profiles(username, full_name),
-          comments:project_applications(count),
-          applications:project_applications(count)
+          author:profiles(id, username, full_name, avatar_url, created_at, updated_at),
+          _count:project_applications(count)
         `)
         .order("created_at", { ascending: false });
+      
       if (error) throw error;
-      return data as Project[];
+      return data.map(project => ({
+        ...project,
+        _count: {
+          comments: project._count,
+          applications: project._count
+        }
+      })) as Project[];
     },
   });
 
@@ -75,7 +81,17 @@ const Freelancing = () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from("project_applications")
-        .select(`*, applicant:profiles(username, full_name, avatar_url)`)
+        .select(`
+          *,
+          applicant:profiles(
+            id,
+            username,
+            full_name,
+            avatar_url,
+            created_at,
+            updated_at
+          )
+        `)
         .in(
           "project_id",
           projects?.filter((project) => project.author_id === user.id).map((project) => project.id) || []

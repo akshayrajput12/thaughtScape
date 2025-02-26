@@ -29,9 +29,14 @@ export interface Project {
   attachment_url?: string;
   status: 'open' | 'closed' | 'in_progress';
   author_id: string;
+  notifications_count?: number;
   created_at: string;
   updated_at: string;
   author?: Profile;
+  _count?: {
+    comments: number;
+    applications: number;
+  };
 }
 
 export interface ProjectApplication {
@@ -40,53 +45,7 @@ export interface ProjectApplication {
   applicant_id: string;
   message: string;
   status: 'pending' | 'accepted' | 'rejected';
+  viewed_at?: string;
   created_at: string;
   applicant?: Profile;
-}
-
-export interface Thought {
-  id: string;
-  title: string;
-  content: string;
-  author_id: string;
-  created_at: string;
-  updated_at: string;
-  image_url?: string;
-  author: {
-    id: string;
-    username: string;
-    full_name?: string;
-    avatar_url?: string;
-    created_at: string;
-    updated_at: string;
-  };
-  _count?: {
-    likes: number;
-    bookmarks: number;
-  };
-  likes?: any[];
-  bookmarks?: any[];
-}
-
-export interface Notification {
-  id: string;
-  user_id: string;
-  type: 'follow' | 'like' | 'comment' | 'message';
-  content: string;
-  is_read: boolean;
-  related_user_id?: string;
-  related_poem_id?: string;
-  created_at: string;
-  related_user?: Profile;
-}
-
-export interface Message {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  is_read: boolean;
-  created_at: string;
-  sender?: Profile;
-  receiver?: Profile;
 }

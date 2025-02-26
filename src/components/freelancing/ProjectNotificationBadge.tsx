@@ -20,12 +20,20 @@ export const ProjectNotificationBadge = ({ userId }: { userId: string }) => {
   const { data } = useQuery({
     queryKey: ["projectNotifications", userId],
     queryFn: async () => {
+      // First get projects authored by the user
+      const { data: userProjects } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("author_id", userId);
+
+      const projectIds = userProjects?.map(p => p.id) || [];
+
       const [applicationsResponse, projectsResponse] = await Promise.all([
         supabase
           .from("project_applications")
           .select("id")
           .is("viewed_at", null)
-          .eq("project_id", supabase.from("projects").select("id").eq("author_id", userId)),
+          .in("project_id", projectIds),
         supabase
           .from("projects")
           .select("id")
@@ -38,7 +46,7 @@ export const ProjectNotificationBadge = ({ userId }: { userId: string }) => {
         newProjects: projectsResponse.data?.length || 0
       };
     },
-    refetchInterval: 30000 // Refetch every 30 seconds
+    refetchInterval: 30000
   });
 
   const totalNotifications = (data?.unviewedApplications || 0) + (data?.newProjects || 0);
