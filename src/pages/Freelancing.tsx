@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -21,29 +22,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Calendar } from "lucide-react";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { IndianRupee, User, CheckCircle2, Calendar } from "lucide-react";
+import clsx from "clsx";
 import type { Project, ProjectApplication } from "@/types";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { IndianRupee, User, CheckCircle2 } from "lucide-react";
-import clsx from "clsx";
+import { format } from "date-fns";
 
 const Freelancing = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -137,6 +126,7 @@ const Freelancing = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["userApplications", user?.id] });
       setIsApplicationDialogOpen(false);
+      setApplicationMessage("");
       toast({
         title: "Success",
         description: "Application submitted successfully!",
@@ -239,52 +229,21 @@ const Freelancing = () => {
                       <Input id="skills" name="skills" type="text" required />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="budget">Budget</Label>
+                      <Label htmlFor="budget">Budget (₹)</Label>
                       <Input id="budget" name="budget" type="number" required />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="deadline">Deadline</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-[240px] justify-start text-left font-normal",
-                              !format(new Date(), 'PP')
-                                ? "text-muted-foreground"
-                                : ""
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {format(new Date(), 'PP') ? (
-                              format(new Date(), 'PP')
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="center" side="bottom">
-                          {/* <Calendar
-                            mode="single"
-                            selected={date}
-                            onSelect={setDate}
-                            disabled={(date) =>
-                              date > new Date() || date < new Date("1900-01-01")
-                            }
-                            initialFocus
-                          /> */}
-                        </PopoverContent>
-                      </Popover>
-                      {/* <Input id="deadline" name="deadline" type="date" required /> */}
+                      <Input id="deadline" name="deadline" type="date" required />
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2">
                       <DialogClose asChild>
                         <Button type="button" variant="secondary">
                           Cancel
                         </Button>
                       </DialogClose>
-                      <Button type="submit">
-                        {createProjectMutation.isLoading ? "Creating..." : "Create Project"}
+                      <Button type="submit" disabled={createProjectMutation.isPending}>
+                        {createProjectMutation.isPending ? "Creating..." : "Create Project"}
                       </Button>
                     </div>
                   </form>
@@ -445,7 +404,7 @@ const Freelancing = () => {
                 {receivedApplications.length === 0 ? (
                   <p>No applications received yet.</p>
                 ) : (
-                  receivedApplications.map((application: ProjectApplication) => (
+                  receivedApplications.map((application) => (
                     <div
                       key={application.id}
                       className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100"
@@ -458,13 +417,13 @@ const Freelancing = () => {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">
-                          Status: {application.status}
+                          Status: {application.status.toUpperCase()}
                         </span>
-                        <div>
+                        <div className="flex gap-2">
                           {application.status === "pending" && (
                             <>
                               <Button
-                                variant="ghost"
+                                variant="default"
                                 size="sm"
                                 onClick={() =>
                                   updateApplicationStatusMutation.mutate({
@@ -529,14 +488,14 @@ const Freelancing = () => {
                 required
               />
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
               <DialogClose asChild>
                 <Button type="button" variant="secondary">
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit" disabled={applyProjectMutation.isLoading}>
-                {applyProjectMutation.isLoading ? "Applying..." : "Submit Application"}
+              <Button type="submit" disabled={applyProjectMutation.isPending}>
+                {applyProjectMutation.isPending ? "Applying..." : "Submit Application"}
               </Button>
             </div>
           </form>
