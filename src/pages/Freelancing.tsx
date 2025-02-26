@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +27,7 @@ import clsx from "clsx";
 import type { Project, ProjectApplication } from "@/types";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { format } from "date-fns";
+import { ProjectApplicationCard } from "@/components/freelancing/ProjectApplicationCard";
 
 const Freelancing = () => {
   const { user } = useAuth();
@@ -43,7 +43,12 @@ const Freelancing = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
-        .select(`*, author:profiles(username, full_name)`)
+        .select(`
+          *,
+          author:profiles(username, full_name),
+          comments:project_applications(count),
+          applications:project_applications(count)
+        `)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as Project[];
@@ -75,6 +80,16 @@ const Freelancing = () => {
           "project_id",
           projects?.filter((project) => project.author_id === user.id).map((project) => project.id) || []
         );
+      
+      // Mark applications as viewed
+      if (data?.length) {
+        await supabase
+          .from("project_applications")
+          .update({ viewed_at: new Date().toISOString() })
+          .in("id", data.map(app => app.id))
+          .is("viewed_at", null);
+      }
+
       if (error) throw error;
       return data as ProjectApplication[];
     },
@@ -405,52 +420,13 @@ const Freelancing = () => {
                   <p>No applications received yet.</p>
                 ) : (
                   receivedApplications.map((application) => (
-                    <div
+                    <ProjectApplicationCard
                       key={application.id}
-                      className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100"
-                    >
-                      <div className="space-y-2">
-                        <h3 className="text-xl font-semibold text-gray-900">
-                          {application.applicant?.full_name || application.applicant?.username}
-                        </h3>
-                        <p className="text-sm text-gray-600">{application.message}</p>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">
-                          Status: {application.status.toUpperCase()}
-                        </span>
-                        <div className="flex gap-2">
-                          {application.status === "pending" && (
-                            <>
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() =>
-                                  updateApplicationStatusMutation.mutate({
-                                    applicationId: application.id,
-                                    status: "accepted",
-                                  })
-                                }
-                              >
-                                Accept
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() =>
-                                  updateApplicationStatusMutation.mutate({
-                                    applicationId: application.id,
-                                    status: "rejected",
-                                  })
-                                }
-                              >
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                      application={application}
+                      onUpdateStatus={(applicationId, status) =>
+                        updateApplicationStatusMutation.mutate({ applicationId, status })
+                      }
+                    />
                   ))
                 )}
               </div>

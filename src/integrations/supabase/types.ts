@@ -336,6 +336,7 @@ export type Database = {
           message: string
           project_id: string
           status: string | null
+          viewed_at: string | null
         }
         Insert: {
           applicant_id: string
@@ -344,6 +345,7 @@ export type Database = {
           message: string
           project_id: string
           status?: string | null
+          viewed_at?: string | null
         }
         Update: {
           applicant_id?: string
@@ -352,6 +354,7 @@ export type Database = {
           message?: string
           project_id?: string
           status?: string | null
+          viewed_at?: string | null
         }
         Relationships: [
           {
@@ -379,6 +382,7 @@ export type Database = {
           deadline: string | null
           description: string
           id: string
+          notifications_count: number | null
           required_skills: string[] | null
           status: string | null
           title: string
@@ -392,6 +396,7 @@ export type Database = {
           deadline?: string | null
           description: string
           id?: string
+          notifications_count?: number | null
           required_skills?: string[] | null
           status?: string | null
           title: string
@@ -405,6 +410,7 @@ export type Database = {
           deadline?: string | null
           description?: string
           id?: string
+          notifications_count?: number | null
           required_skills?: string[] | null
           status?: string | null
           title?: string

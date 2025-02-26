@@ -1,12 +1,15 @@
+
 import { Link } from "react-router-dom";
-import { Bell, MessageSquare } from "lucide-react";
+import { Bell, MessageSquare, Briefcase } from "lucide-react";
+import { ProjectNotificationBadge } from "@/components/freelancing/ProjectNotificationBadge";
 
 interface NotificationIconsProps {
   unreadMessages: number;
   unreadNotifications: number;
+  userId: string;
 }
 
-export const NotificationIcons = ({ unreadMessages, unreadNotifications }: NotificationIconsProps) => {
+export const NotificationIcons = ({ unreadMessages, unreadNotifications, userId }: NotificationIconsProps) => {
   return (
     <>
       <div className="relative">
@@ -27,6 +30,12 @@ export const NotificationIcons = ({ unreadMessages, unreadNotifications }: Notif
               {unreadMessages}
             </span>
           )}
+        </Link>
+      </div>
+      <div className="relative">
+        <Link to="/freelancing" className="text-gray-600 hover:text-gray-900">
+          <Briefcase className="h-6 w-6" />
+          <ProjectNotificationBadge userId={userId} />
         </Link>
       </div>
     </>
