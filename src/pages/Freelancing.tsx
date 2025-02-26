@@ -49,28 +49,19 @@ const Freelancing = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
 
-  const { data: projects, isLoading: isLoadingProjects } = useQuery({
+  const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
         .select(`*, author:profiles(username, full_name)`)
         .order("created_at", { ascending: false });
-      if (error) {
-        console.error("Error fetching projects:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch projects",
-          variant: "destructive",
-        });
-        return [];
-      }
-      return data || [];
+      if (error) throw error;
+      return data as Project[];
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  const { data: userApplications, isLoading: isLoadingUserApplications } = useQuery({
+  const { data: userApplications = [], isLoading: isLoadingUserApplications } = useQuery({
     queryKey: ["userApplications", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -78,18 +69,13 @@ const Freelancing = () => {
         .from("project_applications")
         .select("project_id")
         .eq("applicant_id", user.id);
-
-      if (error) {
-        console.error("Error fetching user applications:", error);
-        return [];
-      }
-      return data ? data.map(app => app.project_id) : [];
+      if (error) throw error;
+      return data.map(app => app.project_id);
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  const { data: receivedApplications, isLoading: isLoadingReceivedApplications } = useQuery({
+  const { data: receivedApplications = [], isLoading: isLoadingReceivedApplications } = useQuery({
     queryKey: ["receivedApplications", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -100,113 +86,97 @@ const Freelancing = () => {
           "project_id",
           projects?.filter((project) => project.author_id === user.id).map((project) => project.id) || []
         );
-
-      if (error) {
-        console.error("Error fetching received applications:", error);
-        return [];
-      }
-      return data || [];
+      if (error) throw error;
+      return data as ProjectApplication[];
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  const createProjectMutation = useMutation(
-    async (newProject: Omit<Project, "id" | "created_at" | "updated_at">) => {
+  const createProjectMutation = useMutation({
+    mutationFn: async (newProject: Omit<Project, "id" | "created_at" | "updated_at" | "author">) => {
       const { data, error } = await supabase
         .from("projects")
         .insert([newProject])
         .select()
         .single();
-      if (error) {
-        console.error("Error creating project:", error);
-        throw error;
-      }
+      if (error) throw error;
       return data;
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["projects"]);
-        setIsNewProjectDialogOpen(false);
-        toast({
-          title: "Success",
-          description: "Project created successfully!",
-        });
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Error",
-          description: `Failed to create project: ${error.message}`,
-          variant: "destructive",
-        });
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      setIsNewProjectDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Project created successfully!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to create project: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
 
-  const applyProjectMutation = useMutation(
-    async ({ projectId, message }: { projectId: string; message: string }) => {
+  const applyProjectMutation = useMutation({
+    mutationFn: async ({ projectId, message }: { projectId: string; message: string }) => {
       const { data, error } = await supabase
         .from("project_applications")
-        .insert([{ project_id: projectId, applicant_id: user?.id, message }])
+        .insert([{
+          project_id: projectId,
+          applicant_id: user?.id,
+          message,
+          status: "pending" as const,
+        }])
         .select()
         .single();
-      if (error) {
-        console.error("Error applying for project:", error);
-        throw error;
-      }
+      if (error) throw error;
       return data;
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["projects"]);
-        queryClient.invalidateQueries(["userApplications", user?.id]);
-        setIsApplicationDialogOpen(false);
-        toast({
-          title: "Success",
-          description: "Application submitted successfully!",
-        });
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Error",
-          description: `Failed to submit application: ${error.message}`,
-          variant: "destructive",
-        });
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userApplications", user?.id] });
+      setIsApplicationDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Application submitted successfully!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to submit application: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
 
-  const updateApplicationStatusMutation = useMutation(
-    async ({ applicationId, status }: { applicationId: string; status: string }) => {
+  const updateApplicationStatusMutation = useMutation({
+    mutationFn: async ({ applicationId, status }: { applicationId: string; status: "accepted" | "rejected" }) => {
       const { data, error } = await supabase
         .from("project_applications")
         .update({ status })
         .eq("id", applicationId)
         .select()
         .single();
-      if (error) {
-        console.error("Error updating application status:", error);
-        throw error;
-      }
+      if (error) throw error;
       return data;
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["receivedApplications", user?.id]);
-        toast({
-          title: "Success",
-          description: "Application status updated successfully!",
-        });
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Error",
-          description: `Failed to update application status: ${error.message}`,
-          variant: "destructive",
-        });
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["receivedApplications", user?.id] });
+      toast({
+        title: "Success",
+        description: "Application status updated successfully!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update application status: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
