@@ -12,6 +12,10 @@ interface ProjectApplicationCardProps {
 export const ProjectApplicationCard = ({ application, onUpdateStatus }: ProjectApplicationCardProps) => {
   const navigate = useNavigate();
 
+  const handleMessageClick = () => {
+    navigate(`/messages?user=${application.applicant_id}`);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100">
       <div className="flex justify-between items-start">
@@ -24,7 +28,7 @@ export const ProjectApplicationCard = ({ application, onUpdateStatus }: ProjectA
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate(`/messages?user=${application.applicant_id}`)}
+          onClick={handleMessageClick}
           className="hover:bg-gray-100"
         >
           <MessageSquare className="h-5 w-5" />

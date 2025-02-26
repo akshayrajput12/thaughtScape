@@ -250,6 +250,25 @@ const Messages = () => {
     };
   }, [isInCall]);
 
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const directUserId = searchParams.get('user');
+    if (directUserId) {
+      const fetchUser = async () => {
+        const { data: userData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', directUserId)
+          .single();
+        
+        if (userData) {
+          setSelectedUser(userData);
+        }
+      };
+      fetchUser();
+    }
+  }, []);
+
   const handleStartCall = async (withVideo: boolean) => {
     if (!selectedUser || !currentUserId) return;
     
@@ -501,7 +520,7 @@ const Messages = () => {
                           <AvatarFallback>{selectedUser.username[0].toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{selectedUser.username}</p>
+                          <p className="font-medium">{selectedUser.full_name || selectedUser.username}</p>
                           {isInCall && (
                             <p className="text-sm text-gray-500">
                               {new Date(callDuration * 1000).toISOString().substr(11, 8)}
@@ -548,7 +567,7 @@ const Messages = () => {
                                 <div
                                   className={`max-w-[70%] p-3 rounded-lg ${
                                     message.sender_id === currentUserId
-                                      ? 'bg-primary text-primary-foreground'
+                                      ? 'bg-primary text-primary-foreground ml-auto'
                                       : 'bg-gray-100 text-gray-900'
                                   }`}
                                 >
@@ -560,6 +579,7 @@ const Messages = () => {
                               </motion.div>
                             ))}
                           </AnimatePresence>
+                          <div ref={messagesEndRef} />
                         </div>
                         <div className="p-4 border-t border-gray-200">
                           <div className="flex gap-2">
@@ -568,6 +588,7 @@ const Messages = () => {
                               value={newMessage}
                               onChange={(e) => setNewMessage(e.target.value)}
                               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                              className="flex-1"
                             />
                             <Button onClick={sendMessage}>
                               <Send className="h-4 w-4" />
