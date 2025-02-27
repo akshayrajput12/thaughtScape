@@ -7,14 +7,14 @@ import Navigation from "@/components/Navigation";
 import LoadingScreen from "@/components/LoadingScreen";
 
 // Lazy load pages
-const Home = lazy(() => import("./pages/home"));
-const Auth = lazy(() => import("./pages/Auth"));
-const Profile = lazy(() => import("./pages/profile"));
-const Admin = lazy(() => import("./pages/admin"));
-const Messages = lazy(() => import("./pages/messages"));
-const Write = lazy(() => import("./pages/write"));
-const Explore = lazy(() => import("./pages/explore"));
-const Freelancing = lazy(() => import("./pages/freelancing"));
+const Home = lazy(() => import("@/pages/home"));
+const Auth = lazy(() => import("@/pages/Auth"));
+const Profile = lazy(() => import("@/pages/profile"));
+const Admin = lazy(() => import("@/pages/admin"));
+const Messages = lazy(() => import("@/pages/messages"));
+const Write = lazy(() => import("@/pages/write"));
+const Explore = lazy(() => import("@/pages/explore"));
+const Freelancing = lazy(() => import("@/pages/freelancing"));
 
 const App = () => (
   <AppProviders>
