@@ -2,6 +2,8 @@
 import { motion } from "framer-motion";
 import { Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import type { Thought } from "@/types";
 
 interface ProfilePoemsProps {
@@ -12,6 +14,30 @@ interface ProfilePoemsProps {
 }
 
 export const ProfilePoems = ({ poems, isOwnProfile, isAdmin, onDeletePoem }: ProfilePoemsProps) => {
+  const { toast } = useToast();
+
+  const handleDelete = async (poemId: string) => {
+    try {
+      const { error } = await supabase
+        .from('thoughts')
+        .delete()
+        .eq('id', poemId);
+
+      if (error) throw error;
+
+      onDeletePoem(poemId);
+      toast({
+        description: "Thought deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting thought:', error);
+      toast({
+        variant: "destructive",
+        description: "Failed to delete thought",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-serif font-bold text-gray-800">Thoughts</h2>
@@ -34,7 +60,7 @@ export const ProfilePoems = ({ poems, isOwnProfile, isAdmin, onDeletePoem }: Pro
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => onDeletePoem(poem.id)}
+                      onClick={() => handleDelete(poem.id)}
                       className="text-red-500 hover:text-red-600 hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4" />
