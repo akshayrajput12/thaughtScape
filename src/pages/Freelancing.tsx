@@ -20,8 +20,12 @@ const Freelancing = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const { data: { session } } = await supabase.auth.getSession();
-    setCurrentUserId(session?.user?.id || null);
+    const fetchSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setCurrentUserId(session?.user?.id || null);
+    };
+
+    fetchSession();
   }, []);
 
   const { data: projects = [], isLoading } = useQuery({
@@ -31,7 +35,7 @@ const Freelancing = () => {
         .from("projects")
         .select(`
           *,
-          author:profiles(id, username, full_name, avatar_url),
+          author:profiles(id, username, full_name, avatar_url, created_at, updated_at),
           applications:project_applications(count),
           comments:project_applications(count)
         `)
@@ -39,14 +43,20 @@ const Freelancing = () => {
       
       if (error) throw error;
 
-      return data.map(project => ({
+      return (data?.map(project => ({
         ...project,
+        author: project.author ? {
+          ...project.author,
+          created_at: project.author.created_at || new Date().toISOString(),
+          updated_at: project.author.updated_at || new Date().toISOString(),
+        } : undefined,
         _count: {
           comments: project.comments?.[0]?.count || 0,
           applications: project.applications?.[0]?.count || 0
         }
-      })) as Project[];
+      })) || []) as Project[];
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   if (isLoading) {
