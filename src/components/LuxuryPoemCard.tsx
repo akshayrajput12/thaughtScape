@@ -19,7 +19,6 @@ interface LuxuryPoemCardProps {
 
 export const LuxuryPoemCard = ({ poem, currentUserId, isAdmin, onDelete }: LuxuryPoemCardProps) => {
   const [isFollowing, setIsFollowing] = useState(false);
-  const [commentsCount, setCommentsCount] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
   const {
@@ -49,19 +48,6 @@ export const LuxuryPoemCard = ({ poem, currentUserId, isAdmin, onDelete }: Luxur
 
     checkFollowStatus();
   }, [currentUserId, poem.author.id]);
-
-  useEffect(() => {
-    const fetchCommentsCount = async () => {
-      const { count } = await supabase
-        .from('comments')
-        .select('*', { count: 'exact', head: true })
-        .eq('thought_id', poem.id);
-      
-      setCommentsCount(count || 0);
-    };
-
-    fetchCommentsCount();
-  }, [poem.id]);
 
   const handleFollowToggle = async () => {
     if (!currentUserId) {
@@ -172,7 +158,6 @@ export const LuxuryPoemCard = ({ poem, currentUserId, isAdmin, onDelete }: Luxur
         <PoemInteractionButtons
           likesCount={likesCount}
           bookmarksCount={bookmarksCount}
-          commentsCount={commentsCount}
           isLiked={isLiked}
           isBookmarked={isBookmarked}
           onLike={handleLike}
