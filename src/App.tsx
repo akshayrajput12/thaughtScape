@@ -6,7 +6,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Navigation from "@/components/Navigation";
 import LoadingScreen from "@/components/LoadingScreen";
 
-// Lazy load pages
+// Lazy load pages with consistent path aliases
 const Home = lazy(() => import("@/pages/home"));
 const Auth = lazy(() => import("@/pages/Auth"));
 const Profile = lazy(() => import("@/pages/profile"));
