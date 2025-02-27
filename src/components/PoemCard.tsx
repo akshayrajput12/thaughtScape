@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -23,8 +22,10 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
   const [isFollowing, setIsFollowing] = useState(false);
   const [followers, setFollowers] = useState<Profile[]>([]);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
+
   const {
     likesCount,
     bookmarksCount,
@@ -33,6 +34,19 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
     handleLike,
     handleBookmark
   } = useThoughtInteractions(poem.id, currentUserId);
+
+  useEffect(() => {
+    const fetchCommentsCount = async () => {
+      const { count } = await supabase
+        .from('comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('thought_id', poem.id);
+      
+      setCommentsCount(count || 0);
+    };
+
+    fetchCommentsCount();
+  }, [poem.id]);
 
   useEffect(() => {
     const checkFollowStatus = async () => {
@@ -208,10 +222,11 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
           transition={{ delay: 0.3 }}
         >
           <div className="flex items-center justify-between text-sm text-gray-500">
-            <div>
+            <div className="flex gap-4 items-center">
               <PoemInteractionButtons
                 likesCount={likesCount}
                 bookmarksCount={bookmarksCount}
+                commentsCount={commentsCount}
                 isLiked={isLiked}
                 isBookmarked={isBookmarked}
                 onLike={handleLike}

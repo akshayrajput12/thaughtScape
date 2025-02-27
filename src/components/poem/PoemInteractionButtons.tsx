@@ -1,10 +1,11 @@
 
-import { Heart, Bookmark, Share2 } from "lucide-react";
+import { Heart, Bookmark, Share2, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface PoemInteractionButtonsProps {
   likesCount: number;
   bookmarksCount: number;
+  commentsCount: number;
   isLiked: boolean;
   isBookmarked: boolean;
   onLike: () => void;
@@ -16,6 +17,7 @@ interface PoemInteractionButtonsProps {
 export const PoemInteractionButtons = ({
   likesCount,
   bookmarksCount,
+  commentsCount,
   isLiked,
   isBookmarked,
   onLike,
@@ -37,6 +39,15 @@ export const PoemInteractionButtons = ({
         <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
         <span className="text-sm font-medium">{likesCount}</span>
       </ButtonWrapper>
+      
+      <ButtonWrapper
+        className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 transition-colors"
+        {...(showAnimation && { whileHover: { scale: 1.1 } })}
+      >
+        <MessageCircle className="w-5 h-5" />
+        <span className="text-sm font-medium">{commentsCount}</span>
+      </ButtonWrapper>
+
       <ButtonWrapper
         className={`flex items-center gap-1.5 transition-colors ${
           isBookmarked ? 'text-purple-500' : 'hover:text-purple-500'
@@ -47,6 +58,7 @@ export const PoemInteractionButtons = ({
         <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} />
         <span className="text-sm font-medium">{bookmarksCount}</span>
       </ButtonWrapper>
+
       {onShare && (
         <ButtonWrapper
           className="hover:text-purple-500 transition-colors flex items-center gap-1.5"
