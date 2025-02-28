@@ -26,11 +26,31 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { IndianRupee, User, CheckCircle2, Calendar, Menu, ChevronRight } from "lucide-react";
+import { 
+  IndianRupee, 
+  User, 
+  CheckCircle2, 
+  Calendar, 
+  Menu, 
+  ChevronRight, 
+  Pencil, 
+  Trash,
+  AlertCircle
+} from "lucide-react";
 import clsx from "clsx";
 import type { Project, ProjectApplication } from "@/types";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -44,7 +64,9 @@ const Freelancing = () => {
   const queryClient = useQueryClient();
   const isMobile = useMobile();
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+  const [isEditProjectDialogOpen, setIsEditProjectDialogOpen] = useState(false);
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
   const [activeTab, setActiveTab] = useState("browse");
@@ -81,10 +103,10 @@ const Freelancing = () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from("project_applications")
-        .select("project_id")
+        .select("project_id, status")
         .eq("applicant_id", user.id);
       if (error) throw error;
-      return data.map(app => app.project_id);
+      return data;
     },
     enabled: !!user?.id,
   });
@@ -115,6 +137,9 @@ const Freelancing = () => {
             avatar_url,
             created_at,
             updated_at
+          ),
+          project:projects(
+            *
           )
         `)
         .in("project_id", projectIds);
@@ -129,7 +154,7 @@ const Freelancing = () => {
       }
 
       if (error) throw error;
-      return data as ProjectApplication[];
+      return data as (ProjectApplication & { project: Project })[];
     },
     enabled: !!user?.id,
   });
@@ -156,6 +181,62 @@ const Freelancing = () => {
       toast({
         title: "Error",
         description: `Failed to create project: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateProjectMutation = useMutation({
+    mutationFn: async (updatedProject: Partial<Project> & { id: string }) => {
+      const { id, ...projectData } = updatedProject;
+      const { data, error } = await supabase
+        .from("projects")
+        .update(projectData)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      setIsEditProjectDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Project updated successfully!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update project: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (projectId: string) => {
+      const { error } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", projectId);
+      if (error) throw error;
+      return projectId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      setIsDeleteAlertOpen(false);
+      setSelectedProject(null);
+      toast({
+        title: "Success",
+        description: "Project deleted successfully!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete project: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -196,18 +277,32 @@ const Freelancing = () => {
   });
 
   const updateApplicationStatusMutation = useMutation({
-    mutationFn: async ({ applicationId, status }: { applicationId: string; status: "accepted" | "rejected" }) => {
+    mutationFn: async ({ applicationId, status, projectId }: { applicationId: string; status: "accepted" | "rejected"; projectId?: string }) => {
+      // First update the application status
       const { data, error } = await supabase
         .from("project_applications")
         .update({ status })
         .eq("id", applicationId)
         .select()
         .single();
+      
       if (error) throw error;
+      
+      // If status is accepted, update project status to in_progress
+      if (status === "accepted" && projectId) {
+        const { error: projectError } = await supabase
+          .from("projects")
+          .update({ status: "in_progress" })
+          .eq("id", projectId);
+        
+        if (projectError) throw projectError;
+      }
+      
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["receivedApplications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast({
         title: "Success",
         description: "Application status updated successfully!",
@@ -226,6 +321,28 @@ const Freelancing = () => {
     setActiveTab(value);
     if (isMobile) {
       setIsMobileMenuOpen(false);
+    }
+  };
+
+  const handleEditProject = (project: Project) => {
+    setSelectedProject(project);
+    setIsEditProjectDialogOpen(true);
+  };
+
+  const handleDeleteProject = (project: Project) => {
+    setSelectedProject(project);
+    setIsDeleteAlertOpen(true);
+  };
+
+  const handleUpdateStatus = (applicationId: string, status: "accepted" | "rejected") => {
+    // Find the application to get the project ID
+    const application = receivedApplications.find(app => app.id === applicationId);
+    if (application) {
+      updateApplicationStatusMutation.mutate({
+        applicationId,
+        status,
+        projectId: application.project?.id
+      });
     }
   };
 
@@ -254,6 +371,17 @@ const Freelancing = () => {
     
     markApplicationsAsViewed();
   }, [user?.id]);
+
+  // Check if user has already applied to a project
+  const hasApplied = (projectId: string) => {
+    return userApplications.some(app => app.project_id === projectId);
+  };
+
+  // Check application status
+  const getApplicationStatus = (projectId: string) => {
+    const application = userApplications.find(app => app.project_id === projectId);
+    return application?.status || null;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
@@ -411,9 +539,31 @@ const Freelancing = () => {
                     className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100"
                   >
                     <div className="space-y-2">
-                      <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
-                        {project.title}
-                      </h3>
+                      <div className="flex justify-between items-start">
+                        <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
+                          {project.title}
+                        </h3>
+                        {user?.id === project.author_id && (
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => handleEditProject(project)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-red-500"
+                              onClick={() => handleDeleteProject(project)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600 line-clamp-3">
                         {project.description}
                       </p>
@@ -450,28 +600,39 @@ const Freelancing = () => {
                         {project.status?.toUpperCase()}
                       </span>
                       
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedProject(project);
-                          setIsApplicationDialogOpen(true);
-                        }}
-                        disabled={
-                          project.status !== "open" || 
-                          project.author_id === user?.id || 
-                          userApplications.includes(project.id)
-                        }
-                      >
-                        {userApplications.includes(project.id) ? (
-                          <span className="flex items-center gap-1">
-                            <CheckCircle2 className="w-4 h-4" />
-                            Applied
-                          </span>
-                        ) : (
-                          "Apply Now"
-                        )}
-                      </Button>
+                      {project.status === "in_progress" && hasApplied(project.id) && getApplicationStatus(project.id) === "accepted" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-green-600 border-green-600"
+                        >
+                          <CheckCircle2 className="w-4 h-4 mr-1" />
+                          Awarded
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedProject(project);
+                            setIsApplicationDialogOpen(true);
+                          }}
+                          disabled={
+                            project.status !== "open" || 
+                            project.author_id === user?.id || 
+                            hasApplied(project.id)
+                          }
+                        >
+                          {hasApplied(project.id) ? (
+                            <span className="flex items-center gap-1">
+                              <CheckCircle2 className="w-4 h-4" />
+                              Applied
+                            </span>
+                          ) : (
+                            "Apply Now"
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -481,7 +642,7 @@ const Freelancing = () => {
 
           <TabsContent value="applied" className="space-y-6">
             <h2 className="text-3xl font-serif font-bold text-gray-900">Applied Projects</h2>
-            {isLoadingUserApplications ? (
+            {isLoadingUserApplications || isLoadingProjects ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="p-6 bg-white rounded-xl shadow-sm animate-pulse">
@@ -491,60 +652,82 @@ const Freelancing = () => {
                   </div>
                 ))}
               </div>
+            ) : userApplications.length === 0 ? (
+              <div className="p-8 bg-white rounded-xl shadow-sm text-center">
+                <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-600">You haven't applied to any projects yet.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => handleTabChange("browse")}
+                >
+                  Browse Projects
+                </Button>
+              </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {projects
-                  ?.filter((project) => userApplications.includes(project.id))
-                  .map((project) => (
-                    <div
-                      key={project.id}
-                      className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100"
-                    >
-                      <div className="space-y-2">
-                        <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
-                          {project.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 line-clamp-3">
-                          {project.description}
-                        </p>
-                      </div>
+                  ?.filter((project) => userApplications.some(app => app.project_id === project.id))
+                  .map((project) => {
+                    const appStatus = getApplicationStatus(project.id);
+                    return (
+                      <div
+                        key={project.id}
+                        className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100"
+                      >
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
+                            {project.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 line-clamp-3">
+                            {project.description}
+                          </p>
+                        </div>
 
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Calendar className="w-4 h-4" />
-                          <span className="text-sm">
-                            Deadline: {project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Calendar className="w-4 h-4" />
+                            <span className="text-sm">
+                              Deadline: {project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <IndianRupee className="w-4 h-4" />
+                            <span className="text-sm">Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <User className="w-4 h-4" />
+                            <span className="text-sm">{project.author?.full_name || project.author?.username}</span>
+                          </div>
+                        </div>
+
+                        <div className="pt-4 flex justify-between items-center border-t border-gray-100">
+                          <span className={clsx(
+                            "px-3 py-1 rounded-full text-xs font-medium",
+                            {
+                              "bg-green-100 text-green-800": project.status === "open",
+                              "bg-yellow-100 text-yellow-800": project.status === "in_progress",
+                              "bg-gray-100 text-gray-800": project.status === "closed"
+                            }
+                          )}>
+                            {project.status?.toUpperCase()}
+                          </span>
+                          <span className={clsx(
+                            "px-3 py-1 rounded-full text-xs capitalize font-medium",
+                            {
+                              "bg-blue-100 text-blue-800": appStatus === "pending",
+                              "bg-green-100 text-green-800": appStatus === "accepted",
+                              "bg-red-100 text-red-800": appStatus === "rejected"
+                            }
+                          )}>
+                            {appStatus || "Applied"}
                           </span>
                         </div>
-                        
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <IndianRupee className="w-4 h-4" />
-                          <span className="text-sm">Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <User className="w-4 h-4" />
-                          <span className="text-sm">{project.author?.full_name || project.author?.username}</span>
-                        </div>
                       </div>
-
-                      <div className="pt-4 flex justify-between items-center border-t border-gray-100">
-                        <span className={clsx(
-                          "px-3 py-1 rounded-full text-xs font-medium",
-                          {
-                            "bg-green-100 text-green-800": project.status === "open",
-                            "bg-yellow-100 text-yellow-800": project.status === "in_progress",
-                            "bg-gray-100 text-gray-800": project.status === "closed"
-                          }
-                        )}>
-                          {project.status?.toUpperCase()}
-                        </span>
-                        <Button variant="secondary" size="sm" disabled>
-                          Applied
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
               </div>
             )}
           </TabsContent>
@@ -565,16 +748,22 @@ const Freelancing = () => {
               <div className="space-y-4">
                 {receivedApplications.length === 0 ? (
                   <div className="p-8 bg-white rounded-xl shadow-sm text-center">
+                    <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                     <p className="text-gray-600">No applications received yet.</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => handleTabChange("browse")}
+                    >
+                      Post a Project
+                    </Button>
                   </div>
                 ) : (
                   receivedApplications.map((application) => (
                     <ProjectApplicationCard
                       key={application.id}
                       application={application}
-                      onUpdateStatus={(applicationId, status) =>
-                        updateApplicationStatusMutation.mutate({ applicationId, status })
-                      }
+                      onUpdateStatus={handleUpdateStatus}
                     />
                   ))
                 )}
@@ -632,6 +821,146 @@ const Freelancing = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Project Dialog */}
+      <Dialog open={isEditProjectDialogOpen} onOpenChange={setIsEditProjectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Project</DialogTitle>
+            <DialogDescription>
+              Update your project details.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!selectedProject) return;
+
+              const formData = new FormData(e.currentTarget);
+              const title = String(formData.get("title"));
+              const description = String(formData.get("description"));
+              const skills = String(formData.get("skills"))
+                .split(",")
+                .map((skill) => skill.trim());
+              const budget = Number(formData.get("budget"));
+              const deadline = String(formData.get("deadline"));
+              const status = String(formData.get("status")) as any;
+
+              updateProjectMutation.mutate({
+                id: selectedProject.id,
+                title,
+                description,
+                required_skills: skills,
+                budget,
+                deadline,
+                status,
+              });
+            }}
+            className="grid gap-4 py-4"
+          >
+            <div className="grid gap-2">
+              <Label htmlFor="title">Title</Label>
+              <Input 
+                id="title" 
+                name="title" 
+                type="text" 
+                defaultValue={selectedProject?.title} 
+                required 
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description" 
+                name="description" 
+                defaultValue={selectedProject?.description} 
+                required 
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="skills">Required Skills (comma-separated)</Label>
+              <Input 
+                id="skills" 
+                name="skills" 
+                type="text" 
+                defaultValue={selectedProject?.required_skills?.join(", ")} 
+                required 
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="budget">Budget (₹)</Label>
+              <Input 
+                id="budget" 
+                name="budget" 
+                type="number" 
+                defaultValue={selectedProject?.budget} 
+                required 
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="deadline">Deadline</Label>
+              <Input 
+                id="deadline" 
+                name="deadline" 
+                type="date" 
+                defaultValue={selectedProject?.deadline ? 
+                  new Date(selectedProject.deadline).toISOString().split('T')[0] : 
+                  undefined} 
+                required 
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="status">Status</Label>
+              <select 
+                id="status" 
+                name="status" 
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                defaultValue={selectedProject?.status}
+              >
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={updateProjectMutation.isPending}>
+                {updateProjectMutation.isPending ? "Updating..." : "Update Project"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Project Alert */}
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the project
+              and all related applications.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                if (selectedProject) {
+                  deleteProjectMutation.mutate(selectedProject.id);
+                }
+              }}
+            >
+              {deleteProjectMutation.isPending ? "Deleting..." : "Delete Project"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
