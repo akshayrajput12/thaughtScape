@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Hero } from "@/components/home/Hero";
 import { FeaturedPoems } from "@/components/home/FeaturedPoems";
+import { Footer } from "@/components/home/Footer";
 import type { Thought } from "@/types";
 
 const THOUGHTS_PER_PAGE = 6;
@@ -169,6 +170,7 @@ const Index = () => {
         isLoading={loadingMore}
         onLoadMore={handleLoadMore}
       />
+      <Footer />
     </div>
   );
 };

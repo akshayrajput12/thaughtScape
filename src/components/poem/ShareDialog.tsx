@@ -10,7 +10,7 @@ interface ShareDialogProps {
   onShare: (followerId: string) => void;
 }
 
-export const ShareDialog = ({ open, onOpenChange, followers, onShare }: ShareDialogProps) => {
+export const ShareDialog = ({ open, onOpenChange, followers = [], onShare }: ShareDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">

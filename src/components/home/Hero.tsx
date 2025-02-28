@@ -3,6 +3,7 @@ import { ContainerScroll } from "@/components/ui/container-scroll-animation";
 import { RevealImageList } from "@/components/ui/reveal-images";
 import { Button } from "@/components/ui/button";
 import { LightbulbIcon } from "lucide-react";
+import { GooeyText } from "@/components/ui/gooey-text-morphing";
 
 interface HeroProps {
   onActionClick: () => void;
@@ -15,23 +16,33 @@ export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
       <ContainerScroll
         titleComponent={
           <>
-            <h1 className="text-4xl font-serif font-bold mb-8 relative z-0">
-              Welcome to <br />
-              <span className="text-4xl md:text-[7rem] font-bold mt-1 leading-none bg-clip-text text-transparent bg-gradient-to-r from-slate-800 via-slate-600 to-slate-900 relative -z-10 block font-serif">
-                Thoughtscape
-              </span>
-            </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed relative z-10">
+            <div className="space-y-6 md:space-y-8 mt-8 md:mt-12">
+              <h1 className="text-3xl md:text-4xl font-serif font-bold relative mt-[150px] z-0 text-center">
+                Welcome to
+              </h1>
+              <div className="h-24 md:h-32 flex items-center justify-center">
+                <GooeyText
+                  texts={["Thoughtscape", "Creativity", "Expression", "Connection"]}
+                  morphTime={1.5}
+                  cooldownTime={1}
+                  className="font-serif w-full"
+                  textClassName="bg-clip-text text-transparent bg-gradient-to-r from-slate-800 via-slate-600 to-slate-900 text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[80pt] font-bold"
+                />
+              </div>
+            </div>
+            <p className="text-lg md:text-xl mt-8 text-slate-600 dark:text-slate-300 mb-8 md:mb-12 max-w-2xl mx-auto leading-relaxed relative z-10 text-center px-4">
               A serene space for sharing your thoughts, ideas, and reflections. 
               Connect with minds that inspire and stories that resonate.
             </p>
-            <Button
-              className="group bg-slate-800 hover:bg-slate-700 text-white px-8 py-6 rounded-lg text-lg shadow-lg hover:shadow-xl transition-all relative z-10"
-              onClick={onActionClick}
-            >
-              <LightbulbIcon className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
-              {!isLoggedIn ? "Share Your Thoughts" : "Start Writing"}
-            </Button>
+            <div className="flex justify-center">
+              <Button
+                className="group bg-slate-800 hover:bg-slate-700 text-white px-6 md:px-8 py-4 md:py-6 rounded-lg text-base md:text-lg shadow-lg hover:shadow-xl transition-all relative z-10"
+                onClick={onActionClick}
+              >
+                <LightbulbIcon className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
+                {!isLoggedIn ? "Share Your Thoughts" : "Start Writing"}
+              </Button>
+            </div>
             <div className="mt-16 relative z-10">
               <RevealImageList />
             </div>
