@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Heart, MessageCircle, Share2, Trash } from "lucide-react";
@@ -45,12 +45,13 @@ export const ThoughtsCard = ({
   const { handleLike } = useThoughtInteractions(id, user?.id);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [followers, setFollowers] = useState<any[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   const deleteThought = async () => {
     if (!user) return;
     
     // Check if user is admin by querying the profiles table
-    let isAdmin = false;
+    let isUserAdmin = false;
     if (user.id !== authorId) {
       const { data } = await supabase
         .from('profiles')
@@ -58,10 +59,10 @@ export const ThoughtsCard = ({
         .eq('id', user.id)
         .single();
       
-      isAdmin = !!data?.is_admin;
+      isUserAdmin = !!data?.is_admin;
     }
     
-    if (user.id !== authorId && !isAdmin) return;
+    if (user.id !== authorId && !isUserAdmin) return;
     
     try {
       setIsDeleting(true);
@@ -93,18 +94,29 @@ export const ThoughtsCard = ({
     if (!user?.id) return;
     
     try {
+      // Fix the query to avoid passing a PostgrestFilterBuilder to an array function
+      const { data: followingIds } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+      
+      if (!followingIds?.length) {
+        setFollowers([]);
+        return;
+      }
+      
+      const ids = followingIds.map(item => item.following_id);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .in('id', supabase
-          .from('follows')
-          .select('following_id')
-          .eq('follower_id', user.id));
+        .in('id', ids);
       
       if (error) throw error;
       setFollowers(data || []);
     } catch (error) {
       console.error('Error fetching followers:', error);
+      setFollowers([]);
     }
   };
   
@@ -116,26 +128,23 @@ export const ThoughtsCard = ({
   };
   
   // Check if user is admin
-  const checkIsAdmin = async (): Promise<boolean> => {
-    if (!user) return false;
+  useEffect(() => {
+    const checkIsAdmin = async () => {
+      if (!user?.id) return false;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single();
+      
+      setIsAdmin(!!data?.is_admin);
+    };
     
-    const { data } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single();
-    
-    return !!data?.is_admin;
-  };
-  
-  const [isAdmin, setIsAdmin] = useState(false);
-  
-  // Load admin status on component mount
-  useState(() => {
     if (user?.id) {
-      checkIsAdmin().then(setIsAdmin);
+      checkIsAdmin();
     }
-  });
+  }, [user?.id]);
   
   const isOwnThought = user?.id === authorId;
   const canDelete = isOwnThought || isAdmin;
