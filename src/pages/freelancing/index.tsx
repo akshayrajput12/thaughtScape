@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -194,14 +195,14 @@ const Freelancing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-6 px-4 sm:py-12">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50/30 via-white to-pink-50/30 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-7xl mx-auto">
-        <Tabs defaultValue="browse" className="space-y-8">
-          <div className="sticky top-20 z-10 bg-white/80 backdrop-blur-md py-4 border-b border-gray-100">
-            <TabsList className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <TabsTrigger value="browse" className="text-base sm:text-lg">Browse Projects</TabsTrigger>
-              <TabsTrigger value="applied" className="text-base sm:text-lg">Applied Projects</TabsTrigger>
-              <TabsTrigger value="received" className="text-base sm:text-lg">Received Applications</TabsTrigger>
+        <Tabs defaultValue="browse" className="space-y-6">
+          <div className="sticky top-[72px] z-10 bg-white/80 backdrop-blur-md py-3 border-b border-gray-100 rounded-t-lg shadow-sm">
+            <TabsList className="w-full grid grid-cols-1 sm:grid-cols-3 gap-1 p-1">
+              <TabsTrigger value="browse" className="text-sm sm:text-base">Browse Projects</TabsTrigger>
+              <TabsTrigger value="applied" className="text-sm sm:text-base">Applied Projects</TabsTrigger>
+              <TabsTrigger value="received" className="text-sm sm:text-base">Received Applications</TabsTrigger>
             </TabsList>
           </div>
 
@@ -211,11 +212,12 @@ const Freelancing = () => {
                 <h2 className="text-2xl sm:text-3xl font-serif font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
                   Available Projects
                 </h2>
-                <p className="mt-2 text-gray-600">Find your next opportunity</p>
+                <p className="mt-1 text-gray-600 text-sm sm:text-base">Find your next opportunity</p>
               </div>
               <Button
                 onClick={() => setIsNewProjectDialogOpen(true)}
-                className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-md hover:shadow-lg transition-all duration-300"
+                size="sm"
               >
                 Post New Project
               </Button>
@@ -231,7 +233,7 @@ const Freelancing = () => {
           </TabsContent>
 
           <TabsContent value="applied" className="space-y-6 animate-fade-in">
-            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-gray-900">Applied Projects</h2>
+            <h2 className="text-xl sm:text-2xl font-serif font-bold text-gray-900">Applied Projects</h2>
             <ProjectsList
               projects={projects.filter((project) => userApplications.includes(project.id))}
               isLoading={isLoadingUserApplications}
@@ -239,23 +241,32 @@ const Freelancing = () => {
               userApplications={userApplications}
               onApply={handleApplyToProject}
             />
+            {!isLoadingUserApplications && userApplications.length === 0 && (
+              <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
+                <p className="text-gray-500">You haven't applied to any projects yet.</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="received" className="space-y-6 animate-fade-in">
-            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-gray-900">Received Applications</h2>
+            <h2 className="text-xl sm:text-2xl font-serif font-bold text-gray-900">Received Applications</h2>
             <div className="space-y-4">
               {receivedApplications.length === 0 ? (
-                <p>No applications received yet.</p>
+                <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
+                  <p className="text-gray-500">No applications received yet.</p>
+                </div>
               ) : (
-                receivedApplications.map((application) => (
-                  <ProjectApplicationCard
-                    key={application.id}
-                    application={application}
-                    onUpdateStatus={(applicationId, status) =>
-                      updateApplicationStatusMutation.mutate({ applicationId, status })
-                    }
-                  />
-                ))
+                <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+                  {receivedApplications.map((application) => (
+                    <ProjectApplicationCard
+                      key={application.id}
+                      application={application}
+                      onUpdateStatus={(applicationId, status) =>
+                        updateApplicationStatusMutation.mutate({ applicationId, status })
+                      }
+                    />
+                  ))}
+                </div>
               )}
             </div>
           </TabsContent>

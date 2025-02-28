@@ -1,8 +1,9 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { Home, PenTool, Search, Menu, Briefcase } from "lucide-react";
+import { Home, PenTool, Search, Menu } from "lucide-react";
 import { NotificationIcons } from "./navigation/NotificationIcons";
 import { UserMenu } from "./navigation/UserMenu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -109,9 +110,6 @@ const Navigation = () => {
       </Link>
       <Link to="/write" className="text-slate-600 hover:text-slate-900 transition-all duration-300 transform hover:scale-110 hover:rotate-3">
         <PenTool className="h-6 w-6" />
-      </Link>
-      <Link to="/freelancing" className="text-slate-600 hover:text-slate-900 transition-all duration-300 transform hover:scale-110 hover:-rotate-3">
-        <Briefcase className="h-6 w-6" />
       </Link>
     </div>
   );
