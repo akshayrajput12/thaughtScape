@@ -1,6 +1,8 @@
 
-import { Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -8,10 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 export const ProjectNotificationBadge = ({ userId }: { userId: string }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -55,19 +54,9 @@ export const ProjectNotificationBadge = ({ userId }: { userId: string }) => {
 
   return (
     <>
-      <div className="relative">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
-          onClick={() => setIsDialogOpen(true)}
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-            {totalNotifications}
-          </span>
-        </Button>
-      </div>
+      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+        {totalNotifications}
+      </span>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>

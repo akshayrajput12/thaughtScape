@@ -91,6 +91,24 @@ const Messages = () => {
     fetchCurrentUser();
   }, [navigate]);
 
+  // Mark messages as read when user arrives at this page or selects a user
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      if (!currentUserId || !selectedUser) return;
+      
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('receiver_id', currentUserId)
+        .eq('sender_id', selectedUser.id)
+        .eq('is_read', false);
+    };
+    
+    if (currentUserId && selectedUser) {
+      markMessagesAsRead();
+    }
+  }, [currentUserId, selectedUser]);
+
   useEffect(() => {
     if (!currentUserId) return;
 
@@ -120,7 +138,7 @@ const Messages = () => {
           conversationsMap.set(otherUser.id, {
             user: otherUser,
             lastMessage: message,
-            unreadCount: message.receiver_id === currentUserId ? 1 : 0,
+            unreadCount: message.receiver_id === currentUserId && !message.is_read ? 1 : 0,
           });
         }
       });
@@ -652,6 +670,7 @@ const Messages = () => {
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 placeholder="Type your message..."
                                 className="min-h-12 resize-none rounded-lg bg-background border-0 p-3 shadow-none focus-visible:ring-0"
+                                onEnterSubmit={sendMessage}
                               />
                               <div className="flex items-center p-3 pt-0 justify-between">
                                 <div className="flex">

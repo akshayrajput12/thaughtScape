@@ -1,7 +1,9 @@
 
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { MessageSquare, Briefcase } from "lucide-react";
 import { ProjectNotificationBadge } from "@/components/freelancing/ProjectNotificationBadge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NotificationIconsProps {
   unreadMessages: number;
@@ -10,6 +12,49 @@ interface NotificationIconsProps {
 }
 
 export const NotificationIcons = ({ unreadMessages, userId }: NotificationIconsProps) => {
+  const location = useLocation();
+
+  // Mark messages as read when user visits the messages page
+  useEffect(() => {
+    if (location.pathname === "/messages" && unreadMessages > 0 && userId) {
+      const markMessagesAsRead = async () => {
+        await supabase
+          .from('messages')
+          .update({ is_read: true })
+          .eq('receiver_id', userId)
+          .eq('is_read', false);
+      };
+      
+      markMessagesAsRead();
+    }
+  }, [location.pathname, unreadMessages, userId]);
+
+  // Mark project applications as viewed when user visits freelancing page
+  useEffect(() => {
+    if (location.pathname === "/freelancing" && userId) {
+      const markApplicationsAsViewed = async () => {
+        // First get projects authored by the user
+        const { data: userProjects } = await supabase
+          .from("projects")
+          .select("id")
+          .eq("author_id", userId);
+
+        if (userProjects && userProjects.length > 0) {
+          const projectIds = userProjects.map(p => p.id);
+          
+          // Update viewed_at for unviewed applications
+          await supabase
+            .from("project_applications")
+            .update({ viewed_at: new Date().toISOString() })
+            .is("viewed_at", null)
+            .in("project_id", projectIds);
+        }
+      };
+      
+      markApplicationsAsViewed();
+    }
+  }, [location.pathname, userId]);
+
   return (
     <>
       <div className="relative">
