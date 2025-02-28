@@ -35,6 +35,7 @@ interface Message {
   sender_id: string;
   receiver_id: string;
   created_at: string;
+  is_read: boolean;
   sender: User;
   receiver: User;
 }
