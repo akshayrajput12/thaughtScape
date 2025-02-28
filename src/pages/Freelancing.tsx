@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -18,25 +19,36 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { IndianRupee, User, CheckCircle2, Calendar } from "lucide-react";
+import { IndianRupee, User, CheckCircle2, Calendar, Menu, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import type { Project, ProjectApplication } from "@/types";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { format } from "date-fns";
 import { ProjectApplicationCard } from "@/components/freelancing/ProjectApplicationCard";
+import { useMobile } from "@/hooks/use-mobile";
 
 const Freelancing = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useMobile();
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("browse");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
     queryKey: ["projects"],
@@ -81,6 +93,17 @@ const Freelancing = () => {
     queryKey: ["receivedApplications", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
+      
+      // First get projects authored by the user
+      const { data: userProjects } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("author_id", user.id);
+      
+      if (!userProjects || userProjects.length === 0) return [];
+      
+      const projectIds = userProjects.map(project => project.id);
+      
       const { data, error } = await supabase
         .from("project_applications")
         .select(`
@@ -94,10 +117,7 @@ const Freelancing = () => {
             updated_at
           )
         `)
-        .in(
-          "project_id",
-          projects?.filter((project) => project.author_id === user.id).map((project) => project.id) || []
-        );
+        .in("project_id", projectIds);
       
       // Mark applications as viewed
       if (data?.length) {
@@ -158,6 +178,7 @@ const Freelancing = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["userApplications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       setIsApplicationDialogOpen(false);
       setApplicationMessage("");
       toast({
@@ -201,15 +222,94 @@ const Freelancing = () => {
     },
   });
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (isMobile) {
+      setIsMobileMenuOpen(false);
+    }
+  };
+
+  // Effect to mark applications as viewed
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const markApplicationsAsViewed = async () => {
+      // Get projects authored by the user
+      const { data: userProjects } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("author_id", user.id);
+
+      if (userProjects && userProjects.length > 0) {
+        const projectIds = userProjects.map(p => p.id);
+        
+        // Update viewed_at for unviewed applications
+        await supabase
+          .from("project_applications")
+          .update({ viewed_at: new Date().toISOString() })
+          .is("viewed_at", null)
+          .in("project_id", projectIds);
+      }
+    };
+    
+    markApplicationsAsViewed();
+  }, [user?.id]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
-        <Tabs defaultValue="browse" className="space-y-8">
-          <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-3 gap-4">
-            <TabsTrigger value="browse" className="text-lg">Browse Projects</TabsTrigger>
-            <TabsTrigger value="applied" className="text-lg">Applied Projects</TabsTrigger>
-            <TabsTrigger value="received" className="text-lg">Received Applications</TabsTrigger>
-          </TabsList>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Freelancing Hub</h1>
+          {isMobile && (
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left">
+                <SheetHeader>
+                  <SheetTitle>Navigation</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col gap-4 py-6">
+                  <Button 
+                    variant={activeTab === "browse" ? "default" : "ghost"} 
+                    className="justify-start gap-2"
+                    onClick={() => handleTabChange("browse")}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                    Browse Projects
+                  </Button>
+                  <Button
+                    variant={activeTab === "applied" ? "default" : "ghost"}
+                    className="justify-start gap-2"
+                    onClick={() => handleTabChange("applied")}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                    Applied Projects
+                  </Button>
+                  <Button
+                    variant={activeTab === "received" ? "default" : "ghost"}
+                    className="justify-start gap-2"
+                    onClick={() => handleTabChange("received")}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                    Received Applications
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
+        </div>
+
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
+          {!isMobile && (
+            <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-3 gap-4">
+              <TabsTrigger value="browse" className="text-lg">Browse Projects</TabsTrigger>
+              <TabsTrigger value="applied" className="text-lg">Applied Projects</TabsTrigger>
+              <TabsTrigger value="received" className="text-lg">Received Applications</TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value="browse" className="space-y-6">
             <div className="flex justify-between items-center">
@@ -237,13 +337,22 @@ const Freelancing = () => {
                       const budget = Number(formData.get("budget"));
                       const deadline = String(formData.get("deadline"));
 
+                      if (!user?.id) {
+                        toast({
+                          title: "Error",
+                          description: "You must be logged in to create a project",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+
                       createProjectMutation.mutate({
                         title,
                         description,
                         required_skills: skills,
                         budget,
                         deadline,
-                        author_id: user?.id as string,
+                        author_id: user.id,
                         status: "open",
                       });
                     }}
@@ -348,7 +457,11 @@ const Freelancing = () => {
                           setSelectedProject(project);
                           setIsApplicationDialogOpen(true);
                         }}
-                        disabled={project.status !== "open" || project.author_id === user?.id || userApplications.includes(project.id)}
+                        disabled={
+                          project.status !== "open" || 
+                          project.author_id === user?.id || 
+                          userApplications.includes(project.id)
+                        }
                       >
                         {userApplications.includes(project.id) ? (
                           <span className="flex items-center gap-1">
@@ -369,7 +482,15 @@ const Freelancing = () => {
           <TabsContent value="applied" className="space-y-6">
             <h2 className="text-3xl font-serif font-bold text-gray-900">Applied Projects</h2>
             {isLoadingUserApplications ? (
-              <div>Loading...</div>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="p-6 bg-white rounded-xl shadow-sm animate-pulse">
+                    <Skeleton className="h-6 w-2/3 mb-4" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-5/6" />
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {projects
@@ -431,11 +552,21 @@ const Freelancing = () => {
           <TabsContent value="received" className="space-y-6">
             <h2 className="text-3xl font-serif font-bold text-gray-900">Received Applications</h2>
             {isLoadingReceivedApplications ? (
-              <div>Loading...</div>
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="p-6 bg-white rounded-xl shadow-sm animate-pulse">
+                    <Skeleton className="h-6 w-2/3 mb-4" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-5/6" />
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="space-y-4">
                 {receivedApplications.length === 0 ? (
-                  <p>No applications received yet.</p>
+                  <div className="p-8 bg-white rounded-xl shadow-sm text-center">
+                    <p className="text-gray-600">No applications received yet.</p>
+                  </div>
                 ) : (
                   receivedApplications.map((application) => (
                     <ProjectApplicationCard
@@ -464,10 +595,16 @@ const Freelancing = () => {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (selectedProject) {
+              if (selectedProject && user?.id) {
                 applyProjectMutation.mutate({
                   projectId: selectedProject.id,
                   message: applicationMessage,
+                });
+              } else {
+                toast({
+                  title: "Error",
+                  description: "You must be logged in to apply for a project",
+                  variant: "destructive",
                 });
               }
             }}
