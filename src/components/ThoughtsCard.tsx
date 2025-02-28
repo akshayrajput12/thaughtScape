@@ -42,11 +42,26 @@ export const ThoughtsCard = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
-  const { toggleLike } = useThoughtInteractions();
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const { handleLike } = useThoughtInteractions(id, user?.id);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [followers, setFollowers] = useState<any[]>([]);
   
   const deleteThought = async () => {
-    if (!user || (user.id !== authorId && !user.isAdmin)) return;
+    if (!user) return;
+    
+    // Check if user is admin by querying the profiles table
+    let isAdmin = false;
+    if (user.id !== authorId) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single();
+      
+      isAdmin = !!data?.is_admin;
+    }
+    
+    if (user.id !== authorId && !isAdmin) return;
     
     try {
       setIsDeleting(true);
@@ -72,9 +87,57 @@ export const ThoughtsCard = ({
       setIsDeleting(false);
     }
   };
+
+  // Fetch followers for sharing dialog when opened
+  const fetchFollowers = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id));
+      
+      if (error) throw error;
+      setFollowers(data || []);
+    } catch (error) {
+      console.error('Error fetching followers:', error);
+    }
+  };
+  
+  const handleShare = (followerId: string) => {
+    toast({
+      description: 'Thought shared successfully!'
+    });
+    setShareDialogOpen(false);
+  };
+  
+  // Check if user is admin
+  const checkIsAdmin = async (): Promise<boolean> => {
+    if (!user) return false;
+    
+    const { data } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single();
+    
+    return !!data?.is_admin;
+  };
+  
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Load admin status on component mount
+  useState(() => {
+    if (user?.id) {
+      checkIsAdmin().then(setIsAdmin);
+    }
+  });
   
   const isOwnThought = user?.id === authorId;
-  const isAdmin = user?.isAdmin;
   const canDelete = isOwnThought || isAdmin;
   
   // Truncate content if it's too long
@@ -137,7 +200,7 @@ export const ThoughtsCard = ({
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => toggleLike(id)}
+              onClick={() => handleLike()}
               className={`flex items-center gap-1 text-sm transition-colors ${
                 hasLiked ? 'text-pink-500' : 'text-gray-500 hover:text-pink-500'
               }`}
@@ -156,7 +219,10 @@ export const ThoughtsCard = ({
           </div>
           
           <button
-            onClick={() => setIsShareDialogOpen(true)}
+            onClick={() => {
+              fetchFollowers();
+              setShareDialogOpen(true);
+            }}
             className="flex items-center gap-1 text-sm text-gray-500 hover:text-green-500 transition-colors"
           >
             <Share2 size={18} />
@@ -166,10 +232,10 @@ export const ThoughtsCard = ({
       </div>
       
       <ShareDialog
-        isOpen={isShareDialogOpen}
-        onClose={() => setIsShareDialogOpen(false)}
-        thoughtId={id}
-        title={title}
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        followers={followers}
+        onShare={handleShare}
       />
     </motion.div>
   );
