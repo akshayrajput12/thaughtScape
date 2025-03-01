@@ -1,5 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+
+// Define valid table names as a type to ensure type safety
+type TableName = keyof Tables;
 
 /**
  * Creates a function that optimistically updates a resource in the local cache
@@ -8,13 +12,13 @@ import { supabase } from "@/integrations/supabase/client";
  * @param tableName - The name of the Supabase table
  * @returns A function that can be used to optimistically update a resource
  */
-export const createOptimizedMutation = <T extends Record<string, any>>(tableName: string) => {
+export const createOptimizedMutation = <T extends Record<string, any>>(tableName: TableName) => {
   return async (data: T, key: string): Promise<{ success: boolean, error: any }> => {
     try {
       // Perform the actual update on the server
       const { error } = await supabase
         .from(tableName)
-        .insert(data);
+        .insert(data as any);
 
       if (error) {
         throw error;
@@ -34,7 +38,7 @@ export const createOptimizedMutation = <T extends Record<string, any>>(tableName
  * @param tableName - The name of the Supabase table
  * @returns A function that can be used to fetch a resource
  */
-export const createOptimizedQuery = <T extends Record<string, any>>(tableName: string) => {
+export const createOptimizedQuery = <T extends Record<string, any>>(tableName: TableName) => {
   return {
     async getById(id: string): Promise<T | null> {
       try {
@@ -48,7 +52,6 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: s
           throw error;
         }
 
-        // Use type assertion to avoid deep instantiation errors
         return data as unknown as T;
       } catch (error) {
         console.error(`Error fetching ${tableName} by ID:`, error);
@@ -66,8 +69,7 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: s
           throw error;
         }
 
-        // Use type assertion to avoid deep instantiation errors
-        return data as unknown as T[];
+        return (data || []) as unknown as T[];
       } catch (error) {
         console.error(`Error fetching all ${tableName}:`, error);
         return [];
@@ -86,7 +88,6 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: s
           throw error;
         }
 
-        // Use type assertion to avoid deep instantiation errors
         return data as unknown as T;
       } catch (error) {
         console.error(`Error fetching ${tableName} by field:`, error);
@@ -110,7 +111,6 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: s
           throw error;
         }
 
-        // Use type assertion to avoid deep instantiation errors
         return data as unknown as T;
       } catch (error) {
         console.error(`Error fetching ${tableName} by fields:`, error);
