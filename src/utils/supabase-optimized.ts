@@ -52,7 +52,7 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .maybeSingle();
       
       if (error) throw error;
-      return data as unknown as T;
+      return data as T;
     },
     
     getByUserId: async (userId: string) => {
@@ -62,11 +62,11 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .eq('user_id', userId);
       
       if (error) throw error;
-      return data as unknown as T[];
+      return data as T[];
     },
     
     create: async (record: Partial<T>) => {
-      // Cast to any to avoid TS errors with Record<string,any> type
+      // Use explicit type casting to avoid TS errors
       const { data, error } = await client
         .from(tableName)
         .insert(record as any)
@@ -74,11 +74,11 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .single();
       
       if (error) throw error;
-      return data as unknown as T;
+      return data as T;
     },
     
     update: async (id: string, updates: Partial<T>) => {
-      // Cast to any to avoid TS errors with Record<string,any> type
+      // Use explicit type casting to avoid TS errors
       const { data, error } = await client
         .from(tableName)
         .update(updates as any)
@@ -87,7 +87,7 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .single();
       
       if (error) throw error;
-      return data as unknown as T;
+      return data as T;
     },
     
     delete: async (id: string) => {
