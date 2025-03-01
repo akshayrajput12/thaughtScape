@@ -36,8 +36,8 @@ export function getSupabaseClient() {
   return supabaseInstance;
 }
 
-// Helper for creating optimized query builders
-export function createOptimizedQuery<T>(tableName: string) {
+// Helper for creating optimized query builders with proper typing
+export function createOptimizedQuery<T extends Record<string, any>>(tableName: keyof Database['public']['Tables']) {
   const client = getSupabaseClient();
   
   return {
@@ -65,7 +65,7 @@ export function createOptimizedQuery<T>(tableName: string) {
     create: async (record: Partial<T>) => {
       const { data, error } = await client
         .from(tableName)
-        .insert(record)
+        .insert(record as any)
         .select()
         .single();
       
@@ -76,7 +76,7 @@ export function createOptimizedQuery<T>(tableName: string) {
     update: async (id: string, updates: Partial<T>) => {
       const { data, error } = await client
         .from(tableName)
-        .update(updates)
+        .update(updates as any)
         .eq('id', id)
         .select()
         .single();
@@ -100,7 +100,7 @@ export function createOptimizedQuery<T>(tableName: string) {
         .channel(`${tableName}-changes`)
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: tableName },
+          { event: '*', schema: 'public', table: tableName as string },
           callback
         )
         .subscribe();

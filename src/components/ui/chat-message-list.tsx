@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAutoScroll } from "@/components/hooks/use-auto-scroll";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,20 +19,34 @@ export interface ChatMessage {
 }
 
 interface ChatMessageListProps {
-  messages: ChatMessage[];
+  messages?: ChatMessage[];
   isLoading?: boolean;
   className?: string;
   emptyState?: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export function ChatMessageList({
-  messages,
+  messages = [],
   isLoading = false,
   className = "",
   emptyState,
+  children,
 }: ChatMessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   useAutoScroll(containerRef, messages);
+
+  // If children are provided, render them instead of messages
+  if (children) {
+    return (
+      <div
+        ref={containerRef}
+        className={`flex flex-col space-y-4 overflow-y-auto p-4 h-full ${className}`}
+      >
+        {children}
+      </div>
+    );
+  }
 
   // Group messages by date
   const groupedMessages: Record<string, ChatMessage[]> = {};

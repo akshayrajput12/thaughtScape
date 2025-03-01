@@ -713,25 +713,20 @@ const Messages = () => {
                       ) : (
                         <>
                           <div className="flex-1 h-[calc(80vh-190px)]">
-                            <ChatMessageList>
-                              {messages.map((message) => (
-                                <ChatBubble
-                                  key={message.id}
-                                  variant={message.sender_id === currentUserId ? "sent" : "received"}
-                                >
-                                  <ChatBubbleAvatar
-                                    className="h-8 w-8 shrink-0"
-                                    src={message.sender.avatar_url || undefined}
-                                    fallback={message.sender.username[0].toUpperCase()}
-                                  />
-                                  <ChatBubbleMessage
-                                    variant={message.sender_id === currentUserId ? "sent" : "received"}
-                                  >
-                                    {message.content}
-                                  </ChatBubbleMessage>
-                                </ChatBubble>
-                              ))}
-                            </ChatMessageList>
+                            <ChatMessageList
+                              messages={messages.map(msg => ({
+                                id: msg.id,
+                                content: msg.content,
+                                timestamp: msg.created_at,
+                                sender: {
+                                  id: msg.sender_id,
+                                  name: msg.sender?.username || 'Unknown',
+                                  avatar: msg.sender?.avatar_url
+                                },
+                                isMine: msg.sender_id === currentUserId,
+                                isRead: msg.is_read
+                              }))}
+                            />
                           </div>
                           <div className="p-4 border-t border-gray-200">
                             <form
@@ -739,6 +734,7 @@ const Messages = () => {
                               className="relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring p-1"
                             >
                               <ChatInput
+                                onSendMessage={sendMessage}
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 placeholder={isListening ? "Listening..." : "Type your message..."}

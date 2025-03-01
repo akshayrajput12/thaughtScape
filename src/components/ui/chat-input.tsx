@@ -6,18 +6,38 @@ import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { useToast } from "@/hooks/use-toast";
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage?: (message: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  className?: string;
+  onEnterSubmit?: (e?: React.FormEvent) => void;
 }
 
 export function ChatInput({
   onSendMessage,
   placeholder = "Type a message...",
   disabled = false,
+  value,
+  onChange,
+  className = "",
+  onEnterSubmit,
 }: ChatInputProps) {
-  const [message, setMessage] = useState("");
+  const [internalMessage, setInternalMessage] = useState("");
   const { toast } = useToast();
+  
+  // Determine if we're in controlled or uncontrolled mode
+  const isControlled = value !== undefined && onChange !== undefined;
+  const message = isControlled ? value : internalMessage;
+  
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (isControlled) {
+      onChange?.(e);
+    } else {
+      setInternalMessage(e.target.value);
+    }
+  };
   
   const {
     isListening,
@@ -27,20 +47,24 @@ export function ChatInput({
     isSupported,
   } = useSpeechRecognition({
     onResult: (result) => {
-      setMessage((prev) => prev + result);
-    },
-    onEnd: () => {
-      // Optional: Auto-send message when speech ends
-      // if (message.trim()) {
-      //   handleSendMessage();
-      // }
+      if (isControlled) {
+        onChange?.({ target: { value: (value || "") + result } } as React.ChangeEvent<HTMLTextAreaElement>);
+      } else {
+        setInternalMessage((prev) => prev + result);
+      }
     },
   });
 
   const handleSendMessage = () => {
-    if (message.trim()) {
-      onSendMessage(message.trim());
-      setMessage("");
+    if (message?.trim()) {
+      if (onEnterSubmit) {
+        onEnterSubmit();
+      } else if (onSendMessage) {
+        onSendMessage(message.trim());
+        if (!isControlled) {
+          setInternalMessage("");
+        }
+      }
     }
   };
 
@@ -69,11 +93,11 @@ export function ChatInput({
   };
 
   return (
-    <div className="flex items-end gap-2 bg-background p-4 border-t">
+    <div className={`flex items-end gap-2 bg-background p-4 border-t ${className}`}>
       <div className="relative flex-1">
         <textarea
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder={isListening ? "Listening..." : placeholder}
           disabled={disabled}
@@ -102,7 +126,7 @@ export function ChatInput({
       
       <Button
         type="button"
-        disabled={!message.trim() || disabled}
+        disabled={!message?.trim() || disabled}
         onClick={handleSendMessage}
         className="shrink-0"
       >

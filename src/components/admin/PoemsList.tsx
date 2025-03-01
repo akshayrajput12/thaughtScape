@@ -57,13 +57,14 @@ export const PoemsList = () => {
 
       const enhancedThoughts = thoughtsData.map(thought => ({
         ...thought,
+        author: thought.author as Thought['author'],
         _count: {
           likes: thought.likes?.[0]?.count || 0,
-          comments: thought.comments?.[0]?.count || 0
+          bookmarks: 0 // Adding the missing bookmarks property
         }
-      })) as Thought[];
+      }));
 
-      setThoughts(enhancedThoughts);
+      setThoughts(enhancedThoughts as Thought[]);
     } catch (error) {
       console.error('Unexpected error fetching thoughts:', error);
       toast({
@@ -174,7 +175,7 @@ export const PoemsList = () => {
                   Likes: {thought._count?.likes || 0}
                 </Badge>
                 <Badge variant="outline" className="flex gap-1 items-center">
-                  Comments: {thought._count?.comments || 0}
+                  Comments: {thought._count?.likes || 0}
                 </Badge>
               </div>
               <Button 
