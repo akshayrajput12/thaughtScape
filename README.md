@@ -1,69 +1,142 @@
-# Welcome to your Lovable project
+# Poetic Parley
 
-## Project info
+A modern social platform for sharing thoughts and connecting with creative minds, built with React, TypeScript, and Supabase.
 
-**URL**: https://lovable.dev/projects/19fe5eee-e8a4-468e-b045-19eca86a2a14
+## Features
 
-## How can I edit this code?
+- User authentication and profiles
+- Real-time thought sharing
+- Interactive user connections
+- Responsive design with modern UI
+- Supabase backend integration
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend Framework**: React 18.3.1
+- **Build Tool**: Vite 5.4.1
+- **Language**: TypeScript 5.5.3
+- **UI Components**: shadcn-ui
+- **Styling**: Tailwind CSS 3.4.11
+- **State Management**: React Query 5.56.2
+- **Backend & Auth**: Supabase
+- **Animations**: Framer Motion 11.18.2
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/19fe5eee-e8a4-468e-b045-19eca86a2a14) and start prompting.
+## Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js (Latest LTS version recommended)
+- npm or bun package manager
+- Git
 
-**Use your preferred IDE**
+## Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd poetic-parley
+   ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   bun install
+   ```
 
-Follow these steps:
+3. Set up environment variables:
+   Create a `.env` file in the root directory with your Supabase credentials:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+4. Start the development server:
+   ```bash
+   npm run dev
+   # or
+   bun dev
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Project Structure
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+src/
+├── components/     # Reusable UI components
+│   ├── ui/         # shadcn-ui components
+│   ├── profile/    # Profile components
+│   ├── auth/       # Authentication components
+│   └── messages/   # Messaging components
+├── pages/          # Page components
+├── hooks/          # Custom React hooks
+├── lib/            # Utility functions
+├── types/          # TypeScript definitions
+├── integrations/   # Third-party integrations
+└── styles/         # Global styles
 ```
 
-**Edit a file directly in GitHub**
+## Development Guidelines
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Code Style**
+   - Follow TypeScript best practices
+   - Use functional components
+   - Implement proper error handling
+   - Follow the component size limit (max 200 lines)
 
-**Use GitHub Codespaces**
+2. **State Management**
+   - Use React Query for server state
+   - Implement local state with useState/useReducer
+   - Extract complex state logic into custom hooks
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+3. **Styling**
+   - Use Tailwind CSS classes
+   - Follow the project's color palette
+   - Maintain responsive design principles
 
-## What technologies are used for this project?
+## Building for Production
 
-This project is built with .
+1. Create a production build:
+   ```bash
+   npm run build
+   # or
+   bun run build
+   ```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+2. Preview the production build:
+   ```bash
+   npm run preview
+   # or
+   bun run preview
+   ```
 
-## How can I deploy this project?
+## Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/19fe5eee-e8a4-468e-b045-19eca86a2a14) and click on Share -> Publish.
+### Vercel Deployment
 
-## I want to use a custom domain - is that possible?
+1. Push your code to a Git repository
+2. Import your project in Vercel
+3. Configure the following build settings:
+   - Framework Preset: Vite
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Install Command: `npm install`
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+4. Add environment variables in Vercel project settings
+
+### Build Error Prevention
+
+1. Ensure all dependencies are properly listed in `package.json`
+2. Verify environment variables are set in Vercel
+3. Check for any TypeScript errors before deployment
+4. Ensure proper Vite configuration in `vite.config.ts`
+5. Verify the build output directory is set to `dist`
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
