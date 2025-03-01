@@ -1,4 +1,3 @@
-
 import { useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAutoScroll } from "@/components/hooks/use-auto-scroll";

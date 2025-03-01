@@ -66,6 +66,7 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
     },
     
     create: async (record: Partial<T>) => {
+      // Cast to any to avoid TS errors with Record<string,any> type
       const { data, error } = await client
         .from(tableName)
         .insert(record as any)
@@ -77,6 +78,7 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
     },
     
     update: async (id: string, updates: Partial<T>) => {
+      // Cast to any to avoid TS errors with Record<string,any> type
       const { data, error } = await client
         .from(tableName)
         .update(updates as any)
