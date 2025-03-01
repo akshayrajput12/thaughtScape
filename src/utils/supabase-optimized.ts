@@ -44,7 +44,7 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
   const client = getSupabaseClient();
   
   return {
-    getById: async (id: string) => {
+    getById: async (id: string): Promise<T> => {
       const { data, error } = await client
         .from(tableName)
         .select('*')
@@ -52,23 +52,22 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .maybeSingle();
       
       if (error) throw error;
-      // Break the recursive type reference by using explicit unknown casting
-      return data as unknown as T;
+      // Use double type assertion to break the circular type reference
+      return data as any as T;
     },
     
-    getByUserId: async (userId: string) => {
+    getByUserId: async (userId: string): Promise<T[]> => {
       const { data, error } = await client
         .from(tableName)
         .select('*')
         .eq('user_id', userId);
       
       if (error) throw error;
-      // Break the recursive type reference by using explicit unknown casting
-      return data as unknown as T[];
+      // Use double type assertion to break the circular type reference
+      return data as any as T[];
     },
     
-    create: async (record: Partial<T>) => {
-      // Using explicit casting to avoid TypeScript errors with any intermediary
+    create: async (record: Partial<T>): Promise<T> => {
       const { data, error } = await client
         .from(tableName)
         .insert(record as any)
@@ -76,12 +75,11 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .single();
       
       if (error) throw error;
-      // Break the recursive type reference by using explicit unknown casting
-      return data as unknown as T;
+      // Use double type assertion to break the circular type reference
+      return data as any as T;
     },
     
-    update: async (id: string, updates: Partial<T>) => {
-      // Using explicit casting to avoid TypeScript errors with any intermediary
+    update: async (id: string, updates: Partial<T>): Promise<T> => {
       const { data, error } = await client
         .from(tableName)
         .update(updates as any)
@@ -90,11 +88,11 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .single();
       
       if (error) throw error;
-      // Break the recursive type reference by using explicit unknown casting
-      return data as unknown as T;
+      // Use double type assertion to break the circular type reference
+      return data as any as T;
     },
     
-    delete: async (id: string) => {
+    delete: async (id: string): Promise<boolean> => {
       const { error } = await client
         .from(tableName)
         .delete()
