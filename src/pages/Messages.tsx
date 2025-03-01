@@ -476,8 +476,7 @@ const Messages = () => {
     }
   };
 
-  const sendMessage = async (e?: FormEvent) => {
-    if (e) e.preventDefault();
+  const sendMessage = async () => {
     if (!currentUserId || !selectedUser || !newMessage.trim()) return;
 
     try {
@@ -730,16 +729,18 @@ const Messages = () => {
                           </div>
                           <div className="p-4 border-t border-gray-200">
                             <form
-                              onSubmit={sendMessage}
+                              onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
                               className="relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring p-1"
                             >
                               <ChatInput
-                                onSendMessage={sendMessage}
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
+                                onSendMessage={(message) => {
+                                  setNewMessage(message);
+                                  sendMessage();
+                                }}
                                 placeholder={isListening ? "Listening..." : "Type your message..."}
                                 className={`min-h-12 resize-none rounded-lg bg-background border-0 p-3 shadow-none focus-visible:ring-0 ${isListening ? 'bg-primary/10' : ''}`}
-                                onEnterSubmit={sendMessage}
                               />
                               <div className="flex items-center p-3 pt-0 justify-between">
                                 <div className="flex">

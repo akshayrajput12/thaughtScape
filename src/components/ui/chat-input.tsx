@@ -12,7 +12,7 @@ interface ChatInputProps {
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   className?: string;
-  onEnterSubmit?: (e?: React.FormEvent) => void;
+  onEnterSubmit?: () => void; // No parameters
 }
 
 export function ChatInput({

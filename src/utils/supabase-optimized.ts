@@ -36,8 +36,11 @@ export function getSupabaseClient() {
   return supabaseInstance;
 }
 
+// Define a type safe table name
+export type TableName = keyof Database['public']['Tables'];
+
 // Helper for creating optimized query builders with proper typing
-export function createOptimizedQuery<T extends Record<string, any>>(tableName: keyof Database['public']['Tables']) {
+export function createOptimizedQuery<T extends Record<string, any>>(tableName: TableName) {
   const client = getSupabaseClient();
   
   return {
@@ -49,7 +52,7 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: k
         .maybeSingle();
       
       if (error) throw error;
-      return data as T;
+      return data as unknown as T;
     },
     
     getByUserId: async (userId: string) => {
@@ -59,7 +62,7 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: k
         .eq('user_id', userId);
       
       if (error) throw error;
-      return data as T[];
+      return data as unknown as T[];
     },
     
     create: async (record: Partial<T>) => {
@@ -70,7 +73,7 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: k
         .single();
       
       if (error) throw error;
-      return data as T;
+      return data as unknown as T;
     },
     
     update: async (id: string, updates: Partial<T>) => {
@@ -82,7 +85,7 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: k
         .single();
       
       if (error) throw error;
-      return data as T;
+      return data as unknown as T;
     },
     
     delete: async (id: string) => {
@@ -100,7 +103,7 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: k
         .channel(`${tableName}-changes`)
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: tableName as string },
+          { event: '*', schema: 'public', table: tableName },
           callback
         )
         .subscribe();
