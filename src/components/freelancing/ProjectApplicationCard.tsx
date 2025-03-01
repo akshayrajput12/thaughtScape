@@ -12,19 +12,40 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import type { Project, ProjectApplication } from "@/types";
 
 interface ProjectApplicationCardProps {
-  application: ProjectApplication & { project?: Project };
-  onUpdateStatus: (applicationId: string, status: "accepted" | "rejected") => void;
+  application: ProjectApplication & { 
+    project?: Project;
+    applicant?: any;
+  };
+  onUpdateStatus: (applicationId: string, status: "accepted" | "rejected", projectId?: string) => void;
 }
 
 export const ProjectApplicationCard = ({ application, onUpdateStatus }: ProjectApplicationCardProps) => {
   const navigate = useNavigate();
   const [showProjectDetails, setShowProjectDetails] = useState(false);
+  const { toast } = useToast();
 
   const handleMessageClick = () => {
+    if (!application.applicant_id) {
+      toast({
+        title: "Error",
+        description: "Could not find applicant information",
+        variant: "destructive",
+      });
+      return;
+    }
     navigate(`/messages?user=${application.applicant_id}`);
+  };
+
+  const handleAccept = () => {
+    onUpdateStatus(application.id, "accepted", application.project?.id);
+  };
+
+  const handleReject = () => {
+    onUpdateStatus(application.id, "rejected", application.project?.id);
   };
 
   return (
@@ -33,7 +54,7 @@ export const ProjectApplicationCard = ({ application, onUpdateStatus }: ProjectA
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <h3 className="text-xl font-semibold text-gray-900">
-              {application.applicant?.full_name || application.applicant?.username}
+              {application.applicant?.full_name || application.applicant?.username || "Applicant"}
             </h3>
             {application.project && (
               <Dialog open={showProjectDetails} onOpenChange={setShowProjectDetails}>
@@ -118,14 +139,14 @@ export const ProjectApplicationCard = ({ application, onUpdateStatus }: ProjectA
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => onUpdateStatus(application.id, "accepted")}
+                onClick={handleAccept}
               >
                 Accept
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => onUpdateStatus(application.id, "rejected")}
+                onClick={handleReject}
               >
                 Reject
               </Button>

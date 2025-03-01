@@ -1,38 +1,114 @@
 
-import * as React from "react";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Mic, Send, MicOff } from "lucide-react";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
+import { useToast } from "@/hooks/use-toast";
 
-interface ChatInputProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement>{
-  onEnterSubmit?: () => void;
+interface ChatInputProps {
+  onSendMessage: (message: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
 }
 
-const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
-  ({ className, onEnterSubmit, ...props }, ref) => {
-    // Handle key down event
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      // Submit on Enter key press without shift
-      if (e.key === 'Enter' && !e.shiftKey && onEnterSubmit) {
-        e.preventDefault(); // Prevent newline
-        onEnterSubmit();
-      }
-    };
+export function ChatInput({
+  onSendMessage,
+  placeholder = "Type a message...",
+  disabled = false,
+}: ChatInputProps) {
+  const [message, setMessage] = useState("");
+  const { toast } = useToast();
+  
+  const {
+    isListening,
+    startListening,
+    stopListening,
+    error,
+    isSupported,
+  } = useSpeechRecognition({
+    onResult: (result) => {
+      setMessage((prev) => prev + result);
+    },
+    onEnd: () => {
+      // Optional: Auto-send message when speech ends
+      // if (message.trim()) {
+      //   handleSendMessage();
+      // }
+    },
+  });
 
-    return (
-      <Textarea
-        autoComplete="off"
-        ref={ref}
-        name="message"
-        onKeyDown={handleKeyDown}
-        className={cn(
-          "max-h-12 px-4 py-3 bg-background text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 w-full rounded-md flex items-center h-16 resize-none",
-          className,
+  const handleSendMessage = () => {
+    if (message.trim()) {
+      onSendMessage(message.trim());
+      setMessage("");
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const toggleSpeechRecognition = () => {
+    if (!isSupported) {
+      toast({
+        title: "Not Supported",
+        description: "Speech recognition is not supported in your browser.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+
+  return (
+    <div className="flex items-end gap-2 bg-background p-4 border-t">
+      <div className="relative flex-1">
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={isListening ? "Listening..." : placeholder}
+          disabled={disabled}
+          className={`w-full min-h-[80px] max-h-[200px] p-3 pr-12 rounded-md border focus:ring-2 focus:ring-primary/20 focus-visible:outline-none resize-none ${
+            isListening ? "bg-primary/5 border-primary/20" : ""
+          }`}
+        />
+        {error && (
+          <div className="text-sm text-red-500 mt-1">{error}</div>
         )}
-        {...props}
-      />
-    );
-  },
-);
-ChatInput.displayName = "ChatInput";
-
-export { ChatInput };
+      </div>
+      
+      {isSupported && (
+        <Button
+          type="button"
+          variant={isListening ? "destructive" : "outline"}
+          size="icon"
+          disabled={disabled}
+          onClick={toggleSpeechRecognition}
+          title={isListening ? "Stop listening" : "Start voice input"}
+          className="shrink-0"
+        >
+          {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+        </Button>
+      )}
+      
+      <Button
+        type="button"
+        disabled={!message.trim() || disabled}
+        onClick={handleSendMessage}
+        className="shrink-0"
+      >
+        <Send size={20} className="mr-2" />
+        Send
+      </Button>
+    </div>
+  );
+}
