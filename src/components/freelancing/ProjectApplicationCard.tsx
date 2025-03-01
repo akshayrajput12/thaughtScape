@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import type { Project, ProjectApplication } from "@/types";
 
 interface ProjectApplicationCardProps {
@@ -22,9 +23,31 @@ interface ProjectApplicationCardProps {
 export const ProjectApplicationCard = ({ application, onUpdateStatus }: ProjectApplicationCardProps) => {
   const navigate = useNavigate();
   const [showProjectDetails, setShowProjectDetails] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { toast } = useToast();
 
   const handleMessageClick = () => {
     navigate(`/messages?user=${application.applicant_id}`);
+  };
+
+  const handleStatusUpdate = async (status: "accepted" | "rejected") => {
+    try {
+      setIsUpdating(true);
+      await onUpdateStatus(application.id, status);
+      toast({
+        title: `Application ${status}`,
+        description: `You have ${status} the application from ${application.applicant?.full_name || application.applicant?.username}`,
+      });
+    } catch (error) {
+      console.error(`Error ${status} application:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to ${status} the application. Please try again.`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -118,14 +141,16 @@ export const ProjectApplicationCard = ({ application, onUpdateStatus }: ProjectA
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => onUpdateStatus(application.id, "accepted")}
+                onClick={() => handleStatusUpdate("accepted")}
+                disabled={isUpdating}
               >
                 Accept
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => onUpdateStatus(application.id, "rejected")}
+                onClick={() => handleStatusUpdate("rejected")}
+                disabled={isUpdating}
               >
                 Reject
               </Button>

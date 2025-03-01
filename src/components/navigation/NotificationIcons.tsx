@@ -33,21 +33,34 @@ export const NotificationIcons = ({ unreadMessages, userId }: NotificationIconsP
   useEffect(() => {
     if (location.pathname === "/freelancing" && userId) {
       const markApplicationsAsViewed = async () => {
-        // First get projects authored by the user
-        const { data: userProjects } = await supabase
-          .from("projects")
-          .select("id")
-          .eq("author_id", userId);
+        try {
+          // First get projects authored by the user
+          const { data: userProjects, error: projectsError } = await supabase
+            .from("projects")
+            .select("id")
+            .eq("author_id", userId);
 
-        if (userProjects && userProjects.length > 0) {
-          const projectIds = userProjects.map(p => p.id);
-          
-          // Update viewed_at for unviewed applications
-          await supabase
-            .from("project_applications")
-            .update({ viewed_at: new Date().toISOString() })
-            .is("viewed_at", null)
-            .in("project_id", projectIds);
+          if (projectsError) {
+            console.error("Error fetching user projects:", projectsError);
+            return;
+          }
+
+          if (userProjects && userProjects.length > 0) {
+            const projectIds = userProjects.map(p => p.id);
+            
+            // Update viewed_at for unviewed applications
+            const { error: updateError } = await supabase
+              .from("project_applications")
+              .update({ viewed_at: new Date().toISOString() })
+              .is("viewed_at", null)
+              .in("project_id", projectIds);
+              
+            if (updateError) {
+              console.error("Error updating application viewed status:", updateError);
+            }
+          }
+        } catch (error) {
+          console.error("Error in markApplicationsAsViewed:", error);
         }
       };
       
