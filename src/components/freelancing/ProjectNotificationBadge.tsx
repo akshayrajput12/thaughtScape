@@ -1,8 +1,7 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -16,9 +15,8 @@ import { Button } from "@/components/ui/button";
 export const ProjectNotificationBadge = ({ userId }: { userId: string }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const { data, refetch } = useQuery({
+  const { data } = useQuery({
     queryKey: ["projectNotifications", userId],
     queryFn: async () => {
       // First get projects authored by the user
@@ -49,13 +47,6 @@ export const ProjectNotificationBadge = ({ userId }: { userId: string }) => {
     },
     refetchInterval: 30000
   });
-
-  // Clear notification when user visits the freelancing page
-  useEffect(() => {
-    if (location.pathname === "/freelancing" && userId) {
-      refetch();
-    }
-  }, [location.pathname, userId, refetch]);
 
   const totalNotifications = (data?.unviewedApplications || 0) + (data?.newProjects || 0);
 

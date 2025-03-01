@@ -6,63 +6,81 @@ interface ScrollState {
   autoScrollEnabled: boolean;
 }
 
-export function useAutoScroll(containerRef: React.RefObject<HTMLDivElement>, deps: any[] = []) {
+interface UseAutoScrollOptions {
+  offset?: number;
+  smooth?: boolean;
+  content?: React.ReactNode;
+}
+
+export function useAutoScroll(options: UseAutoScrollOptions = {}) {
+  const { offset = 20, smooth = false, content } = options;
+  const scrollRef = useRef<HTMLDivElement>(null);
   const lastContentHeight = useRef(0);
   const userHasScrolled = useRef(false);
+
   const [scrollState, setScrollState] = useState<ScrollState>({
     isAtBottom: true,
     autoScrollEnabled: true,
   });
 
-  const checkIsAtBottom = useCallback((element: HTMLElement) => {
-    const { scrollTop, scrollHeight, clientHeight } = element;
-    const distanceToBottom = Math.abs(scrollHeight - scrollTop - clientHeight);
-    return distanceToBottom <= 20; // 20px threshold
-  }, []);
+  const checkIsAtBottom = useCallback(
+    (element: HTMLElement) => {
+      const { scrollTop, scrollHeight, clientHeight } = element;
+      const distanceToBottom = Math.abs(
+        scrollHeight - scrollTop - clientHeight
+      );
+      return distanceToBottom <= offset;
+    },
+    [offset]
+  );
 
-  const scrollToBottom = useCallback((instant?: boolean) => {
-    if (!containerRef.current) return;
+  const scrollToBottom = useCallback(
+    (instant?: boolean) => {
+      if (!scrollRef.current) return;
 
-    const targetScrollTop = containerRef.current.scrollHeight - containerRef.current.clientHeight;
+      const targetScrollTop =
+        scrollRef.current.scrollHeight - scrollRef.current.clientHeight;
 
-    if (instant) {
-      containerRef.current.scrollTop = targetScrollTop;
-    } else {
-      containerRef.current.scrollTo({
-        top: targetScrollTop,
-        behavior: "smooth",
+      if (instant) {
+        scrollRef.current.scrollTop = targetScrollTop;
+      } else {
+        scrollRef.current.scrollTo({
+          top: targetScrollTop,
+          behavior: smooth ? "smooth" : "auto",
+        });
+      }
+
+      setScrollState({
+        isAtBottom: true,
+        autoScrollEnabled: true,
       });
-    }
-
-    setScrollState({
-      isAtBottom: true,
-      autoScrollEnabled: true,
-    });
-    userHasScrolled.current = false;
-  }, [containerRef]);
+      userHasScrolled.current = false;
+    },
+    [smooth]
+  );
 
   const handleScroll = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!scrollRef.current) return;
 
-    const atBottom = checkIsAtBottom(containerRef.current);
+    const atBottom = checkIsAtBottom(scrollRef.current);
 
     setScrollState((prev) => ({
       isAtBottom: atBottom,
       // Re-enable auto-scroll if at the bottom
       autoScrollEnabled: atBottom ? true : prev.autoScrollEnabled,
     }));
-  }, [checkIsAtBottom, containerRef]);
+  }, [checkIsAtBottom]);
 
   useEffect(() => {
-    const element = containerRef.current;
+    const element = scrollRef.current;
     if (!element) return;
 
     element.addEventListener("scroll", handleScroll, { passive: true });
     return () => element.removeEventListener("scroll", handleScroll);
-  }, [handleScroll, containerRef]);
+  }, [handleScroll]);
 
   useEffect(() => {
-    const scrollElement = containerRef.current;
+    const scrollElement = scrollRef.current;
     if (!scrollElement) return;
 
     const currentHeight = scrollElement.scrollHeight;
@@ -76,10 +94,10 @@ export function useAutoScroll(containerRef: React.RefObject<HTMLDivElement>, dep
       }
       lastContentHeight.current = currentHeight;
     }
-  }, [deps, scrollState.autoScrollEnabled, scrollToBottom, containerRef]);
+  }, [content, scrollState.autoScrollEnabled, scrollToBottom]);
 
   useEffect(() => {
-    const element = containerRef.current;
+    const element = scrollRef.current;
     if (!element) return;
 
     const resizeObserver = new ResizeObserver(() => {
@@ -90,11 +108,11 @@ export function useAutoScroll(containerRef: React.RefObject<HTMLDivElement>, dep
 
     resizeObserver.observe(element);
     return () => resizeObserver.disconnect();
-  }, [scrollState.autoScrollEnabled, scrollToBottom, containerRef]);
+  }, [scrollState.autoScrollEnabled, scrollToBottom]);
 
   const disableAutoScroll = useCallback(() => {
-    const atBottom = containerRef.current
-      ? checkIsAtBottom(containerRef.current)
+    const atBottom = scrollRef.current
+      ? checkIsAtBottom(scrollRef.current)
       : false;
 
     // Only disable if not at bottom
@@ -105,9 +123,10 @@ export function useAutoScroll(containerRef: React.RefObject<HTMLDivElement>, dep
         autoScrollEnabled: false,
       }));
     }
-  }, [checkIsAtBottom, containerRef]);
+  }, [checkIsAtBottom]);
 
   return {
+    scrollRef,
     isAtBottom: scrollState.isAtBottom,
     autoScrollEnabled: scrollState.autoScrollEnabled,
     scrollToBottom: () => scrollToBottom(false),

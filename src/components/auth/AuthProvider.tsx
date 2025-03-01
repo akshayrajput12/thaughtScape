@@ -2,14 +2,12 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 type AuthContextType = {
   session: Session | null;
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
-  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -17,7 +15,6 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   isAuthenticated: false,
-  signOut: async () => {},
 });
 
 export const useAuth = () => {
@@ -33,27 +30,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { toast } = useToast();
-
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      setSession(null);
-      setUser(null);
-      setIsAuthenticated(false);
-      toast({
-        title: "Signed out",
-        description: "You have been successfully signed out",
-      });
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast({
-        title: "Error",
-        description: "Failed to sign out",
-        variant: "destructive",
-      });
-    }
-  };
 
   useEffect(() => {
     // Get session from local storage if available
@@ -104,7 +80,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, isAuthenticated, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

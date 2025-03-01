@@ -476,7 +476,8 @@ const Messages = () => {
     }
   };
 
-  const sendMessage = async () => {
+  const sendMessage = async (e?: FormEvent) => {
+    if (e) e.preventDefault();
     if (!currentUserId || !selectedUser || !newMessage.trim()) return;
 
     try {
@@ -712,35 +713,37 @@ const Messages = () => {
                       ) : (
                         <>
                           <div className="flex-1 h-[calc(80vh-190px)]">
-                            <ChatMessageList
-                              messages={messages.map(msg => ({
-                                id: msg.id,
-                                content: msg.content,
-                                timestamp: msg.created_at,
-                                sender: {
-                                  id: msg.sender_id,
-                                  name: msg.sender?.username || 'Unknown',
-                                  avatar: msg.sender?.avatar_url
-                                },
-                                isMine: msg.sender_id === currentUserId,
-                                isRead: msg.is_read
-                              }))}
-                            />
+                            <ChatMessageList>
+                              {messages.map((message) => (
+                                <ChatBubble
+                                  key={message.id}
+                                  variant={message.sender_id === currentUserId ? "sent" : "received"}
+                                >
+                                  <ChatBubbleAvatar
+                                    className="h-8 w-8 shrink-0"
+                                    src={message.sender.avatar_url || undefined}
+                                    fallback={message.sender.username[0].toUpperCase()}
+                                  />
+                                  <ChatBubbleMessage
+                                    variant={message.sender_id === currentUserId ? "sent" : "received"}
+                                  >
+                                    {message.content}
+                                  </ChatBubbleMessage>
+                                </ChatBubble>
+                              ))}
+                            </ChatMessageList>
                           </div>
                           <div className="p-4 border-t border-gray-200">
                             <form
-                              onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
+                              onSubmit={sendMessage}
                               className="relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring p-1"
                             >
                               <ChatInput
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
-                                onSendMessage={(message) => {
-                                  setNewMessage(message);
-                                  sendMessage();
-                                }}
                                 placeholder={isListening ? "Listening..." : "Type your message..."}
                                 className={`min-h-12 resize-none rounded-lg bg-background border-0 p-3 shadow-none focus-visible:ring-0 ${isListening ? 'bg-primary/10' : ''}`}
+                                onEnterSubmit={sendMessage}
                               />
                               <div className="flex items-center p-3 pt-0 justify-between">
                                 <div className="flex">

@@ -4,14 +4,12 @@ import { Navigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/types";
 import { useAuth } from "./AuthProvider";
-import { useToast } from "@/hooks/use-toast";
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, user, loading, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const location = useLocation();
-  const { toast } = useToast();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -36,37 +34,6 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         
         if (profileData) {
           console.log("Profile data:", profileData);
-          
-          // Auto-complete profile if name, age, and some bio information is available
-          let isProfileUpdated = false;
-          let profileUpdates: any = {};
-          
-          if (!profileData.is_profile_completed && 
-              profileData.full_name && 
-              profileData.age && 
-              (profileData.bio || profileData.country)) {
-            profileUpdates.is_profile_completed = true;
-            isProfileUpdated = true;
-          }
-          
-          if (isProfileUpdated) {
-            const { error: updateError } = await supabase
-              .from('profiles')
-              .update(profileUpdates)
-              .eq('id', user.id);
-              
-            if (updateError) {
-              console.error("Error updating profile completion status:", updateError);
-            } else {
-              // Update profile with new values
-              profileData.is_profile_completed = true;
-              toast({
-                title: "Profile Status Updated",
-                description: "Your profile is now marked as complete",
-              });
-            }
-          }
-          
           setProfile({
             ...profileData,
             is_profile_completed: profileData.is_profile_completed || false
@@ -85,7 +52,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     } else {
       setProfileLoading(false);
     }
-  }, [user, toast]);
+  }, [user]);
 
   if (loading || profileLoading) {
     return <div className="flex items-center justify-center min-h-screen">
