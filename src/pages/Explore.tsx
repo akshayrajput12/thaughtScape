@@ -111,7 +111,7 @@ const Explore = () => {
           className="mb-12"
         >
           <div className="max-w-2xl mx-auto text-center space-y-4">
-            <h1 className="text-3xl md:text-4xl font-serif font-bold text-gray-800 mb-4">
+            <h1 className="text-3xl md:text-4xl font-serif font-bold text-black-800 mb-4">
               Discover Amazing Thoughts
             </h1>
             <p className="text-gray-600 mb-8 max-w-lg mx-auto">
