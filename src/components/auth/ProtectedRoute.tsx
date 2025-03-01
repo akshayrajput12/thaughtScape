@@ -1,95 +1,68 @@
+
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/types";
+import { useAuth } from "./AuthProvider";
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const [session, setSession] = useState<any>(null);
+  const { session, user, loading, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
-    const checkSession = async () => {
+    const fetchProfile = async () => {
       try {
-        console.log("Checking session and profile...");
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) {
-          console.error("Session error:", sessionError);
-          setLoading(false);
+        if (!user) {
+          setProfileLoading(false);
           return;
         }
-
-        setSession(session);
-
-        if (session?.user) {
-          console.log("Found session, fetching profile for user:", session.user.id);
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-          
-          if (profileError) {
-            console.error("Profile error:", profileError);
-            setLoading(false);
-            return;
-          }
-          
-          if (profileData) {
-            console.log("Profile data:", profileData);
-            setProfile({
-              ...profileData,
-              is_profile_completed: profileData.is_profile_completed || false
-            });
-          }
-        }
         
-        setLoading(false);
-      } catch (error) {
-        console.error("Unexpected error:", error);
-        setLoading(false);
-      }
-    };
-
-    checkSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("Auth state changed:", _event, session?.user?.id);
-      setSession(session);
-      
-      if (session?.user) {
-        const { data: profileData } = await supabase
+        console.log("Fetching profile for user:", user.id);
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', session.user.id)
+          .eq('id', user.id)
           .maybeSingle();
         
+        if (profileError) {
+          console.error("Profile error:", profileError);
+          setProfileLoading(false);
+          return;
+        }
+        
         if (profileData) {
+          console.log("Profile data:", profileData);
           setProfile({
             ...profileData,
             is_profile_completed: profileData.is_profile_completed || false
           });
         }
-      } else {
-        setProfile(null);
+        
+        setProfileLoading(false);
+      } catch (error) {
+        console.error("Unexpected error fetching profile:", error);
+        setProfileLoading(false);
       }
-    });
-
-    return () => {
-      subscription.unsubscribe();
     };
-  }, []);
 
-  if (loading) {
+    if (user) {
+      fetchProfile();
+    } else {
+      setProfileLoading(false);
+    }
+  }, [user]);
+
+  if (loading || profileLoading) {
     return <div className="flex items-center justify-center min-h-screen">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
     </div>;
   }
 
-  if (!session) {
-    return <Navigate to="/auth" replace />;
+  if (!isAuthenticated || !session) {
+    // Save the location the user was trying to access
+    return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
   if (profile && 

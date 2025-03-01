@@ -1,35 +1,26 @@
-
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { FiMail, FiLock, FiGithub, FiTwitter } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 import { RiQuillPenLine } from "react-icons/ri";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, loading } = useAuth();
+  
+  const from = location.state?.from?.pathname || "/";
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/");
-      }
-    };
-    
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN") {
-        navigate("/");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    if (isAuthenticated && !loading) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, loading, navigate, from]);
 
   return (
     <motion.div 

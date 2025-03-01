@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,6 +61,8 @@ const Messages = () => {
   const [callDuration, setCallDuration] = useState<number>(0);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
   const [showConversations, setShowConversations] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+  const [transcribedText, setTranscribedText] = useState("");
   const callDurationInterval = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -69,6 +70,7 @@ const Messages = () => {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const rtcConnectionRef = useRef<WebRTCConnection | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -92,7 +94,6 @@ const Messages = () => {
     fetchCurrentUser();
   }, [navigate]);
 
-  // Mark messages as read when user arrives at this page or selects a user
   useEffect(() => {
     const markMessagesAsRead = async () => {
       if (!currentUserId || !selectedUser) return;
@@ -167,7 +168,7 @@ const Messages = () => {
   }, [currentUserId]);
 
   useEffect(() => {
-    if (!currentUserId || !selectedUser) return;
+    if (!currentUserId) return;
 
     const fetchMessages = async () => {
       const { data, error } = await supabase
@@ -406,6 +407,75 @@ const Messages = () => {
     }
   };
 
+  const startListening = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      toast({
+        title: "Error",
+        description: "Speech recognition is not supported in this browser",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+      
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+      
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('');
+        
+        setTranscribedText(transcript);
+        setNewMessage(transcript);
+      };
+      
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error', event);
+        setIsListening(false);
+      };
+      
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+      
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (error) {
+      console.error('Speech recognition error:', error);
+      toast({
+        title: "Error",
+        description: "Could not start speech recognition",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+      setIsListening(false);
+    }
+  };
+
+  const toggleSpeechRecognition = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+
   const sendMessage = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     if (!currentUserId || !selectedUser || !newMessage.trim()) return;
@@ -422,6 +492,10 @@ const Messages = () => {
       if (error) throw error;
 
       setNewMessage("");
+      setTranscribedText("");
+      if (isListening) {
+        stopListening();
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -451,7 +525,6 @@ const Messages = () => {
       <div className="min-h-screen bg-gradient-to-b from-white to-primary/10 pt-20">
         <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-3 min-h-[80vh]">
-            {/* Conversation list - only show in desktop or when showConversations is true in mobile */}
             {(!isMobileView || showConversations) && (
               <div className="md:border-r border-gray-200">
                 <Tabs defaultValue="chats" className="w-full" onValueChange={setActiveTab}>
@@ -561,7 +634,6 @@ const Messages = () => {
               </div>
             )}
 
-            {/* Chat area - only show in desktop or when showConversations is false in mobile */}
             {(!isMobileView || !showConversations) && (
               <div className="md:col-span-2 flex flex-col">
                 {selectedUser ? (
@@ -669,8 +741,8 @@ const Messages = () => {
                               <ChatInput
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
-                                placeholder="Type your message..."
-                                className="min-h-12 resize-none rounded-lg bg-background border-0 p-3 shadow-none focus-visible:ring-0"
+                                placeholder={isListening ? "Listening..." : "Type your message..."}
+                                className={`min-h-12 resize-none rounded-lg bg-background border-0 p-3 shadow-none focus-visible:ring-0 ${isListening ? 'bg-primary/10' : ''}`}
                                 onEnterSubmit={sendMessage}
                               />
                               <div className="flex items-center p-3 pt-0 justify-between">
@@ -684,11 +756,13 @@ const Messages = () => {
                                   </Button>
 
                                   <Button
-                                    variant="ghost"
+                                    variant={isListening ? "secondary" : "ghost"}
                                     size="icon"
                                     type="button"
+                                    onClick={toggleSpeechRecognition}
+                                    className={isListening ? "bg-primary/20" : ""}
                                   >
-                                    <Mic className="size-4" />
+                                    <Mic className={`size-4 ${isListening ? "text-primary animate-pulse" : ""}`} />
                                   </Button>
                                 </div>
                                 <Button type="submit" size="sm" className="ml-auto gap-1.5">
