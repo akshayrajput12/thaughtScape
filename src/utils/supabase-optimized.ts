@@ -52,8 +52,8 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .maybeSingle();
       
       if (error) throw error;
-      // Break circular type reference by using type assertion
-      return data as T;
+      // Use double casting to break the circular type reference
+      return data as unknown as T;
     },
     
     getByUserId: async (userId: string): Promise<T[]> => {
@@ -63,8 +63,8 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .eq('user_id', userId);
       
       if (error) throw error;
-      // Break circular type reference by using type assertion
-      return data as T[];
+      // Use double casting to break the circular type reference
+      return data as unknown as T[];
     },
     
     create: async (record: Partial<T>): Promise<T> => {
@@ -75,8 +75,8 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .single();
       
       if (error) throw error;
-      // Break circular type reference by using type assertion
-      return data as T;
+      // Use double casting to break the circular type reference
+      return data as unknown as T;
     },
     
     update: async (id: string, updates: Partial<T>): Promise<T> => {
@@ -88,8 +88,8 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .single();
       
       if (error) throw error;
-      // Break circular type reference by using type assertion
-      return data as T;
+      // Use double casting to break the circular type reference
+      return data as unknown as T;
     },
     
     delete: async (id: string): Promise<boolean> => {
