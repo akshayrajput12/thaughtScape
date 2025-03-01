@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { CallControls } from './CallControls';
 import { WebRTCConnection } from '@/utils/webrtc';
@@ -29,6 +29,7 @@ export const CallView = ({
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const rtcConnectionRef = useRef<WebRTCConnection | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -48,6 +49,11 @@ export const CallView = ({
       rtcConnectionRef.current = new WebRTCConnection((remoteStream) => {
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = remoteStream;
+          setConnectionStatus('connected');
+          toast({
+            title: "Connected",
+            description: "Call connection established successfully",
+          });
         }
       });
 
@@ -77,6 +83,7 @@ export const CallView = ({
             } else if (payload.type === 'candidate') {
               await rtcConnectionRef.current.handleCandidate(payload.candidate);
             } else if (payload.type === 'end-call') {
+              setConnectionStatus('disconnected');
               onCallEnd();
             }
           } catch (error) {
@@ -86,6 +93,7 @@ export const CallView = ({
               description: "There was an error with the call connection",
               variant: "destructive"
             });
+            setConnectionStatus('disconnected');
             onCallEnd();
           }
         })
@@ -111,12 +119,24 @@ export const CallView = ({
         description: "Could not access camera/microphone",
         variant: "destructive"
       });
+      setConnectionStatus('disconnected');
       onCallEnd();
     }
   };
 
   return (
     <div className="absolute inset-0 bg-gray-900">
+      {/* Connection Status Indicator */}
+      <div className={`absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+        connectionStatus === 'connecting' ? 'bg-yellow-500/80 text-yellow-50' :
+        connectionStatus === 'connected' ? 'bg-green-500/80 text-green-50' :
+        'bg-red-500/80 text-red-50'
+      }`}>
+        {connectionStatus === 'connecting' ? 'Connecting...' :
+         connectionStatus === 'connected' ? 'Connected' :
+         'Disconnected'}
+      </div>
+
       <video
         ref={remoteVideoRef}
         className="w-full h-full object-cover"
@@ -126,13 +146,13 @@ export const CallView = ({
       {isVideo && (
         <video
           ref={localVideoRef}
-          className="absolute bottom-4 right-4 w-48 h-36 rounded-lg object-cover"
+          className="absolute bottom-20 right-4 w-48 h-36 rounded-lg object-cover shadow-lg border-2 border-white/20 backdrop-blur-sm"
           autoPlay
           playsInline
           muted
         />
       )}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm rounded-full p-2">
         <CallControls
           isInCall={isInCall}
           isVideo={isVideo}

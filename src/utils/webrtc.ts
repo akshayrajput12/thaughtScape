@@ -139,9 +139,28 @@ export class WebRTCConnection {
       }
     }
   }
-
   async initiateCall(callerId: string, receiverId: string, isVideo: boolean): Promise<string> {
     const callId = `${callerId}-${receiverId}-${Date.now()}`;
+    
+    // Send call request notification to receiver
+    const receiverChannel = supabase.channel(`user:${receiverId}`);
+    await receiverChannel.subscribe();
+    
+    await receiverChannel.send({
+      type: 'broadcast',
+      event: 'call-request',
+      payload: {
+        callId,
+        caller: {
+          id: callerId,
+          username: (await supabase.from('profiles').select('username').eq('id', callerId).single()).data?.username,
+          avatar_url: (await supabase.from('profiles').select('avatar_url').eq('id', callerId).single()).data?.avatar_url
+        },
+        isVideo
+      }
+    });
+
+    // Set up WebRTC signaling channel
     const channel = supabase.channel(`call:${callId}`)
       .on('broadcast', { event: 'call-signal' }, async ({ payload }) => {
         const signalPayload = payload as CallSignalPayload;
@@ -149,6 +168,9 @@ export class WebRTCConnection {
           await this.handleAnswer(signalPayload.answer);
         } else if (signalPayload.type === 'candidate' && this.peerConnection && signalPayload.candidate) {
           await this.handleCandidate(signalPayload.candidate);
+        } else if (signalPayload.type === 'reject') {
+          this.closeConnection();
+          throw new Error('Call rejected');
         }
       });
     
@@ -169,7 +191,6 @@ export class WebRTCConnection {
 
     return callId;
   }
-
   async acceptCall(callId: string): Promise<void> {
     if (!this.peerConnection) return;
 

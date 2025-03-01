@@ -480,23 +480,53 @@ const Messages = () => {
     if (e) e.preventDefault();
     if (!currentUserId || !selectedUser || !newMessage.trim()) return;
 
+    const optimisticMessage = {
+      id: crypto.randomUUID(),
+      content: newMessage.trim(),
+      sender_id: currentUserId,
+      receiver_id: selectedUser.id,
+      created_at: new Date().toISOString(),
+      is_read: false,
+      sender: {
+        id: currentUserId,
+        username: 'You',
+        full_name: 'You',
+        avatar_url: undefined
+      },
+      receiver: selectedUser
+    };
+
+    // Optimistically add the message to the UI
+    setMessages(prev => [...prev, optimisticMessage]);
+    setNewMessage("");
+    setTranscribedText("");
+    if (isListening) {
+      stopListening();
+    }
+
+    // Scroll to bottom immediately
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+
     try {
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('messages')
         .insert({
-          content: newMessage.trim(),
+          content: optimisticMessage.content,
           sender_id: currentUserId,
           receiver_id: selectedUser.id,
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      setNewMessage("");
-      setTranscribedText("");
-      if (isListening) {
-        stopListening();
-      }
+      // Update the optimistic message with the real one
+      setMessages(prev => prev.map(msg => 
+        msg.id === optimisticMessage.id ? data : msg
+      ));
     } catch (error) {
+      // Remove the optimistic message if the request failed
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
       toast({
         title: "Error",
         description: "Failed to send message",
@@ -721,8 +751,8 @@ const Messages = () => {
                                 >
                                   <ChatBubbleAvatar
                                     className="h-8 w-8 shrink-0"
-                                    src={message.sender.avatar_url || undefined}
-                                    fallback={message.sender.username[0].toUpperCase()}
+                                    src={message.sender?.avatar_url || undefined}
+                                    fallback={(message.sender?.username?.[0] || '?').toUpperCase()}
                                   />
                                   <ChatBubbleMessage
                                     variant={message.sender_id === currentUserId ? "sent" : "received"}
