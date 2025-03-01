@@ -1,13 +1,14 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
 
-// Define valid table names as a type to ensure type safety
-type TableName = keyof Tables;
+// Define valid table names explicitly to ensure type safety
+type TableName = "bookmarks" | "thoughts" | "profiles" | "comments" | "follows" | 
+  "genres" | "likes" | "messages" | "notifications" | "project_applications" | 
+  "projects" | "tags" | "thought_categories" | "thought_tags" | "user_genres";
 
 /**
  * Creates a function that optimistically updates a resource in the local cache
- * before sending the update to the server.
+ * while making the server request in the background.
  * 
  * @param tableName - The name of the Supabase table
  * @returns A function that can be used to optimistically update a resource
@@ -26,14 +27,14 @@ export const createOptimizedMutation = <T extends Record<string, any>>(tableName
 
       return { success: true, error: null };
     } catch (error) {
-      console.error(`Error in optimized mutation for ${tableName}:`, error);
+      console.error(`Error inserting into ${String(tableName)}:`, error);
       return { success: false, error };
     }
   };
 };
 
 /**
- * Creates a function that fetches a resource from Supabase with optimistic cache updates
+ * Creates a set of optimized query functions for a specific resource
  * 
  * @param tableName - The name of the Supabase table
  * @returns A function that can be used to fetch a resource
@@ -54,7 +55,7 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: T
 
         return data as unknown as T;
       } catch (error) {
-        console.error(`Error fetching ${tableName} by ID:`, error);
+        console.error(`Error fetching ${String(tableName)} by ID:`, error);
         return null;
       }
     },
@@ -71,17 +72,17 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: T
 
         return (data || []) as unknown as T[];
       } catch (error) {
-        console.error(`Error fetching all ${tableName}:`, error);
+        console.error(`Error fetching all ${String(tableName)}:`, error);
         return [];
       }
     },
 
-    async getByField(field: string, value: any): Promise<T | null> {
+    async getByField(field: keyof T, value: any): Promise<T | null> {
       try {
         const { data, error } = await supabase
           .from(tableName)
           .select('*')
-          .eq(field, value)
+          .eq(String(field), value)
           .single();
 
         if (error) {
@@ -90,17 +91,18 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: T
 
         return data as unknown as T;
       } catch (error) {
-        console.error(`Error fetching ${tableName} by field:`, error);
+        console.error(`Error fetching ${String(tableName)} by field:`, error);
         return null;
       }
     },
 
-    async getByFields(fields: Record<string, any>): Promise<T | null> {
+    async getByFields(fields: Partial<T>): Promise<T | null> {
       try {
         let query = supabase
           .from(tableName)
           .select('*');
 
+        // Apply each field as a filter
         for (const [field, value] of Object.entries(fields)) {
           query = query.eq(field, value);
         }
@@ -113,9 +115,9 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: T
 
         return data as unknown as T;
       } catch (error) {
-        console.error(`Error fetching ${tableName} by fields:`, error);
+        console.error(`Error fetching ${String(tableName)} by fields:`, error);
         return null;
       }
-    },
+    }
   };
 };
