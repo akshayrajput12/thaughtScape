@@ -52,8 +52,8 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .maybeSingle();
       
       if (error) throw error;
-      // Using double casting to avoid recursive type issues
-      return (data as unknown) as T;
+      // Break the recursive type reference by using explicit unknown casting
+      return data as unknown as T;
     },
     
     getByUserId: async (userId: string) => {
@@ -63,12 +63,12 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .eq('user_id', userId);
       
       if (error) throw error;
-      // Using double casting to avoid recursive type issues
-      return (data as unknown) as T[];
+      // Break the recursive type reference by using explicit unknown casting
+      return data as unknown as T[];
     },
     
     create: async (record: Partial<T>) => {
-      // Using explicit casting to avoid TypeScript errors
+      // Using explicit casting to avoid TypeScript errors with any intermediary
       const { data, error } = await client
         .from(tableName)
         .insert(record as any)
@@ -76,12 +76,12 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .single();
       
       if (error) throw error;
-      // Using double casting to avoid recursive type issues
-      return (data as unknown) as T;
+      // Break the recursive type reference by using explicit unknown casting
+      return data as unknown as T;
     },
     
     update: async (id: string, updates: Partial<T>) => {
-      // Using explicit casting to avoid TypeScript errors
+      // Using explicit casting to avoid TypeScript errors with any intermediary
       const { data, error } = await client
         .from(tableName)
         .update(updates as any)
@@ -90,8 +90,8 @@ export function createOptimizedQuery<T extends Record<string, any>>(tableName: T
         .single();
       
       if (error) throw error;
-      // Using double casting to avoid recursive type issues
-      return (data as unknown) as T;
+      // Break the recursive type reference by using explicit unknown casting
+      return data as unknown as T;
     },
     
     delete: async (id: string) => {
