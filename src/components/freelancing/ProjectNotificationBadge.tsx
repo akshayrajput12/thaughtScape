@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -11,10 +11,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export const ProjectNotificationBadge = ({ userId }: { userId: string }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
 
   const { data, refetch } = useQuery({
     queryKey: ["projectNotifications", userId],
@@ -70,6 +73,19 @@ export const ProjectNotificationBadge = ({ userId }: { userId: string }) => {
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
+
+  // Force refresh notifications data when on freelancing page
+  useEffect(() => {
+    if (location.pathname === "/freelancing") {
+      refetch();
+      // Invalidate the query after a small delay to ensure applications are marked as viewed
+      const timer = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["projectNotifications", userId] });
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, refetch, queryClient, userId]);
 
   // Setup realtime subscription for project applications
   useEffect(() => {
