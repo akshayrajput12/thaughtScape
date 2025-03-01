@@ -1,4 +1,4 @@
-# Poetic Parley
+# ThaughtScape
 
 A modern social platform for sharing thoughts and connecting with creative minds, built with React, TypeScript, and Supabase.
 
@@ -32,7 +32,7 @@ A modern social platform for sharing thoughts and connecting with creative minds
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd poetic-parley
+   cd thaughtscape
    ```
 
 2. Install dependencies:

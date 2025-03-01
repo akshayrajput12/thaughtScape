@@ -46,7 +46,7 @@ function RevealImageList() {
       images: [
         {
           src: "https://images.unsplash.com/photo-1474073705359-5da2a8270c64?w=200&auto=format&fit=crop&q=60",
-          alt: "Poetry Expression",
+          alt: "Thaught Expression",
         },
         {
           src: "https://images.unsplash.com/photo-1516414447565-b14be0adf13e?w=200&auto=format&fit=crop&q=60",
@@ -59,11 +59,11 @@ function RevealImageList() {
       images: [
         {
           src: "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=200&auto=format&fit=crop&q=60",
-          alt: "Poetry Creation",
+          alt: "Thaughts Creation",
         },
         {
           src: "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=200&auto=format&fit=crop&q=60",
-          alt: "Writing Poetry",
+          alt: "Writing Thoughts",
         },
       ],
     },
@@ -72,11 +72,11 @@ function RevealImageList() {
       images: [
         {
           src: "https://images.unsplash.com/photo-1459369510627-9efbee1e6051?w=200&auto=format&fit=crop&q=60",
-          alt: "Poetry Community",
+          alt: "Thaughts Community",
         },
         {
           src: "https://images.unsplash.com/photo-1456324504439-367cee3b3c32?w=200&auto=format&fit=crop&q=60",
-          alt: "Poetic Connection",
+          alt: "Thaughts Connection",
         },
       ],
     },

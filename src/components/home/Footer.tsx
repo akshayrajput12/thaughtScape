@@ -11,7 +11,7 @@ export const Footer = () => {
           <div className="space-y-4">
             <h3 className="text-xl font-serif font-semibold text-gray-800">Thoughtscape</h3>
             <p className="text-gray-600">
-              A creative space for poets and writers to share their thoughts and connect with like-minded individuals.
+              A creative space for Thaughts,Ideas,Enegener and writers to share their thoughts and connect with like-minded individuals.
             </p>
           </div>
 
@@ -71,7 +71,7 @@ export const Footer = () => {
           {/* Newsletter */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-800">Newsletter</h3>
-            <p className="text-gray-600">Stay updated with our latest poetry and features.</p>
+            <p className="text-gray-600">Stay updated with our latest Thaughts and features.</p>
             <div className="flex gap-2">
               <Input
                 type="email"
