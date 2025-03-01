@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
 // Define valid table names explicitly to ensure type safety
 type TableName = "bookmarks" | "thoughts" | "profiles" | "comments" | "follows" | 
@@ -18,7 +19,7 @@ export const createOptimizedMutation = <T extends Record<string, any>>(tableName
     try {
       // Perform the actual update on the server
       const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .insert(data as any);
 
       if (error) {
@@ -44,7 +45,7 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: T
     async getById(id: string): Promise<T | null> {
       try {
         const { data, error } = await supabase
-          .from(tableName)
+          .from(tableName as any)
           .select('*')
           .eq('id', id)
           .single();
@@ -53,7 +54,7 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: T
           throw error;
         }
 
-        return data as unknown as T;
+        return data as any;
       } catch (error) {
         console.error(`Error fetching ${String(tableName)} by ID:`, error);
         return null;
@@ -63,14 +64,14 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: T
     async getAll(): Promise<T[]> {
       try {
         const { data, error } = await supabase
-          .from(tableName)
+          .from(tableName as any)
           .select('*');
 
         if (error) {
           throw error;
         }
 
-        return (data || []) as unknown as T[];
+        return (data || []) as any;
       } catch (error) {
         console.error(`Error fetching all ${String(tableName)}:`, error);
         return [];
@@ -80,7 +81,7 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: T
     async getByField(field: keyof T, value: any): Promise<T | null> {
       try {
         const { data, error } = await supabase
-          .from(tableName)
+          .from(tableName as any)
           .select('*')
           .eq(String(field), value)
           .single();
@@ -89,7 +90,7 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: T
           throw error;
         }
 
-        return data as unknown as T;
+        return data as any;
       } catch (error) {
         console.error(`Error fetching ${String(tableName)} by field:`, error);
         return null;
@@ -99,7 +100,7 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: T
     async getByFields(fields: Partial<T>): Promise<T | null> {
       try {
         let query = supabase
-          .from(tableName)
+          .from(tableName as any)
           .select('*');
 
         // Apply each field as a filter
@@ -113,7 +114,7 @@ export const createOptimizedQuery = <T extends Record<string, any>>(tableName: T
           throw error;
         }
 
-        return data as unknown as T;
+        return data as any;
       } catch (error) {
         console.error(`Error fetching ${String(tableName)} by fields:`, error);
         return null;
