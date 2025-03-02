@@ -116,4 +116,6 @@ export interface CallLog {
   duration?: number;
   call_type: 'audio' | 'video';
   status: 'completed' | 'missed' | 'rejected';
+  created_at?: string;
 }
+

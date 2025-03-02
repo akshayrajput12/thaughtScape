@@ -1,322 +1,360 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { Phone, PhoneOff, Video, VideoOff } from 'lucide-react';
-import { initializePeerConnection, addStreamToPeer, handleICECandidate } from '@/utils/webrtc';
+import { supabase } from "@/integrations/supabase/client";
+import { Message, Profile, CallLog } from '@/types';
+import { Button } from '../ui/button';
+import { useToast } from '../ui/use-toast';
+import { WebRTCConnection } from '@/utils/webrtc';
+import CallView from './CallView';
+import IncomingCallDialog from './IncomingCallDialog';
 
 interface ChatInterfaceProps {
-  currentUserId: string;
-  recipientId: string;
+  currentUser: Profile;
+  selectedUser: Profile | null;
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  sendMessage: (content: string) => Promise<void>;
 }
 
-interface CallLog {
-  id: string;
-  caller_id: string;
-  recipient_id: string;
-  start_time: string;
-  end_time: string | null;
-  call_type: 'audio' | 'video';
-  status: 'missed' | 'completed' | 'ongoing';
-}
-
-export const ChatInterface = ({ currentUserId, recipientId }: ChatInterfaceProps) => {
-  const [isCallActive, setIsCallActive] = useState(false);
-  const [isCaller, setIsCaller] = useState(false);
-  const [callLogs, setCallLogs] = useState<CallLog[]>([]);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const peerConnection = useRef<RTCPeerConnection | null>(null);
-  const localAudioRef = useRef<HTMLAudioElement>(null);
-  const remoteAudioRef = useRef<HTMLAudioElement>(null);
-  const currentCallId = useRef<string | null>(null);
+const ChatInterface = ({
+  currentUser,
+  selectedUser,
+  messages,
+  setMessages,
+  sendMessage
+}: ChatInterfaceProps) => {
+  const [isTyping, setIsTyping] = useState(false);
+  const [isOnline, setIsOnline] = useState(false);
+  const [lastActive, setLastActive] = useState<string | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{ callId: string; caller: Profile; isVideo: boolean } | null>(null);
+  const [activeCall, setActiveCall] = useState<{ callId: string; peer: Profile; isVideo: boolean } | null>(null);
+  const [callHistory, setCallHistory] = useState<CallLog[]>([]);
+  const [showCallHistory, setShowCallHistory] = useState(false);
+  
+  const webRTCRef = useRef<WebRTCConnection | null>(null);
   const { toast } = useToast();
-
+  
   useEffect(() => {
-    // Subscribe to call events
-    const callChannel = supabase.channel(`calls:${currentUserId}`);
+    if (!selectedUser) return;
     
-    callChannel
-      .on('broadcast', { event: 'call-offer' }, async ({ payload }) => {
-        if (payload.recipientId === currentUserId) {
-          handleIncomingCall(payload);
-        }
+    const fetchCallHistory = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('call_logs')
+          .select('*')
+          .or(`caller_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
+          .order('created_at', { ascending: false })
+          .limit(10);
+          
+        if (error) throw error;
+        
+        setCallHistory(data as CallLog[]);
+      } catch (error) {
+        console.error('Error fetching call history:', error);
+      }
+    };
+    
+    fetchCallHistory();
+  }, [selectedUser, currentUser.id]);
+  
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const channel = supabase.channel(`user:${currentUser.id}`)
+      .on('broadcast', { event: 'call-request' }, ({ payload }) => {
+        const request = payload as { callId: string; caller: Profile; isVideo: boolean };
+        setIncomingCall(request);
+        
+        const audio = new Audio('/sounds/ringtone.mp3');
+        audio.loop = true;
+        audio.play().catch(e => console.error('Could not play ringtone:', e));
+        
+        return () => {
+          audio.pause();
+          audio.currentTime = 0;
+        };
       })
-      .on('broadcast', { event: 'call-answer' }, ({ payload }) => {
-        if (payload.callerId === currentUserId) {
-          handleCallAccepted(payload);
-        }
-      })
-      .on('broadcast', { event: 'call-end' }, ({ payload }) => {
-        if (payload.participantId === currentUserId) {
-          handleCallEnded();
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser]);
+  
+  useEffect(() => {
+    if (!selectedUser) return;
+    
+    const channel = supabase.channel(`presence:${selectedUser.id}`)
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const isUserOnline = Object.keys(state).length > 0;
+        setIsOnline(isUserOnline);
+        
+        if (!isUserOnline && state[selectedUser.id]?.[0]?.last_active) {
+          setLastActive(state[selectedUser.id][0].last_active);
         }
       })
       .subscribe();
-
-    // Fetch call logs
-    fetchCallLogs();
-
-    return () => {
-      callChannel.unsubscribe();
-      cleanupCall();
-    };
-  }, [currentUserId]);
-
-  const fetchCallLogs = async () => {
-    const { data, error } = await supabase
-      .from('call_logs')
-      .select('*')
-      .or(`caller_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`)
-      .order('start_time', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching call logs:', error);
-      return;
-    }
-
-    setCallLogs(data);
-  };
-
-  const initializeCall = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      setLocalStream(stream);
       
-      if (localAudioRef.current) {
-        localAudioRef.current.srcObject = stream;
-      }
-
-      const pc = await initializePeerConnection();
-      peerConnection.current = pc;
-
-      // Add local stream to peer connection
-      await addStreamToPeer(pc, stream);
-
-      // Handle incoming remote stream
-      pc.ontrack = (event) => {
-        setRemoteStream(event.streams[0]);
-        if (remoteAudioRef.current) {
-          remoteAudioRef.current.srcObject = event.streams[0];
-        }
-      };
-
-      // Handle ICE candidates
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          handleICECandidate(event.candidate, currentUserId, recipientId);
-        }
-      };
-
-      return pc;
-    } catch (error) {
-      console.error('Error initializing call:', error);
-      toast({
-        title: "Error",
-        description: "Could not access microphone",
-        variant: "destructive",
-      });
-      return null;
-    }
-  };
-
-  const startCall = async () => {
-    const pc = await initializeCall();
-    if (!pc) return;
-
-    setIsCaller(true);
-    setIsCallActive(true);
-
-    // Create and send offer
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-
-    // Create call log
-    const { data: callLog, error } = await supabase
-      .from('call_logs')
-      .insert({
-        caller_id: currentUserId,
-        recipient_id: recipientId,
-        start_time: new Date().toISOString(),
-        call_type: 'audio',
-        status: 'ongoing'
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedUser]);
+  
+  useEffect(() => {
+    if (!selectedUser) return;
+    
+    const channel = supabase.channel(`typing:${currentUser.id}-${selectedUser.id}`)
+      .on('broadcast', { event: 'typing' }, () => {
+        setIsTyping(true);
+        
+        setTimeout(() => {
+          setIsTyping(false);
+        }, 3000);
       })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating call log:', error);
-      return;
-    }
-
-    currentCallId.current = callLog.id;
-
-    // Send offer through Supabase channel
-    await supabase.channel('calls').send({
-      type: 'broadcast',
-      event: 'call-offer',
-      payload: {
-        callerId: currentUserId,
-        recipientId,
-        offer,
-        callId: callLog.id
-      }
-    });
-  };
-
-  const handleIncomingCall = async (payload: any) => {
-    const pc = await initializeCall();
-    if (!pc) return;
-
-    setIsCaller(false);
-    setIsCallActive(true);
-    currentCallId.current = payload.callId;
-
-    // Set remote description from offer
-    await pc.setRemoteDescription(new RTCSessionDescription(payload.offer));
-
-    // Create and send answer
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-
-    // Send answer through Supabase channel
-    await supabase.channel('calls').send({
-      type: 'broadcast',
-      event: 'call-answer',
-      payload: {
-        callerId: payload.callerId,
-        recipientId: currentUserId,
-        answer,
-        callId: payload.callId
-      }
-    });
-  };
-
-  const handleCallAccepted = async (payload: any) => {
-    if (peerConnection.current) {
-      await peerConnection.current.setRemoteDescription(
-        new RTCSessionDescription(payload.answer)
-      );
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedUser, currentUser.id]);
+  
+  const initiateCall = async (isVideo: boolean) => {
+    if (!selectedUser) return;
+    
+    try {
+      webRTCRef.current = new WebRTCConnection((stream) => {
+        const remoteVideo = document.getElementById('remote-video') as HTMLVideoElement;
+        if (remoteVideo) {
+          remoteVideo.srcObject = stream;
+        }
+      });
+      
+      await webRTCRef.current.initializeConnection(isVideo);
+      const callId = await webRTCRef.current.initiateCall(currentUser.id, selectedUser.id, isVideo);
+      
+      const { error } = await supabase
+        .from('call_logs')
+        .insert({
+          caller_id: currentUser.id,
+          recipient_id: selectedUser.id,
+          call_type: isVideo ? 'video' : 'audio',
+          status: 'completed',
+          start_time: new Date().toISOString()
+        });
+        
+      if (error) throw error;
+      
+      setActiveCall({
+        callId,
+        peer: selectedUser,
+        isVideo
+      });
+      
+      toast({
+        title: 'Call Initiated',
+        description: `Calling ${selectedUser.username}...`,
+      });
+    } catch (error) {
+      console.error('Error initiating call:', error);
+      toast({
+        title: 'Call Failed',
+        description: 'Could not initiate call. Please try again.',
+        variant: 'destructive'
+      });
     }
   };
-
+  
+  const acceptIncomingCall = async () => {
+    if (!incomingCall) return;
+    
+    try {
+      webRTCRef.current = new WebRTCConnection((stream) => {
+        const remoteVideo = document.getElementById('remote-video') as HTMLVideoElement;
+        if (remoteVideo) {
+          remoteVideo.srcObject = stream;
+        }
+      });
+      
+      await webRTCRef.current.initializeConnection(incomingCall.isVideo);
+      await webRTCRef.current.acceptCall(incomingCall.callId);
+      
+      setActiveCall({
+        callId: incomingCall.callId,
+        peer: incomingCall.caller,
+        isVideo: incomingCall.isVideo
+      });
+      
+      setIncomingCall(null);
+    } catch (error) {
+      console.error('Error accepting call:', error);
+      toast({
+        title: 'Call Failed',
+        description: 'Could not accept call. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  const rejectIncomingCall = async () => {
+    if (!incomingCall) return;
+    
+    try {
+      const tempConnection = new WebRTCConnection(() => {});
+      await tempConnection.rejectCall(incomingCall.callId);
+      
+      await supabase
+        .from('call_logs')
+        .insert({
+          caller_id: incomingCall.caller.id,
+          recipient_id: currentUser.id,
+          call_type: incomingCall.isVideo ? 'video' : 'audio',
+          status: 'rejected',
+          start_time: new Date().toISOString(),
+          end_time: new Date().toISOString()
+        });
+      
+      setIncomingCall(null);
+    } catch (error) {
+      console.error('Error rejecting call:', error);
+    }
+  };
+  
   const endCall = async () => {
-    if (currentCallId.current) {
-      // Update call log
+    if (!activeCall || !webRTCRef.current) return;
+    
+    webRTCRef.current.closeConnection();
+    
+    const endTime = new Date();
+    const startTime = new Date(activeCall.callId.split('-')[2]);
+    const durationInSeconds = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+    
+    try {
       await supabase
         .from('call_logs')
         .update({
-          end_time: new Date().toISOString(),
+          end_time: endTime.toISOString(),
+          duration: durationInSeconds,
           status: 'completed'
         })
-        .eq('id', currentCallId.current);
-
-      // Notify other participant
-      await supabase.channel('calls').send({
-        type: 'broadcast',
-        event: 'call-end',
-        payload: {
-          participantId: recipientId,
-          callId: currentCallId.current
-        }
-      });
+        .eq('caller_id', currentUser.id)
+        .eq('recipient_id', activeCall.peer.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+    } catch (error) {
+      console.error('Error updating call log:', error);
     }
-
-    handleCallEnded();
+    
+    setActiveCall(null);
   };
-
-  const handleCallEnded = () => {
-    cleanupCall();
-    setIsCallActive(false);
-    setIsCaller(false);
-    currentCallId.current = null;
-    fetchCallLogs();
-  };
-
-  const cleanupCall = () => {
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
-      setLocalStream(null);
-    }
-
-    if (remoteStream) {
-      remoteStream.getTracks().forEach(track => track.stop());
-      setRemoteStream(null);
-    }
-
-    if (peerConnection.current) {
-      peerConnection.current.close();
-      peerConnection.current = null;
-    }
-
-    if (localAudioRef.current) {
-      localAudioRef.current.srcObject = null;
-    }
-
-    if (remoteAudioRef.current) {
-      remoteAudioRef.current.srcObject = null;
-    }
-  };
-
+  
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Call Logs */}
-        <div className="space-y-2">
-          {callLogs.map((log) => (
-            <div
-              key={log.id}
-              className={`p-3 rounded-lg ${log.caller_id === currentUserId ? 'bg-blue-50' : 'bg-gray-50'}`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  {log.caller_id === currentUserId ? 'Outgoing Call' : 'Incoming Call'}
-                </span>
-                <span className="text-xs text-gray-500">
-                  {new Date(log.start_time).toLocaleString()}
-                </span>
+      {incomingCall && (
+        <IncomingCallDialog
+          caller={incomingCall.caller}
+          isVideo={incomingCall.isVideo}
+          onAccept={acceptIncomingCall}
+          onReject={rejectIncomingCall}
+        />
+      )}
+      
+      {activeCall && (
+        <CallView
+          peer={activeCall.peer}
+          isVideo={activeCall.isVideo}
+          onEndCall={endCall}
+        />
+      )}
+      
+      {!activeCall && selectedUser && (
+        <>
+          <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <img 
+                  src={selectedUser.avatar_url || '/default-avatar.png'} 
+                  alt={selectedUser.username}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+                <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></span>
               </div>
-              <div className="text-xs text-gray-600 mt-1">
-                Duration: {log.end_time 
-                  ? Math.round((new Date(log.end_time).getTime() - new Date(log.start_time).getTime()) / 1000) + 's'
-                  : 'Ongoing'}
-              </div>
-              <div className="text-xs text-gray-600">
-                Status: {log.status.charAt(0).toUpperCase() + log.status.slice(1)}
+              <div>
+                <h3 className="font-medium">{selectedUser.full_name || selectedUser.username}</h3>
+                <p className="text-xs text-gray-500">
+                  {isOnline ? 'Online' : lastActive ? `Last seen ${new Date(lastActive).toLocaleString()}` : 'Offline'}
+                </p>
+                {isTyping && <p className="text-xs text-gray-500 italic">Typing...</p>}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Call Controls */}
-      <div className="p-4 border-t">
-        <div className="flex justify-center space-x-4">
-          {isCallActive ? (
-            <Button
-              variant="destructive"
-              size="icon"
-              onClick={endCall}
-              className="h-12 w-12 rounded-full"
-            >
-              <PhoneOff className="h-6 w-6" />
-            </Button>
-          ) : (
-            <Button
-              variant="default"
-              size="icon"
-              onClick={startCall}
-              className="h-12 w-12 rounded-full bg-green-500 hover:bg-green-600"
-            >
-              <Phone className="h-6 w-6" />
-            </Button>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => initiateCall(false)}
+                className="rounded-full"
+              >
+                <i className="fas fa-phone"></i>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => initiateCall(true)}
+                className="rounded-full"
+              >
+                <i className="fas fa-video"></i>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setShowCallHistory(!showCallHistory)}
+                className="rounded-full"
+              >
+                <i className="fas fa-history"></i>
+              </Button>
+            </div>
+          </div>
+          
+          {showCallHistory && (
+            <div className="p-4 bg-gray-50 border-b max-h-64 overflow-y-auto">
+              <h4 className="font-medium mb-2">Recent Calls</h4>
+              {callHistory.length > 0 ? (
+                <ul className="space-y-2">
+                  {callHistory.map((call) => (
+                    <li key={call.id} className="flex items-center justify-between p-2 bg-white rounded shadow-sm">
+                      <div>
+                        <p className="text-sm">
+                          {call.caller_id === currentUser.id ? 'Outgoing' : 'Incoming'} {call.call_type} call
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(call.start_time).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center">
+                        {call.duration && (
+                          <span className="text-xs mr-2">
+                            {Math.floor(call.duration / 60)}:{(call.duration % 60).toString().padStart(2, '0')}
+                          </span>
+                        )}
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          call.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          call.status === 'missed' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {call.status}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500">No call history</p>
+              )}
+            </div>
           )}
-        </div>
-      </div>
-
-      {/* Audio Elements */}
-      <audio ref={localAudioRef} autoPlay muted />
-      <audio ref={remoteAudioRef} autoPlay />
+        </>
+      )}
     </div>
   );
 };
+
+export default ChatInterface;

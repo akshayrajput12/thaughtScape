@@ -42,6 +42,57 @@ export type Database = {
           },
         ]
       }
+      call_logs: {
+        Row: {
+          call_type: string
+          caller_id: string
+          created_at: string
+          duration: number | null
+          end_time: string | null
+          id: string
+          recipient_id: string
+          start_time: string
+          status: string
+        }
+        Insert: {
+          call_type: string
+          caller_id: string
+          created_at?: string
+          duration?: number | null
+          end_time?: string | null
+          id?: string
+          recipient_id: string
+          start_time?: string
+          status: string
+        }
+        Update: {
+          call_type?: string
+          caller_id?: string
+          created_at?: string
+          duration?: number | null
+          end_time?: string | null
+          id?: string
+          recipient_id?: string
+          start_time?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_logs_caller_id_fkey"
+            columns: ["caller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_logs_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           content: string

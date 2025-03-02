@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface CallRequest {
@@ -46,6 +47,8 @@ export class WebRTCConnection {
   private peerConnection: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
   private onRemoteStream: (stream: MediaStream) => void;
+  private callStartTime: Date | null = null;
+  private callId: string | null = null;
 
   constructor(onRemoteStream: (stream: MediaStream) => void) {
     this.onRemoteStream = onRemoteStream;
@@ -144,6 +147,35 @@ export class WebRTCConnection {
       this.peerConnection.close();
       this.peerConnection = null;
     }
+    
+    // Log call end time if a call was in progress
+    this.logCallEnd();
+  }
+  
+  private async logCallEnd(): Promise<void> {
+    if (!this.callId || !this.callStartTime) return;
+    
+    try {
+      const endTime = new Date();
+      const durationInSeconds = Math.floor((endTime.getTime() - this.callStartTime.getTime()) / 1000);
+      
+      const callerId = this.callId.split('-')[0];
+      const receiverId = this.callId.split('-')[1];
+      
+      // Update the call log in the database
+      await supabase
+        .from('call_logs')
+        .update({
+          end_time: endTime.toISOString(),
+          duration: durationInSeconds
+        })
+        .eq('caller_id', callerId)
+        .eq('recipient_id', receiverId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+    } catch (error) {
+      console.error('Error logging call end:', error);
+    }
   }
 
   toggleAudio(enabled: boolean): void {
@@ -166,6 +198,8 @@ export class WebRTCConnection {
 
   async initiateCall(callerId: string, receiverId: string, isVideo: boolean): Promise<string> {
     const callId = `${callerId}-${receiverId}-${Date.now()}`;
+    this.callId = callId;
+    this.callStartTime = new Date();
     
     // Send call request notification to receiver
     const receiverChannel = supabase.channel(`user:${receiverId}`);
@@ -185,6 +219,19 @@ export class WebRTCConnection {
       }
     });
 
+    // Log call start in database
+    try {
+      await supabase.from('call_logs').insert({
+        caller_id: callerId,
+        recipient_id: receiverId,
+        call_type: isVideo ? 'video' : 'audio',
+        status: 'completed', // Will be updated if rejected or missed
+        start_time: this.callStartTime.toISOString()
+      });
+    } catch (error) {
+      console.error('Error logging call start:', error);
+    }
+
     // Set up WebRTC signaling channel
     const channel = supabase.channel(`call:${callId}`)
       .on('broadcast', { event: 'call-signal' }, async ({ payload }) => {
@@ -195,6 +242,23 @@ export class WebRTCConnection {
           await this.handleCandidate(signalPayload.candidate);
         } else if (signalPayload.type === 'reject') {
           this.closeConnection();
+          
+          // Update call log for rejected call
+          try {
+            await supabase
+              .from('call_logs')
+              .update({
+                status: 'rejected',
+                end_time: new Date().toISOString()
+              })
+              .eq('caller_id', callerId)
+              .eq('recipient_id', receiverId)
+              .order('created_at', { ascending: false })
+              .limit(1);
+          } catch (error) {
+            console.error('Error updating call log for rejected call:', error);
+          }
+          
           throw new Error('Call rejected');
         }
       });
@@ -219,6 +283,12 @@ export class WebRTCConnection {
 
   async acceptCall(callId: string): Promise<void> {
     if (!this.peerConnection) return;
+    
+    this.callId = callId;
+    this.callStartTime = new Date();
+    
+    const callerId = callId.split('-')[0];
+    const receiverId = callId.split('-')[1];
 
     const channel = supabase.channel(`call:${callId}`)
       .on('broadcast', { event: 'call-signal' }, async ({ payload }) => {
@@ -241,6 +311,21 @@ export class WebRTCConnection {
       });
 
     await channel.subscribe();
+    
+    // Update call log for accepted call
+    try {
+      await supabase
+        .from('call_logs')
+        .update({
+          status: 'completed'
+        })
+        .eq('caller_id', callerId)
+        .eq('recipient_id', receiverId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+    } catch (error) {
+      console.error('Error updating call log for accepted call:', error);
+    }
   }
 
   async rejectCall(callId: string): Promise<void> {
@@ -256,5 +341,24 @@ export class WebRTCConnection {
     });
 
     channel.unsubscribe();
+    
+    // Update call log for rejected call
+    try {
+      const callerId = callId.split('-')[0];
+      const receiverId = callId.split('-')[1];
+      
+      await supabase
+        .from('call_logs')
+        .update({
+          status: 'rejected',
+          end_time: new Date().toISOString()
+        })
+        .eq('caller_id', callerId)
+        .eq('recipient_id', receiverId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+    } catch (error) {
+      console.error('Error updating call log for rejected call:', error);
+    }
   }
 }
