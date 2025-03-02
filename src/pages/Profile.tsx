@@ -157,7 +157,7 @@ const Profile = () => {
         {shouldShowForm ? (
           <div className={showFirstTimeProfileForm ? "animate-scale-in" : ""}>
             <div className={showFirstTimeProfileForm ? "mb-6 p-6 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg shadow-sm" : "hidden"}>
-              <h2 className="text-2xl font-bold text-purple-800 mb-3">Welcome to ThaughtScape!</h2>
+              <h2 className="text-2xl font-bold text-purple-800 mb-3">Welcome to ThoughtScape!</h2>
               <p className="text-gray-700">Please complete your profile to get started. This will help others connect with you and personalize your experience.</p>
             </div>
             <ProfileForm 
@@ -175,7 +175,7 @@ const Profile = () => {
               userId={profileData.id}
             />
             <ProfilePoems 
-              poems={thoughtsData || []}
+              poems={thoughtsData || []} 
               isOwnProfile={user?.id === profileData.id}
               isAdmin={adminData?.is_admin || false}
               onDeletePoem={handleDeleteThought}

@@ -1,378 +1,278 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { User, Upload } from "lucide-react";
-import type { Profile } from "@/types";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { motion } from "framer-motion";
+import { Profile } from "@/types";
+import { z } from "zod";
 
-interface ProfileFormProps {
-  profile: Profile;
-  onSubmitSuccess: (profile: Profile) => void;
-  isFirstTimeSetup?: boolean;
-}
-
-const collegeOptions = [
+const colleges = [
   "Lovely Professional University",
   "Delhi University",
   "IIT Delhi",
-  "Chandigarh University",
+  "IIT Bombay",
+  "IIT Madras",
   "Amity University",
+  "Chandigarh University",
+  "Thapar University",
   "Other"
 ];
 
-export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false }: ProfileFormProps) => {
-  const { toast } = useToast();
-  const [isUploading, setIsUploading] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
-  const [selectedCollege, setSelectedCollege] = useState(profile.college || "");
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+interface ProfileFormProps {
+  profile: Profile;
+  onSubmitSuccess: (updatedProfile: Profile) => void;
+  isFirstTimeSetup?: boolean;
+}
 
-  const validateForm = (formData: FormData) => {
-    const errors: Record<string, string> = {};
-    
-    // Check required fields
-    if (!formData.get('username')) {
-      errors.username = "Username is required";
-    }
-    
-    if (!formData.get('full_name')) {
-      errors.full_name = "Full name is required";
-    }
-    
-    if (!formData.get('phone')) {
-      errors.phone = "Phone number is required";
+export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false }: ProfileFormProps) => {
+  const [fullName, setFullName] = useState(profile.full_name || "");
+  const [phone, setPhone] = useState(profile.phone || "");
+  const [college, setCollege] = useState(profile.college || "");
+  const [registrationNumber, setRegistrationNumber] = useState(profile.registration_number || "");
+  const [bio, setBio] = useState(profile.bio || "");
+  const [country, setCountry] = useState(profile.country || "");
+  const [state, setState] = useState(profile.state || "");
+  const [city, setCity] = useState(profile.city || "");
+  const [age, setAge] = useState(profile.age?.toString() || "");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    const phoneRegex = /^[0-9]{10}$/;
+    const ageValue = parseInt(age);
+
+    if (isFirstTimeSetup) {
+      if (!fullName) newErrors.fullName = "Full name is required";
+      if (!phone) newErrors.phone = "Phone number is required";
+      else if (!phoneRegex.test(phone)) newErrors.phone = "Phone number must be 10 digits";
+      if (!college) newErrors.college = "Please select your college";
+      if (college === "Lovely Professional University" && !registrationNumber) {
+        newErrors.registrationNumber = "Registration number is required for LPU students";
+      }
     } else {
-      const phonePattern = /^\d{10}$/;
-      if (!phonePattern.test(String(formData.get('phone')))) {
-        errors.phone = "Please enter a valid 10-digit phone number";
+      if (phone && !phoneRegex.test(phone)) newErrors.phone = "Phone number must be 10 digits";
+      if (age && (isNaN(ageValue) || ageValue < 13 || ageValue > 100)) {
+        newErrors.age = "Age must be between 13 and 100";
       }
     }
-    
-    if (!formData.get('college')) {
-      errors.college = "Please select your college";
-    }
-    
-    // Check LPU registration number if college is LPU
-    if (formData.get('college') === "Lovely Professional University") {
-      if (!formData.get('registration_number')) {
-        errors.registration_number = "Registration number is required for LPU students";
-      } else {
-        const regNoPattern = /^[A-Z0-9]{8,12}$/i;
-        if (!regNoPattern.test(String(formData.get('registration_number')))) {
-          errors.registration_number = "Please enter a valid registration number (8-12 alphanumeric characters)";
-        }
-      }
-    }
-    
-    return errors;
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Check file size (3MB limit)
-    if (file.size > 3 * 1024 * 1024) {
-      toast({
-        title: "Error",
-        description: "File size must be less than 3MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Error",
-        description: "Please upload an image file",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
+    setIsSubmitting(true);
+    
     try {
-      setIsUploading(true);
+      const updatedProfile: Partial<Profile> = {
+        full_name: fullName,
+        bio,
+        country,
+        state,
+        city,
+        phone,
+        college,
+        registration_number: registrationNumber,
+        is_profile_completed: true
+      };
       
-      // Upload image to Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${profile.id}/${Date.now()}.${fileExt}`;
+      if (age) updatedProfile.age = parseInt(age);
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('profile_images')
-        .upload(fileName, file, {
-          upsert: true,
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile_images')
-        .getPublicUrl(fileName);
-
-      setAvatarUrl(publicUrl);
-
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updatedProfile)
+        .eq('id', profile.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
       toast({
         title: "Success",
-        description: "Profile image uploaded successfully",
+        description: "Profile updated successfully",
       });
+      
+      if (data) {
+        onSubmitSuccess(data as Profile);
+      }
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error("Error updating profile:", error);
       toast({
         title: "Error",
-        description: "Failed to upload image",
+        description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const errors = validateForm(formData);
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      toast({
-        title: "Validation Error",
-        description: "Please check the form for errors",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const isProfileCompleted = true; // Always set to true since we're validating all required fields
-    
-    const updates = {
-      username: String(formData.get('username')),
-      full_name: String(formData.get('full_name')),
-      bio: String(formData.get('bio')),
-      age: formData.get('age') ? parseInt(String(formData.get('age'))) : null,
-      phone: String(formData.get('phone')),
-      country: String(formData.get('country')),
-      state: String(formData.get('state')),
-      city: String(formData.get('city')),
-      college: String(formData.get('college')),
-      registration_number: formData.get('registration_number') ? String(formData.get('registration_number')) : null,
-      avatar_url: avatarUrl,
-      is_profile_completed: isProfileCompleted,
-    };
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', profile.id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: "Error",
-        description: "Could not update profile",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    onSubmitSuccess(data);
-    toast({
-      title: "Success",
-      description: isFirstTimeSetup 
-        ? "Profile completed successfully! Welcome to ThaughtScape!"
-        : "Profile updated successfully",
-    });
-  };
+  const isLPU = college === "Lovely Professional University";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-sm border border-purple-200">
-      <div className="flex flex-col items-center space-y-4 mb-6">
-        <Avatar className="w-32 h-32 border-4 border-primary/20">
-          <AvatarImage src={avatarUrl || undefined} alt={profile.full_name || profile.username} />
-          <AvatarFallback>
-            <User className="w-12 h-12 text-muted-foreground" />
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex flex-col items-center gap-2">
-          <Label htmlFor="image-upload" className="cursor-pointer">
-            <div className="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 transition-colors px-4 py-2 rounded-full">
-              <Upload className="w-4 h-4" />
-              <span>Upload Profile Picture</span>
-            </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="space-y-2">
+          <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
+            Full Name {isFirstTimeSetup && <span className="text-red-500">*</span>}
           </Label>
           <Input
-            id="image-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleImageUpload}
-            disabled={isUploading}
+            id="fullName"
+            type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="Enter your full name"
+            className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${errors.fullName ? 'border-red-500' : ''}`}
           />
-          <p className="text-sm text-muted-foreground">Max size: 3MB</p>
+          {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
         </div>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <div>
-          <Label htmlFor="username" className={formErrors.username ? "text-red-500" : ""}>
-            Username*
-          </Label>
-          <Input
-            id="username"
-            name="username"
-            defaultValue={profile.username || ''}
-            required
-            className={`mt-1 ${formErrors.username ? "border-red-500" : ""}`}
-          />
-          {formErrors.username && <p className="text-sm text-red-500 mt-1">{formErrors.username}</p>}
-        </div>
-        <div>
-          <Label htmlFor="full_name" className={formErrors.full_name ? "text-red-500" : ""}>
-            Full Name*
-          </Label>
-          <Input
-            id="full_name"
-            name="full_name"
-            defaultValue={profile.full_name || ''}
-            required
-            className={`mt-1 ${formErrors.full_name ? "border-red-500" : ""}`}
-          />
-          {formErrors.full_name && <p className="text-sm text-red-500 mt-1">{formErrors.full_name}</p>}
-        </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <div>
-          <Label htmlFor="phone" className={formErrors.phone ? "text-red-500" : ""}>
-            Phone Number*
+        <div className="space-y-2">
+          <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+            Phone Number {isFirstTimeSetup && <span className="text-red-500">*</span>}
           </Label>
           <Input
             id="phone"
-            name="phone"
             type="tel"
-            defaultValue={profile.phone || ''}
-            required
-            className={`mt-1 ${formErrors.phone ? "border-red-500" : ""}`}
-            placeholder="10-digit number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Enter your phone number"
+            className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${errors.phone ? 'border-red-500' : ''}`}
           />
-          {formErrors.phone && <p className="text-sm text-red-500 mt-1">{formErrors.phone}</p>}
+          {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
         </div>
-        <div>
-          <Label htmlFor="college" className={formErrors.college ? "text-red-500" : ""}>
-            College/University*
+
+        <div className="space-y-2">
+          <Label htmlFor="college" className="text-sm font-medium text-gray-700">
+            College {isFirstTimeSetup && <span className="text-red-500">*</span>}
           </Label>
           <Select 
-            name="college" 
-            defaultValue={profile.college || ''}
-            onValueChange={setSelectedCollege}
-            required
+            value={college} 
+            onValueChange={setCollege}
           >
-            <SelectTrigger className={`mt-1 ${formErrors.college ? "border-red-500" : ""}`}>
+            <SelectTrigger className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${errors.college ? 'border-red-500' : ''}`}>
               <SelectValue placeholder="Select your college" />
             </SelectTrigger>
             <SelectContent>
-              {collegeOptions.map((college) => (
-                <SelectItem key={college} value={college}>
-                  {college}
+              {colleges.map((collegeName) => (
+                <SelectItem key={collegeName} value={collegeName}>
+                  {collegeName}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {formErrors.college && <p className="text-sm text-red-500 mt-1">{formErrors.college}</p>}
+          {errors.college && <p className="text-red-500 text-xs mt-1">{errors.college}</p>}
         </div>
+
+        {isLPU && (
+          <div className="space-y-2">
+            <Label htmlFor="registrationNumber" className="text-sm font-medium text-gray-700">
+              Registration Number <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="registrationNumber"
+              type="text"
+              value={registrationNumber}
+              onChange={(e) => setRegistrationNumber(e.target.value)}
+              placeholder="Enter your registration number"
+              className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${errors.registrationNumber ? 'border-red-500' : ''}`}
+            />
+            {errors.registrationNumber && <p className="text-red-500 text-xs mt-1">{errors.registrationNumber}</p>}
+          </div>
+        )}
+
+        {!isFirstTimeSetup && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="age" className="text-sm font-medium text-gray-700">Age</Label>
+              <Input
+                id="age"
+                type="number"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                placeholder="Enter your age"
+                className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${errors.age ? 'border-red-500' : ''}`}
+              />
+              {errors.age && <p className="text-red-500 text-xs mt-1">{errors.age}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="country" className="text-sm font-medium text-gray-700">Country</Label>
+              <Input
+                id="country"
+                type="text"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="Enter your country"
+                className="border-gray-300 focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="state" className="text-sm font-medium text-gray-700">State</Label>
+              <Input
+                id="state"
+                type="text"
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                placeholder="Enter your state"
+                className="border-gray-300 focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="city" className="text-sm font-medium text-gray-700">City</Label>
+              <Input
+                id="city"
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Enter your city"
+                className="border-gray-300 focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+          </>
+        )}
+
+        {!isFirstTimeSetup && (
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="bio" className="text-sm font-medium text-gray-700">Bio</Label>
+            <Textarea
+              id="bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Write something about yourself"
+              className="border-gray-300 focus:ring-purple-500 focus:border-purple-500 min-h-[100px]"
+            />
+          </div>
+        )}
+      </motion.div>
+
+      <div className="flex justify-end">
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-2 rounded-md shadow-md transition-all duration-300 hover:shadow-lg"
+        >
+          {isSubmitting ? "Saving..." : isFirstTimeSetup ? "Complete Profile" : "Save Changes"}
+        </Button>
       </div>
-
-      {selectedCollege === "Lovely Professional University" && (
-        <div>
-          <Label htmlFor="registration_number" className={formErrors.registration_number ? "text-red-500" : ""}>
-            LPU Registration Number*
-          </Label>
-          <Input
-            id="registration_number"
-            name="registration_number"
-            defaultValue={profile.registration_number || ''}
-            required
-            className={`mt-1 ${formErrors.registration_number ? "border-red-500" : ""}`}
-            placeholder="Your LPU Registration Number"
-          />
-          {formErrors.registration_number && <p className="text-sm text-red-500 mt-1">{formErrors.registration_number}</p>}
-        </div>
-      )}
-
-      <div>
-        <Label htmlFor="bio">Bio</Label>
-        <Textarea
-          id="bio"
-          name="bio"
-          defaultValue={profile.bio || ''}
-          rows={3}
-          className="mt-1 resize-none"
-          placeholder="Tell us about yourself..."
-        />
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <div>
-          <Label htmlFor="age">Age</Label>
-          <Input
-            id="age"
-            name="age"
-            type="number"
-            defaultValue={profile.age || ''}
-            className="mt-1"
-          />
-        </div>
-        <div>
-          <Label htmlFor="country">Country</Label>
-          <Input
-            id="country"
-            name="country"
-            defaultValue={profile.country || ''}
-            className="mt-1"
-          />
-        </div>
-        <div>
-          <Label htmlFor="state">State</Label>
-          <Input
-            id="state"
-            name="state"
-            defaultValue={profile.state || ''}
-            className="mt-1"
-          />
-        </div>
-        <div>
-          <Label htmlFor="city">City</Label>
-          <Input
-            id="city"
-            name="city"
-            defaultValue={profile.city || ''}
-            className="mt-1"
-          />
-        </div>
-      </div>
-
-      <Button 
-        type="submit" 
-        className="w-full md:w-auto bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold transition-all duration-300 shadow-md hover:shadow-lg"
-        disabled={isUploading}
-      >
-        {isUploading ? "Uploading..." : isFirstTimeSetup ? "Complete Profile" : "Save Changes"}
-      </Button>
     </form>
   );
 };

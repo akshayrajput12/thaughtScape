@@ -271,6 +271,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           city: string | null
+          college: string | null
           country: string | null
           created_at: string
           followers_count: number | null
@@ -282,6 +283,7 @@ export type Database = {
           is_profile_completed: boolean | null
           phone: string | null
           posts_count: number | null
+          registration_number: string | null
           state: string | null
           updated_at: string
           username: string
@@ -291,6 +293,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           city?: string | null
+          college?: string | null
           country?: string | null
           created_at?: string
           followers_count?: number | null
@@ -302,6 +305,7 @@ export type Database = {
           is_profile_completed?: boolean | null
           phone?: string | null
           posts_count?: number | null
+          registration_number?: string | null
           state?: string | null
           updated_at?: string
           username: string
@@ -311,6 +315,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           city?: string | null
+          college?: string | null
           country?: string | null
           created_at?: string
           followers_count?: number | null
@@ -322,6 +327,7 @@ export type Database = {
           is_profile_completed?: boolean | null
           phone?: string | null
           posts_count?: number | null
+          registration_number?: string | null
           state?: string | null
           updated_at?: string
           username?: string
