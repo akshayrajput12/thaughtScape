@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,24 @@ export function UsersList() {
 
     setUsers(data || []);
   };
-  const handleEditSubmit = async (updatedUser: Profile) => {
+  
+  // Fixed the function to properly handle the FormData type
+  const handleEditSubmit = async (formData: FormData) => {
     try {
+      // Make sure we have the editing user
+      if (!editingUser) return;
+      
+      // Extract values from form data
+      const updatedUser = {
+        ...editingUser,
+        full_name: formData.get('full_name') as string || editingUser.full_name,
+        username: formData.get('username') as string || editingUser.username,
+        bio: formData.get('bio') as string || editingUser.bio,
+        city: formData.get('city') as string || editingUser.city,
+        country: formData.get('country') as string || editingUser.country,
+        age: formData.get('age') ? Number(formData.get('age')) : editingUser.age
+      };
+  
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -62,6 +79,7 @@ export function UsersList() {
       });
     }
   };
+  
   const toggleProfileCompletion = async (userId: string, currentStatus: boolean | null) => {
     const { error } = await supabase
       .from('profiles')
@@ -84,6 +102,33 @@ export function UsersList() {
   
     fetchUsers();
   };
+  
+  // Added the missing toggleAdminStatus function
+  const toggleAdminStatus = async (userId: string, isCurrentlyAdmin: boolean | undefined) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_admin: !isCurrentlyAdmin })
+        .eq('id', userId);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `User is ${!isCurrentlyAdmin ? 'now an admin' : 'no longer an admin'}`,
+      });
+      
+      fetchUsers();
+    } catch (error) {
+      console.error("Error updating admin status:", error);
+      toast({
+        title: "Error",
+        description: "Could not update admin status",
+        variant: "destructive",
+      });
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <Button 

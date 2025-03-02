@@ -492,13 +492,10 @@ const Messages = () => {
         username: 'You',
         full_name: 'You',
         avatar_url: undefined,
-        created_at: '',
-        updated_at: '',
       },
       receiver: selectedUser
     };
 
-    // Optimistically add the message to the UI
     setMessages(prev => [...prev, optimisticMessage]);
     setNewMessage("");
     setTranscribedText("");
@@ -506,7 +503,6 @@ const Messages = () => {
       stopListening();
     }
 
-    // Scroll to bottom immediately
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
     try {
@@ -522,7 +518,6 @@ const Messages = () => {
 
       if (error) throw error;
 
-      // Update the optimistic message with the real one
       setMessages(prev => prev.map(msg => 
         msg.id === optimisticMessage.id ? { 
           ...data,
@@ -531,7 +526,6 @@ const Messages = () => {
         } : msg
       ));
     } catch (error) {
-      // Remove the optimistic message if the request failed
       setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
       toast({
         title: "Error",

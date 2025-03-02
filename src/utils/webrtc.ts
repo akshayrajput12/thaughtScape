@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface CallRequest {
@@ -17,6 +16,31 @@ interface CallSignalPayload {
   answer?: RTCSessionDescriptionInit;
   candidate?: RTCIceCandidateInit;
 }
+
+export const initializePeerConnection = (config?: RTCConfiguration): RTCPeerConnection => {
+  const defaultConfig = {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' }
+    ]
+  };
+  
+  return new RTCPeerConnection(config || defaultConfig);
+};
+
+export const addStreamToPeer = (peer: RTCPeerConnection, stream: MediaStream): void => {
+  stream.getTracks().forEach(track => {
+    peer.addTrack(track, stream);
+  });
+};
+
+export const handleICECandidate = (
+  peer: RTCPeerConnection, 
+  onIceCandidate: (candidate: RTCIceCandidate | null) => void
+): void => {
+  peer.onicecandidate = (event) => {
+    onIceCandidate(event.candidate);
+  };
+};
 
 export class WebRTCConnection {
   private peerConnection: RTCPeerConnection | null = null;
@@ -139,6 +163,7 @@ export class WebRTCConnection {
       }
     }
   }
+
   async initiateCall(callerId: string, receiverId: string, isVideo: boolean): Promise<string> {
     const callId = `${callerId}-${receiverId}-${Date.now()}`;
     
@@ -191,6 +216,7 @@ export class WebRTCConnection {
 
     return callId;
   }
+
   async acceptCall(callId: string): Promise<void> {
     if (!this.peerConnection) return;
 
