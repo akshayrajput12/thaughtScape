@@ -74,7 +74,10 @@ const Profile = () => {
     enabled: !!user?.id,
   });
 
-
+  // Check if user is viewing their own profile and it's not completed
+  const showFirstTimeProfileForm = user?.id === id && 
+                                  profileData && 
+                                  !profileData.is_profile_completed;
 
   const handleEditClick = () => {
     setIsEditing(!isEditing);
@@ -138,21 +141,31 @@ const Profile = () => {
     );
   }
 
+  // Show first-time profile form or the editing form
+  const shouldShowForm = showFirstTimeProfileForm || isEditing;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-[#E5DEFF]/20 to-[#FDE1D3]/20 px-4 py-12 transition-all duration-500">
       <div className="max-w-4xl mx-auto space-y-12 animate-fadeIn">
         <ProfileHeader 
           profile={profileData} 
           isOwnProfile={user?.id === profileData.id}
-          isEditing={isEditing}
+          isEditing={shouldShowForm}
           onEditClick={handleEditClick}
         />
         
-        {isEditing ? (
-          <ProfileForm 
-            profile={profileData} 
-            onSubmitSuccess={handleProfileUpdate}
-          />
+        {shouldShowForm ? (
+          <div className={showFirstTimeProfileForm ? "animate-scale-in" : ""}>
+            <div className={showFirstTimeProfileForm ? "mb-6 p-6 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg shadow-sm" : "hidden"}>
+              <h2 className="text-2xl font-bold text-purple-800 mb-3">Welcome to ThaughtScape!</h2>
+              <p className="text-gray-700">Please complete your profile to get started. This will help others connect with you and personalize your experience.</p>
+            </div>
+            <ProfileForm 
+              profile={profileData} 
+              onSubmitSuccess={handleProfileUpdate}
+              isFirstTimeSetup={showFirstTimeProfileForm}
+            />
+          </div>
         ) : (
           <>
             <ProfileStats 

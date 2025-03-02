@@ -9,16 +9,75 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { User, Upload } from "lucide-react";
 import type { Profile } from "@/types";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ProfileFormProps {
   profile: Profile;
   onSubmitSuccess: (profile: Profile) => void;
+  isFirstTimeSetup?: boolean;
 }
 
-export const ProfileForm = ({ profile, onSubmitSuccess }: ProfileFormProps) => {
+const collegeOptions = [
+  "Lovely Professional University",
+  "Delhi University",
+  "IIT Delhi",
+  "Chandigarh University",
+  "Amity University",
+  "Other"
+];
+
+export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false }: ProfileFormProps) => {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
+  const [selectedCollege, setSelectedCollege] = useState(profile.college || "");
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (formData: FormData) => {
+    const errors: Record<string, string> = {};
+    
+    // Check required fields
+    if (!formData.get('username')) {
+      errors.username = "Username is required";
+    }
+    
+    if (!formData.get('full_name')) {
+      errors.full_name = "Full name is required";
+    }
+    
+    if (!formData.get('phone')) {
+      errors.phone = "Phone number is required";
+    } else {
+      const phonePattern = /^\d{10}$/;
+      if (!phonePattern.test(String(formData.get('phone')))) {
+        errors.phone = "Please enter a valid 10-digit phone number";
+      }
+    }
+    
+    if (!formData.get('college')) {
+      errors.college = "Please select your college";
+    }
+    
+    // Check LPU registration number if college is LPU
+    if (formData.get('college') === "Lovely Professional University") {
+      if (!formData.get('registration_number')) {
+        errors.registration_number = "Registration number is required for LPU students";
+      } else {
+        const regNoPattern = /^[A-Z0-9]{8,12}$/i;
+        if (!regNoPattern.test(String(formData.get('registration_number')))) {
+          errors.registration_number = "Please enter a valid registration number (8-12 alphanumeric characters)";
+        }
+      }
+    }
+    
+    return errors;
+  };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -86,20 +145,30 @@ export const ProfileForm = ({ profile, onSubmitSuccess }: ProfileFormProps) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const isProfileCompleted = Boolean(
-      formData.get('username') && 
-      formData.get('full_name') && 
-      formData.get('bio')
-    );
-
+    const errors = validateForm(formData);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast({
+        title: "Validation Error",
+        description: "Please check the form for errors",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const isProfileCompleted = true; // Always set to true since we're validating all required fields
+    
     const updates = {
       username: String(formData.get('username')),
       full_name: String(formData.get('full_name')),
       bio: String(formData.get('bio')),
       age: formData.get('age') ? parseInt(String(formData.get('age'))) : null,
+      phone: String(formData.get('phone')),
       country: String(formData.get('country')),
       state: String(formData.get('state')),
       city: String(formData.get('city')),
+      college: String(formData.get('college')),
+      registration_number: formData.get('registration_number') ? String(formData.get('registration_number')) : null,
       avatar_url: avatarUrl,
       is_profile_completed: isProfileCompleted,
     };
@@ -124,14 +193,14 @@ export const ProfileForm = ({ profile, onSubmitSuccess }: ProfileFormProps) => {
     onSubmitSuccess(data);
     toast({
       title: "Success",
-      description: isProfileCompleted 
-        ? "Profile completed and updated successfully"
+      description: isFirstTimeSetup 
+        ? "Profile completed successfully! Welcome to ThaughtScape!"
         : "Profile updated successfully",
     });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-sm">
+    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-sm border border-purple-200">
       <div className="flex flex-col items-center space-y-4 mb-6">
         <Avatar className="w-32 h-32 border-4 border-primary/20">
           <AvatarImage src={avatarUrl || undefined} alt={profile.full_name || profile.username} />
@@ -160,25 +229,90 @@ export const ProfileForm = ({ profile, onSubmitSuccess }: ProfileFormProps) => {
 
       <div className="grid gap-6 md:grid-cols-2">
         <div>
-          <Label htmlFor="username">Username</Label>
+          <Label htmlFor="username" className={formErrors.username ? "text-red-500" : ""}>
+            Username*
+          </Label>
           <Input
             id="username"
             name="username"
             defaultValue={profile.username || ''}
             required
-            className="mt-1"
+            className={`mt-1 ${formErrors.username ? "border-red-500" : ""}`}
           />
+          {formErrors.username && <p className="text-sm text-red-500 mt-1">{formErrors.username}</p>}
         </div>
         <div>
-          <Label htmlFor="full_name">Full Name</Label>
+          <Label htmlFor="full_name" className={formErrors.full_name ? "text-red-500" : ""}>
+            Full Name*
+          </Label>
           <Input
             id="full_name"
             name="full_name"
             defaultValue={profile.full_name || ''}
-            className="mt-1"
+            required
+            className={`mt-1 ${formErrors.full_name ? "border-red-500" : ""}`}
           />
+          {formErrors.full_name && <p className="text-sm text-red-500 mt-1">{formErrors.full_name}</p>}
         </div>
       </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <div>
+          <Label htmlFor="phone" className={formErrors.phone ? "text-red-500" : ""}>
+            Phone Number*
+          </Label>
+          <Input
+            id="phone"
+            name="phone"
+            type="tel"
+            defaultValue={profile.phone || ''}
+            required
+            className={`mt-1 ${formErrors.phone ? "border-red-500" : ""}`}
+            placeholder="10-digit number"
+          />
+          {formErrors.phone && <p className="text-sm text-red-500 mt-1">{formErrors.phone}</p>}
+        </div>
+        <div>
+          <Label htmlFor="college" className={formErrors.college ? "text-red-500" : ""}>
+            College/University*
+          </Label>
+          <Select 
+            name="college" 
+            defaultValue={profile.college || ''}
+            onValueChange={setSelectedCollege}
+            required
+          >
+            <SelectTrigger className={`mt-1 ${formErrors.college ? "border-red-500" : ""}`}>
+              <SelectValue placeholder="Select your college" />
+            </SelectTrigger>
+            <SelectContent>
+              {collegeOptions.map((college) => (
+                <SelectItem key={college} value={college}>
+                  {college}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {formErrors.college && <p className="text-sm text-red-500 mt-1">{formErrors.college}</p>}
+        </div>
+      </div>
+
+      {selectedCollege === "Lovely Professional University" && (
+        <div>
+          <Label htmlFor="registration_number" className={formErrors.registration_number ? "text-red-500" : ""}>
+            LPU Registration Number*
+          </Label>
+          <Input
+            id="registration_number"
+            name="registration_number"
+            defaultValue={profile.registration_number || ''}
+            required
+            className={`mt-1 ${formErrors.registration_number ? "border-red-500" : ""}`}
+            placeholder="Your LPU Registration Number"
+          />
+          {formErrors.registration_number && <p className="text-sm text-red-500 mt-1">{formErrors.registration_number}</p>}
+        </div>
+      )}
 
       <div>
         <Label htmlFor="bio">Bio</Label>
@@ -234,10 +368,10 @@ export const ProfileForm = ({ profile, onSubmitSuccess }: ProfileFormProps) => {
 
       <Button 
         type="submit" 
-        className="w-full md:w-auto"
+        className="w-full md:w-auto bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold transition-all duration-300 shadow-md hover:shadow-lg"
         disabled={isUploading}
       >
-        {isUploading ? "Uploading..." : "Save Changes"}
+        {isUploading ? "Uploading..." : isFirstTimeSetup ? "Complete Profile" : "Save Changes"}
       </Button>
     </form>
   );

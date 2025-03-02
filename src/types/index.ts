@@ -17,6 +17,8 @@ export interface Profile {
   followers_count?: number;
   following_count?: number;
   posts_count?: number;
+  college?: string;
+  registration_number?: string;
 }
 
 export interface Project {
