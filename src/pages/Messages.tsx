@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,12 +24,12 @@ import { ChatMessageList } from "@/components/ui/chat-message-list";
 import { ChatInput } from "@/components/ui/chat-input";
 import { MessageTabs } from "@/components/messages/MessageTabs";
 import { MessageRequests } from "@/components/messages/MessageRequests";
-import { Message, User } from "@/types";
+import { Message, Profile, CallLog } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Conversation {
-  user: User;
+  user: Profile;
   lastMessage: Message;
   unreadCount: number;
 }
@@ -39,11 +38,11 @@ const Messages = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messageRequests, setMessageRequests] = useState<Message[]>([]);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [isInCall, setIsInCall] = useState(false);
   const [isVideo, setIsVideo] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -87,10 +86,7 @@ const Messages = () => {
     fetchCurrentUser();
   }, [navigate]);
 
-  // Fetch user follows data
   useEffect(() => {
-    if (!currentUserId) return;
-
     const fetchFollowStatus = async () => {
       const { data, error } = await supabase
         .from('follows')
@@ -134,7 +130,6 @@ const Messages = () => {
     if (!currentUserId) return;
 
     const fetchConversationsAndRequests = async () => {
-      // First, get all messages
       const { data, error } = await supabase
         .from('messages')
         .select(`
@@ -150,7 +145,6 @@ const Messages = () => {
         return;
       }
 
-      // Get follows to determine which messages are requests
       const { data: followsData, error: followsError } = await supabase
         .from('follows')
         .select('following_id')
@@ -161,43 +155,43 @@ const Messages = () => {
         return;
       }
 
-      // Create a map of user IDs that the current user follows
       const followingMap = new Set(followsData.map(f => f.following_id));
 
-      // Separate messages into conversations and requests
       const conversationsMap = new Map<string, Conversation>();
       const requestsArray: Message[] = [];
 
-      data.forEach((message: Message) => {
-        const isOutgoing = message.sender_id === currentUserId;
-        const otherUser = isOutgoing ? message.receiver : message.sender;
+      data.forEach((message: any) => {
+        const typedMessage: Message = {
+          ...message,
+          is_request: message.is_request || false,
+          request_status: message.request_status || null
+        };
+        
+        const isOutgoing = typedMessage.sender_id === currentUserId;
+        const otherUser = isOutgoing ? typedMessage.receiver : typedMessage.sender;
         
         if (!otherUser) return;
 
         const otherUserId = otherUser.id;
         
-        // Determine if this is a request or a conversation
-        // Requests are incoming messages where the receiver (current user) doesn't follow the sender
         if (
           !isOutgoing && 
-          !followingMap.has(message.sender_id) && 
-          (message.request_status === 'pending' || message.request_status === null)
+          !followingMap.has(typedMessage.sender_id) && 
+          (typedMessage.request_status === 'pending' || typedMessage.request_status === null)
         ) {
-          requestsArray.push(message);
+          requestsArray.push(typedMessage);
           return;
         }
 
-        // For regular conversations
         const existingConv = conversationsMap.get(otherUserId);
 
-        if (!existingConv || new Date(message.created_at) > new Date(existingConv.lastMessage.created_at)) {
+        if (!existingConv || new Date(typedMessage.created_at) > new Date(existingConv.lastMessage.created_at)) {
           conversationsMap.set(otherUserId, {
             user: otherUser,
-            lastMessage: message,
-            unreadCount: !isOutgoing && !message.is_read ? 1 : 0,
+            lastMessage: typedMessage,
+            unreadCount: !isOutgoing && !typedMessage.is_read ? 1 : 0,
           });
-        } else if (!isOutgoing && !message.is_read) {
-          // Increment unread count for existing conversation
+        } else if (!isOutgoing && !typedMessage.is_read) {
           existingConv.unreadCount += 1;
           conversationsMap.set(otherUserId, existingConv);
         }
@@ -230,10 +224,8 @@ const Messages = () => {
     if (!currentUserId || !selectedUser) return;
 
     const fetchMessages = async () => {
-      // Check if the user follows the selected user
       const isFollowing = followStatus[selectedUser.id] || false;
 
-      // Get all messages between the users
       const { data, error } = await supabase
         .from('messages')
         .select(`
@@ -249,24 +241,25 @@ const Messages = () => {
         return;
       }
 
-      // Filter messages based on request status
-      let filteredMessages = data;
+      const typedMessages: Message[] = data.map((msg: any) => ({
+        ...msg,
+        is_request: msg.is_request || false,
+        request_status: msg.request_status || null
+      }));
+
+      let filteredMessages = typedMessages;
       
-      // If in chat tab, only show accepted requests or messages where receiver follows sender
       if (activeTab === 'chats') {
-        filteredMessages = data.filter(msg => 
+        filteredMessages = typedMessages.filter(msg => 
           msg.request_status === 'accepted' || 
-          // Outgoing messages
           msg.sender_id === currentUserId ||
-          // The current user follows the sender
           isFollowing
         );
       }
 
       setMessages(filteredMessages);
       
-      // Count messages from the selected user to the current user
-      const incomingMessageCount = data.filter(
+      const incomingMessageCount = typedMessages.filter(
         msg => msg.sender_id === selectedUser.id && msg.receiver_id === currentUserId
       ).length;
       
@@ -571,7 +564,6 @@ const Messages = () => {
     if (!currentUserId) return;
 
     try {
-      // Update all messages from this sender to be accepted
       const { error } = await supabase
         .from('messages')
         .update({ request_status: 'accepted' })
@@ -581,7 +573,6 @@ const Messages = () => {
 
       if (error) throw error;
 
-      // Fetch the sender's profile
       const { data: senderData, error: senderError } = await supabase
         .from('profiles')
         .select('*')
@@ -590,10 +581,8 @@ const Messages = () => {
 
       if (senderError) throw senderError;
 
-      // Set the selected user to the sender
       setSelectedUser(senderData);
       
-      // Switch to chats tab
       setActiveTab('chats');
 
       toast({
@@ -614,7 +603,6 @@ const Messages = () => {
     if (!currentUserId) return;
 
     try {
-      // Update all messages from this sender to be declined
       const { error } = await supabase
         .from('messages')
         .update({ request_status: 'declined' })
@@ -624,7 +612,6 @@ const Messages = () => {
 
       if (error) throw error;
 
-      // Remove from selected user if currently selected
       if (selectedUser && selectedUser.id === senderId) {
         setSelectedUser(null);
       }
@@ -647,10 +634,8 @@ const Messages = () => {
     if (e) e.preventDefault();
     if (!currentUserId || !selectedUser || !newMessage.trim()) return;
 
-    // Check if this is a request message (receiver doesn't follow sender)
     const isRequest = !followStatus[selectedUser.id];
     
-    // If this is a request, check if sender has already sent 3 messages
     if (isRequest && messageCount >= 3) {
       toast({
         title: "Message limit reached",
@@ -674,6 +659,8 @@ const Messages = () => {
         username: 'You',
         full_name: 'You',
         avatar_url: undefined,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       },
       receiver: selectedUser
     };
@@ -702,7 +689,6 @@ const Messages = () => {
 
       if (error) throw error;
 
-      // Update the message count if this is a request
       if (isRequest) {
         setMessageCount(prev => prev + 1);
       }
@@ -710,9 +696,11 @@ const Messages = () => {
       setMessages(prev => prev.map(msg => 
         msg.id === optimisticMessage.id ? { 
           ...data,
+          is_request: data.is_request || false,
+          request_status: data.request_status || null,
           sender: optimisticMessage.sender,
           receiver: optimisticMessage.receiver
-        } : msg
+        } as Message : msg
       ));
     } catch (error) {
       setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
@@ -732,16 +720,14 @@ const Messages = () => {
     setShowConversations(true);
   };
 
-  const handleSelectUser = (user: User) => {
+  const handleSelectUser = (user: Profile) => {
     setSelectedUser(user);
     if (isMobileView) {
       setShowConversations(false);
     }
   };
 
-  // Calculate requests count for badge
   const requestsCount = messageRequests.reduce((acc, msg) => {
-    // Count unique senders
     if (!acc.includes(msg.sender_id)) {
       acc.push(msg.sender_id);
     }
@@ -988,7 +974,6 @@ const Messages = () => {
                         />
                       ) : (
                         <>
-                          {/* Request status alert */}
                           {!followStatus[selectedUser.id] && activeTab === 'chats' && messageCount >= 3 && (
                             <Alert className="m-4 bg-yellow-50 border-yellow-100">
                               <AlertCircle className="h-4 w-4 text-yellow-600" />
@@ -1032,7 +1017,6 @@ const Messages = () => {
                             </ChatMessageList>
                           </div>
                           <div className="p-4 border-t border-gray-200">
-                            {/* Show message restrictions notice */}
                             {!followStatus[selectedUser.id] && activeTab === 'chats' && (
                               <div className="mb-2 px-3 py-2 bg-yellow-50 rounded-md text-sm text-yellow-800 flex items-center">
                                 <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />

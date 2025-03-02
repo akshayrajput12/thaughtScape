@@ -225,7 +225,9 @@ export type Database = {
           created_at: string
           id: string
           is_read: boolean | null
+          is_request: boolean | null
           receiver_id: string
+          request_status: string | null
           sender_id: string
         }
         Insert: {
@@ -233,7 +235,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean | null
+          is_request?: boolean | null
           receiver_id: string
+          request_status?: string | null
           sender_id: string
         }
         Update: {
@@ -241,7 +245,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean | null
+          is_request?: boolean | null
           receiver_id?: string
+          request_status?: string | null
           sender_id?: string
         }
         Relationships: [
