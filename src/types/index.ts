@@ -1,4 +1,3 @@
-
 export interface Profile {
   id: string;
   username: string;
@@ -102,6 +101,8 @@ export interface Message {
   receiver_id: string;
   content: string;
   is_read: boolean;
+  is_request: boolean;
+  request_status: 'pending' | 'accepted' | 'declined' | null;
   created_at: string;
   sender?: Profile;
   receiver?: Profile;
@@ -118,4 +119,3 @@ export interface CallLog {
   status: 'completed' | 'missed' | 'rejected';
   created_at?: string;
 }
-
