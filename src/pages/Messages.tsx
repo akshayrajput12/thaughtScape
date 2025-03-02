@@ -480,7 +480,7 @@ const Messages = () => {
     if (e) e.preventDefault();
     if (!currentUserId || !selectedUser || !newMessage.trim()) return;
 
-    const optimisticMessage = {
+    const optimisticMessage: Message = {
       id: crypto.randomUUID(),
       content: newMessage.trim(),
       sender_id: currentUserId,
@@ -491,7 +491,9 @@ const Messages = () => {
         id: currentUserId,
         username: 'You',
         full_name: 'You',
-        avatar_url: undefined
+        avatar_url: undefined,
+        created_at: '',
+        updated_at: '',
       },
       receiver: selectedUser
     };
@@ -522,7 +524,11 @@ const Messages = () => {
 
       // Update the optimistic message with the real one
       setMessages(prev => prev.map(msg => 
-        msg.id === optimisticMessage.id ? data : msg
+        msg.id === optimisticMessage.id ? { 
+          ...data,
+          sender: optimisticMessage.sender,
+          receiver: optimisticMessage.receiver
+        } : msg
       ));
     } catch (error) {
       // Remove the optimistic message if the request failed

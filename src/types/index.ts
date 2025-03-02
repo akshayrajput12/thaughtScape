@@ -1,3 +1,4 @@
+
 export interface Profile {
   id: string;
   username: string;
@@ -34,10 +35,16 @@ export interface Project {
   created_at: string;
   updated_at: string;
   author?: Profile;
+  client_id?: string;
+  freelancer_id?: string;
+  client?: Profile;
+  freelancer?: Profile;
   _count?: {
     comments: number;
     applications: number;
   };
+  applications_count?: number | { count: number }[];
+  milestones_count?: number | { count: number }[];
 }
 
 export interface ProjectApplication {
@@ -70,7 +77,9 @@ export interface Thought {
   _count?: {
     likes: number;
     bookmarks: number;
+    comments?: number;
   };
+  comments?: { count: number }[];
   likes?: any[];
   bookmarks?: any[];
 }
@@ -96,4 +105,15 @@ export interface Message {
   created_at: string;
   sender?: Profile;
   receiver?: Profile;
+}
+
+export interface CallLog {
+  id: string;
+  caller_id: string;
+  recipient_id: string;
+  start_time: string;
+  end_time?: string;
+  duration?: number;
+  call_type: 'audio' | 'video';
+  status: 'completed' | 'missed' | 'rejected';
 }

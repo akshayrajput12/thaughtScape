@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -5,31 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  budget: number;
-  deadline: string;
-  client_id: string;
-  freelancer_id: string;
-  created_at: string;
-  updated_at: string;
-  client: {
-    username: string;
-    full_name: string;
-    avatar_url: string;
-  };
-  freelancer: {
-    username: string;
-    full_name: string;
-    avatar_url: string;
-  };
-  applications_count: number;
-  milestones_count: number;
-}
+import type { Project } from "@/types";
 
 export const ProjectsList = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -68,12 +45,36 @@ export const ProjectsList = () => {
         milestones_count: project.milestones_count || 0
       })) || [];
 
-      setProjects(projectsWithCounts);
+      setProjects(projectsWithCounts as Project[]);
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast({
         title: "Error",
         description: "Could not fetch projects",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      setProjects(projects.filter(project => project.id !== projectId));
+      toast({
+        title: "Success",
+        description: "Project deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast({
+        title: "Error",
+        description: "Could not delete project",
         variant: "destructive",
       });
     }
