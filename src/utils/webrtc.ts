@@ -1,5 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import { CallLog } from "@/types";
 
 export interface CallRequest {
   callId: string;
@@ -56,27 +56,23 @@ export class WebRTCConnection {
 
   async initializeConnection(isVideo: boolean): Promise<MediaStream> {
     try {
-      // Get local media stream
       this.localStream = await navigator.mediaDevices.getUserMedia({
         video: isVideo,
         audio: true
       });
 
-      // Create peer connection
       this.peerConnection = new RTCPeerConnection({
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' }
         ]
       });
 
-      // Add local stream tracks to peer connection
       this.localStream.getTracks().forEach(track => {
         if (this.peerConnection && this.localStream) {
           this.peerConnection.addTrack(track, this.localStream);
         }
       });
 
-      // Handle incoming streams
       this.peerConnection.ontrack = (event) => {
         this.onRemoteStream(event.streams[0]);
       };
@@ -148,7 +144,6 @@ export class WebRTCConnection {
       this.peerConnection = null;
     }
     
-    // Log call end time if a call was in progress
     this.logCallEnd();
   }
   
@@ -162,7 +157,6 @@ export class WebRTCConnection {
       const callerId = this.callId.split('-')[0];
       const receiverId = this.callId.split('-')[1];
       
-      // Update the call log in the database
       await supabase
         .from('call_logs')
         .update({
@@ -201,7 +195,6 @@ export class WebRTCConnection {
     this.callId = callId;
     this.callStartTime = new Date();
     
-    // Send call request notification to receiver
     const receiverChannel = supabase.channel(`user:${receiverId}`);
     await receiverChannel.subscribe();
     
@@ -219,20 +212,18 @@ export class WebRTCConnection {
       }
     });
 
-    // Log call start in database
     try {
       await supabase.from('call_logs').insert({
         caller_id: callerId,
         recipient_id: receiverId,
-        call_type: isVideo ? 'video' : 'audio',
-        status: 'completed', // Will be updated if rejected or missed
+        call_type: isVideo ? 'video' as const : 'audio' as const,
+        status: 'completed' as const,
         start_time: this.callStartTime.toISOString()
       });
     } catch (error) {
       console.error('Error logging call start:', error);
     }
 
-    // Set up WebRTC signaling channel
     const channel = supabase.channel(`call:${callId}`)
       .on('broadcast', { event: 'call-signal' }, async ({ payload }) => {
         const signalPayload = payload as CallSignalPayload;
@@ -243,7 +234,6 @@ export class WebRTCConnection {
         } else if (signalPayload.type === 'reject') {
           this.closeConnection();
           
-          // Update call log for rejected call
           try {
             await supabase
               .from('call_logs')
@@ -265,7 +255,6 @@ export class WebRTCConnection {
     
     await channel.subscribe();
 
-    // Create and send offer
     const offer = await this.createOffer();
     if (offer) {
       await channel.send({
@@ -312,7 +301,6 @@ export class WebRTCConnection {
 
     await channel.subscribe();
     
-    // Update call log for accepted call
     try {
       await supabase
         .from('call_logs')
@@ -342,7 +330,6 @@ export class WebRTCConnection {
 
     channel.unsubscribe();
     
-    // Update call log for rejected call
     try {
       const callerId = callId.split('-')[0];
       const receiverId = callId.split('-')[1];

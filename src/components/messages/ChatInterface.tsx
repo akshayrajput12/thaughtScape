@@ -90,7 +90,15 @@ export const ChatInterface = ({ currentUser, selectedUser, onBack }: ChatInterfa
           .limit(10);
           
         if (error) throw error;
-        setCallLogs(data || []);
+        
+        // Properly cast the data to match the CallLog interface
+        const typedCallLogs = (data || []).map(log => ({
+          ...log,
+          call_type: log.call_type as 'audio' | 'video',
+          status: log.status as 'completed' | 'missed' | 'rejected'
+        })) as CallLog[];
+        
+        setCallLogs(typedCallLogs);
       } catch (error) {
         console.error('Error fetching call logs:', error);
       }
