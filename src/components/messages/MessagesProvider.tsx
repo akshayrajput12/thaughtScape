@@ -36,8 +36,9 @@ export function useMessagesProvider() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll when new messages come in
+  // Pass messagesLength as dependency instead of messages array
   const { scrollRef, scrollToBottom } = useAutoScroll({
-    content: messages,
+    content: messages.length, // Just pass the length as a number
   });
 
   // Set messagesEndRef to scrollRef for scrolling
@@ -50,8 +51,9 @@ export function useMessagesProvider() {
     if (messages.length > 0) {
       scrollToBottom();
     }
-  }, [messages, scrollRef, scrollToBottom]);
+  }, [messages.length, scrollRef, scrollToBottom]); // Use messages.length instead of messages
 
+  
   // Filter messages for the selected user
   const messagesToShow = messages.filter(
     (message) =>
