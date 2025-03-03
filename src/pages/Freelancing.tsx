@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -443,6 +444,9 @@ const Freelancing = () => {
             <div className="flex justify-between items-center">
               <h2 className="text-3xl font-serif font-bold text-gray-900">Available Projects</h2>
               <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>Post a Project</Button>
+                </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Post a New Project</DialogTitle>
@@ -924,4 +928,112 @@ const Freelancing = () => {
                 status,
               });
             }}
-            className="
+            className="grid gap-4 py-4"
+          >
+            <div className="grid gap-2">
+              <Label htmlFor="edit-title">Project Title</Label>
+              <Input 
+                id="edit-title" 
+                name="title" 
+                defaultValue={selectedProject?.title}
+                required 
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-description">Project Description</Label>
+              <Textarea 
+                id="edit-description" 
+                name="description" 
+                defaultValue={selectedProject?.description}
+                className="min-h-[150px]"
+                required 
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-skills">Required Skills (comma-separated)</Label>
+              <Input 
+                id="edit-skills" 
+                name="skills" 
+                defaultValue={selectedProject?.required_skills?.join(", ")}
+                required 
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-budget">Budget (₹)</Label>
+              <Input 
+                id="edit-budget" 
+                name="budget" 
+                type="number"
+                defaultValue={selectedProject?.budget}
+                min="0"
+                required 
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-deadline">Deadline</Label>
+              <Input 
+                id="edit-deadline" 
+                name="deadline" 
+                type="date" 
+                defaultValue={selectedProject?.deadline?.split('T')[0]}
+                required 
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-status">Project Status</Label>
+              <select
+                id="edit-status"
+                name="status"
+                defaultValue={selectedProject?.status}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                required
+              >
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={updateProjectMutation.isPending}>
+                {updateProjectMutation.isPending ? "Updating..." : "Update Project"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your project 
+              and remove it from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (selectedProject) {
+                  deleteProjectMutation.mutate(selectedProject.id);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteProjectMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+export default Freelancing;
