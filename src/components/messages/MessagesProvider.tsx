@@ -37,7 +37,7 @@ export function useMessagesProvider() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll when new messages come in
-  useAutoScroll(messagesEndRef, messages);
+  useAutoScroll(messagesEndRef, [messages]);
 
   // Filter messages for the selected user
   const messagesToShow = messages.filter(
@@ -56,6 +56,28 @@ export function useMessagesProvider() {
     selectedUser && 
     messageCounts[selectedUser.id] >= 3 && 
     !isFollowing;
+
+  // Fetch follow status
+  const fetchFollowStatus = async () => {
+    if (!currentUserId) return;
+    
+    const { data, error } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', currentUserId);
+
+    if (error) {
+      console.error('Error fetching follows:', error);
+      return;
+    }
+
+    const followMap = data.reduce((acc, item) => {
+      acc[item.following_id] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+
+    setFollowStatus(followMap);
+  };
 
   // Set up Supabase subscription for real-time messages
   useEffect(() => {
@@ -85,7 +107,7 @@ export function useMessagesProvider() {
             const updatedMessage = {
               ...newMessage,
               sender: senderData
-            };
+            } as Message;
             
             setMessages((prev) => [...prev, updatedMessage]);
             
@@ -134,28 +156,6 @@ export function useMessagesProvider() {
     fetchCurrentUser();
   }, [navigate, user?.id, userIdFromUrl]);
 
-  // Fetch follow status
-  const fetchFollowStatus = async () => {
-    if (!currentUserId) return;
-    
-    const { data, error } = await supabase
-      .from('follows')
-      .select('following_id')
-      .eq('follower_id', currentUserId);
-
-    if (error) {
-      console.error('Error fetching follows:', error);
-      return;
-    }
-
-    const followMap = data.reduce((acc, item) => {
-      acc[item.following_id] = true;
-      return acc;
-    }, {} as Record<string, boolean>);
-
-    setFollowStatus(followMap);
-  };
-
   useEffect(() => {
     fetchFollowStatus();
   }, [currentUserId]);
@@ -187,7 +187,16 @@ export function useMessagesProvider() {
         return;
       }
 
-      setSearchResults(data || []);
+      if (data) {
+        // Add required properties for Profile type
+        const searchResultsWithRequiredFields = data.map((user: any) => ({
+          ...user,
+          created_at: user.created_at || new Date().toISOString(),
+          updated_at: user.updated_at || new Date().toISOString(),
+        })) as Profile[];
+        
+        setSearchResults(searchResultsWithRequiredFields);
+      }
     };
 
     searchUsers();
@@ -240,11 +249,25 @@ export function useMessagesProvider() {
       if (error) {
         console.error('Error fetching messages:', error);
         setMessages([]);
-      } else {
-        setMessages(data || []);
+      } else if (data) {
+        // Ensure data conforms to Message type
+        const typedMessages = data.map(msg => {
+          // Make sure request_status is of the correct type
+          let typedRequestStatus: "pending" | "accepted" | "declined" | null = null;
+          if (msg.request_status === 'pending') typedRequestStatus = 'pending';
+          else if (msg.request_status === 'accepted') typedRequestStatus = 'accepted';
+          else if (msg.request_status === 'declined') typedRequestStatus = 'declined';
+          
+          return {
+            ...msg,
+            request_status: typedRequestStatus
+          } as Message;
+        });
+        
+        setMessages(typedMessages);
         
         // Mark messages from selected user as read
-        const unreadMessages = data?.filter(
+        const unreadMessages = typedMessages.filter(
           msg => msg.sender_id === selectedUser.id && 
                 msg.receiver_id === currentUserId && 
                 !msg.is_read
@@ -280,11 +303,13 @@ export function useMessagesProvider() {
       return;
     }
 
+    if (!data) return;
+
     // Group by conversation and get the latest message
     const conversationMap = new Map<string, Conversation>();
     let unreadCountMap = new Map<string, number>();
 
-    data?.forEach(message => {
+    data.forEach(message => {
       const otherUserId = message.sender_id === currentUserId
         ? message.receiver_id
         : message.sender_id;
@@ -292,6 +317,17 @@ export function useMessagesProvider() {
       const otherUser = message.sender_id === currentUserId
         ? message.receiver
         : message.sender;
+
+      // Ensure message conforms to Message type
+      let typedRequestStatus: "pending" | "accepted" | "declined" | null = null;
+      if (message.request_status === 'pending') typedRequestStatus = 'pending';
+      else if (message.request_status === 'accepted') typedRequestStatus = 'accepted';
+      else if (message.request_status === 'declined') typedRequestStatus = 'declined';
+      
+      const typedMessage = {
+        ...message,
+        request_status: typedRequestStatus
+      } as Message;
 
       // Count unread messages
       if (message.receiver_id === currentUserId && !message.is_read) {
@@ -306,7 +342,7 @@ export function useMessagesProvider() {
           new Date(message.created_at) > new Date(conversationMap.get(otherUserId)!.lastMessage.created_at)) {
         conversationMap.set(otherUserId, {
           user: otherUser,
-          lastMessage: message,
+          lastMessage: typedMessage,
           unreadCount: 0 // Will update this after processing all messages
         });
       }
@@ -345,7 +381,15 @@ export function useMessagesProvider() {
       return;
     }
 
-    setMessageRequests(data || []);
+    if (data) {
+      // Ensure data conforms to Message type
+      const typedMessages = data.map(msg => ({
+        ...msg,
+        request_status: msg.request_status as "pending" | "accepted" | "declined" | null
+      })) as Message[];
+      
+      setMessageRequests(typedMessages);
+    }
   };
 
   const markMessageAsRead = async (messageId: string) => {
@@ -435,8 +479,9 @@ export function useMessagesProvider() {
 
       const newMessage = {
         ...messageData,
-        sender: senderData
-      };
+        sender: senderData,
+        request_status: messageData.request_status as "pending" | "accepted" | "declined" | null
+      } as Message;
 
       setMessages(prevMessages => [...prevMessages, newMessage]);
       setMessageContent('');

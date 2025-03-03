@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ChatBubble } from '@/components/ui/chat-bubble';
+import { ChatBubble, ChatBubbleMessage, ChatBubbleAvatar } from '@/components/ui/chat-bubble';
 import { MessageLoading } from '@/components/ui/message-loading';
 import type { Message } from '@/types';
 
@@ -35,12 +35,22 @@ export function MessageList({
       {messagesToShow.map((message) => (
         <ChatBubble
           key={message.id}
-          message={message.content}
-          isOutgoing={message.sender_id === currentUserId}
-          timestamp={new Date(message.created_at)}
-          sender={message.sender?.username || "Unknown"}
-          avatar={message.sender?.avatar_url}
-        />
+          variant={message.sender_id === currentUserId ? "sent" : "received"}
+        >
+          <ChatBubbleAvatar 
+            src={message.sender?.avatar_url} 
+            fallback={message.sender?.username?.[0] || "U"} 
+          />
+          <ChatBubbleMessage variant={message.sender_id === currentUserId ? "sent" : "received"}>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">{message.sender?.username || "Unknown"}</p>
+              <p>{message.content}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+          </ChatBubbleMessage>
+        </ChatBubble>
       ))}
       <div ref={messagesEndRef} />
     </div>
