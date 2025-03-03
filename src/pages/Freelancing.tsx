@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,7 +48,8 @@ import {
   ChevronRight, 
   Pencil, 
   Trash,
-  AlertCircle
+  AlertCircle,
+  MessageSquare
 } from "lucide-react";
 import clsx from "clsx";
 import type { Project, ProjectApplication } from "@/types";
@@ -79,7 +79,7 @@ const Freelancing = () => {
         .from("projects")
         .select(`
           *,
-          author:profiles(id, username, full_name, avatar_url, created_at, updated_at),
+          author:profiles(id, username, full_name, avatar_url, created_at, updated_at, whatsapp_number),
           applications:project_applications(count),
           comments:project_applications(count)
         `)
@@ -243,7 +243,7 @@ const Freelancing = () => {
   });
 
   const applyProjectMutation = useMutation({
-    mutationFn: async ({ projectId, message }: { projectId: string; message: string }) => {
+    mutationFn: async ({ projectId, message, phoneNumber }: { projectId: string; message: string; phoneNumber: string }) => {
       const { data, error } = await supabase
         .from("project_applications")
         .insert([{
@@ -443,10 +443,7 @@ const Freelancing = () => {
             <div className="flex justify-between items-center">
               <h2 className="text-3xl font-serif font-bold text-gray-900">Available Projects</h2>
               <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>Post New Project</Button>
-                </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Post a New Project</DialogTitle>
                     <DialogDescription>
@@ -462,7 +459,9 @@ const Freelancing = () => {
                       const skills = String(formData.get("skills"))
                         .split(",")
                         .map((skill) => skill.trim());
-                      const budget = Number(formData.get("budget"));
+                      const minBudget = Number(formData.get("min_budget"));
+                      const maxBudget = Number(formData.get("max_budget"));
+                      const whatsappNumber = String(formData.get("whatsapp_number") || "");
                       const deadline = String(formData.get("deadline"));
 
                       if (!user?.id) {
@@ -478,7 +477,7 @@ const Freelancing = () => {
                         title,
                         description,
                         required_skills: skills,
-                        budget,
+                        budget: minBudget,
                         deadline,
                         author_id: user.id,
                         status: "open",
@@ -487,24 +486,76 @@ const Freelancing = () => {
                     className="grid gap-4 py-4"
                   >
                     <div className="grid gap-2">
-                      <Label htmlFor="title">Title</Label>
-                      <Input id="title" name="title" type="text" required />
+                      <Label htmlFor="title">Project Title</Label>
+                      <Input 
+                        id="title" 
+                        name="title" 
+                        type="text"
+                        placeholder="Enter a clear, descriptive title for your project" 
+                        required 
+                      />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea id="description" name="description" required />
+                      <Label htmlFor="description">Project Description</Label>
+                      <Textarea 
+                        id="description" 
+                        name="description" 
+                        placeholder="Describe your project requirements, goals, and any specific instructions"
+                        className="min-h-[150px]"
+                        required 
+                      />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="skills">Required Skills (comma-separated)</Label>
-                      <Input id="skills" name="skills" type="text" required />
+                      <Input 
+                        id="skills" 
+                        name="skills" 
+                        type="text"
+                        placeholder="e.g., React, Node.js, TypeScript" 
+                        required 
+                      />
                     </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="budget">Budget (₹)</Label>
-                      <Input id="budget" name="budget" type="number" required />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="min_budget">Minimum Budget (₹)</Label>
+                        <Input 
+                          id="min_budget" 
+                          name="min_budget" 
+                          type="number"
+                          min="0"
+                          placeholder="Enter minimum budget" 
+                          required 
+                        />
+                      </div>
+                      {/* <div className="grid gap-2">
+                        <Label htmlFor="max_budget">Maximum Budget (₹)</Label>
+                        <Input 
+                          id="max_budget" 
+                          name="max_budget" 
+                          type="number"
+                          min="0"
+                          placeholder="Enter maximum budget" 
+                          required 
+                        />
+                      </div> */}
                     </div>
+                    {/* <div className="grid gap-2">
+                      <Label htmlFor="whatsapp_number">WhatsApp Number (Optional)</Label>
+                      <Input 
+                        id="whatsapp_number" 
+                        name="whatsapp_number" 
+                        type="tel"
+                        placeholder="Enter your WhatsApp number (e.g., +91XXXXXXXXXX)" 
+                      />
+                    </div> */}
                     <div className="grid gap-2">
                       <Label htmlFor="deadline">Deadline</Label>
-                      <Input id="deadline" name="deadline" type="date" required />
+                      <Input 
+                        id="deadline" 
+                        name="deadline" 
+                        type="date" 
+                        required 
+                      />
                     </div>
                     <div className="flex justify-end gap-2">
                       <DialogClose asChild>
@@ -588,7 +639,7 @@ const Freelancing = () => {
                       </div>
                     </div>
 
-                    <div className="pt-4 flex justify-between items-center border-t border-gray-100">
+                    <div className="pt-4 flex flex-wrap gap-2 justify-end border-t border-gray-100">
                       <span className={clsx(
                         "px-3 py-1 rounded-full text-xs font-medium",
                         {
@@ -610,28 +661,38 @@ const Freelancing = () => {
                           Awarded
                         </Button>
                       ) : (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedProject(project);
-                            setIsApplicationDialogOpen(true);
-                          }}
-                          disabled={
-                            project.status !== "open" || 
-                            project.author_id === user?.id || 
-                            hasApplied(project.id)
-                          }
-                        >
-                          {hasApplied(project.id) ? (
-                            <span className="flex items-center gap-1">
-                              <CheckCircle2 className="w-4 h-4" />
-                              Applied
-                            </span>
-                          ) : (
-                            "Apply Now"
-                          )}
-                        </Button>
+                        project.status === "open" && project.author_id !== user?.id && !hasApplied(project.id) ? (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedProject(project);
+                                setIsApplicationDialogOpen(true);
+                              }}
+                            >
+                              Apply Now
+                            </Button>
+                            {project.author?.whatsapp_number && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const message = encodeURIComponent(
+                                    `Hi, I'm interested in your project "${project.title}". I found it on the freelancing platform.`
+                                  );
+                                  window.open(
+                                    `https://wa.me/${project.author.whatsapp_number}?text=${message}`,
+                                    '_blank'
+                                  );
+                                }}
+                              >
+                                <MessageSquare className="w-4 h-4 mr-2" />
+                                Apply via WhatsApp
+                              </Button>
+                            )}
+                          </div>
+                        ) : null
                       )}
                     </div>
                   </div>
@@ -778,33 +839,40 @@ const Freelancing = () => {
           <DialogHeader>
             <DialogTitle>Apply for Project</DialogTitle>
             <DialogDescription>
-              Write a message to the project owner to express your interest.
+              Share your details and explain why you're the best fit for this project.
             </DialogDescription>
           </DialogHeader>
           <form
             onSubmit={(e) => {
               e.preventDefault();
               if (selectedProject && user?.id) {
+                const formData = new FormData(e.currentTarget);
                 applyProjectMutation.mutate({
                   projectId: selectedProject.id,
-                  message: applicationMessage,
-                });
-              } else {
-                toast({
-                  title: "Error",
-                  description: "You must be logged in to apply for a project",
-                  variant: "destructive",
+                  message: String(formData.get("message")),
+                  phoneNumber: String(formData.get("phone_number") || ""),
                 });
               }
             }}
             className="grid gap-4 py-4"
           >
             <div className="grid gap-2">
-              <Label htmlFor="message">Message</Label>
+              <Label htmlFor="message">Cover Letter</Label>
               <Textarea
                 id="message"
-                value={applicationMessage}
-                onChange={(e) => setApplicationMessage(e.target.value)}
+                name="message"
+                placeholder="Explain why you're interested in this project and what makes you the best candidate"
+                className="min-h-[150px]"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="phone_number">Phone Number</Label>
+              <Input
+                id="phone_number"
+                name="phone_number"
+                type="tel"
+                placeholder="Enter your contact number"
                 required
               />
             </div>
@@ -856,113 +924,4 @@ const Freelancing = () => {
                 status,
               });
             }}
-            className="grid gap-4 py-4"
-          >
-            <div className="grid gap-2">
-              <Label htmlFor="title">Title</Label>
-              <Input 
-                id="title" 
-                name="title" 
-                type="text" 
-                defaultValue={selectedProject?.title} 
-                required 
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea 
-                id="description" 
-                name="description" 
-                defaultValue={selectedProject?.description} 
-                required 
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="skills">Required Skills (comma-separated)</Label>
-              <Input 
-                id="skills" 
-                name="skills" 
-                type="text" 
-                defaultValue={selectedProject?.required_skills?.join(", ")} 
-                required 
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="budget">Budget (₹)</Label>
-              <Input 
-                id="budget" 
-                name="budget" 
-                type="number" 
-                defaultValue={selectedProject?.budget} 
-                required 
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="deadline">Deadline</Label>
-              <Input 
-                id="deadline" 
-                name="deadline" 
-                type="date" 
-                defaultValue={selectedProject?.deadline ? 
-                  new Date(selectedProject.deadline).toISOString().split('T')[0] : 
-                  undefined} 
-                required 
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="status">Status</Label>
-              <select 
-                id="status" 
-                name="status" 
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-                defaultValue={selectedProject?.status}
-              >
-                <option value="open">Open</option>
-                <option value="in_progress">In Progress</option>
-                <option value="closed">Closed</option>
-              </select>
-            </div>
-            <div className="flex justify-end gap-2">
-              <DialogClose asChild>
-                <Button type="button" variant="secondary">
-                  Cancel
-                </Button>
-              </DialogClose>
-              <Button type="submit" disabled={updateProjectMutation.isPending}>
-                {updateProjectMutation.isPending ? "Updating..." : "Update Project"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Project Alert */}
-      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the project
-              and all related applications.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={() => {
-                if (selectedProject) {
-                  deleteProjectMutation.mutate(selectedProject.id);
-                }
-              }}
-            >
-              {deleteProjectMutation.isPending ? "Deleting..." : "Delete Project"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-};
-
-export default Freelancing;
+            className="

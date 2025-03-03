@@ -344,6 +344,7 @@ export type Database = {
           state: string | null
           updated_at: string
           username: string
+          whatsapp_number: string | null
         }
         Insert: {
           age?: number | null
@@ -366,6 +367,7 @@ export type Database = {
           state?: string | null
           updated_at?: string
           username: string
+          whatsapp_number?: string | null
         }
         Update: {
           age?: number | null
@@ -388,6 +390,7 @@ export type Database = {
           state?: string | null
           updated_at?: string
           username?: string
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
@@ -397,6 +400,7 @@ export type Database = {
           created_at: string
           id: string
           message: string
+          phone_number: string | null
           project_id: string
           status: string | null
           viewed_at: string | null
@@ -406,6 +410,7 @@ export type Database = {
           created_at?: string
           id?: string
           message: string
+          phone_number?: string | null
           project_id: string
           status?: string | null
           viewed_at?: string | null
@@ -415,6 +420,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string
+          phone_number?: string | null
           project_id?: string
           status?: string | null
           viewed_at?: string | null
@@ -440,11 +446,12 @@ export type Database = {
         Row: {
           attachment_url: string | null
           author_id: string
-          budget: number | null
           created_at: string
           deadline: string | null
           description: string
           id: string
+          max_budget: number | null
+          min_budget: number | null
           notifications_count: number | null
           required_skills: string[] | null
           status: string | null
@@ -454,11 +461,12 @@ export type Database = {
         Insert: {
           attachment_url?: string | null
           author_id: string
-          budget?: number | null
           created_at?: string
           deadline?: string | null
           description: string
           id?: string
+          max_budget?: number | null
+          min_budget?: number | null
           notifications_count?: number | null
           required_skills?: string[] | null
           status?: string | null
@@ -468,11 +476,12 @@ export type Database = {
         Update: {
           attachment_url?: string | null
           author_id?: string
-          budget?: number | null
           created_at?: string
           deadline?: string | null
           description?: string
           id?: string
+          max_budget?: number | null
+          min_budget?: number | null
           notifications_count?: number | null
           required_skills?: string[] | null
           status?: string | null
