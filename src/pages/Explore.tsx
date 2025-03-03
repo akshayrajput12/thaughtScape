@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search } from "lucide-react";
+import { Search, UserPlus, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PoemCard } from "@/components/PoemCard";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import type { Profile, Thought } from "@/types";
 
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Profile[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -62,7 +64,10 @@ const Explore = () => {
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      setShowSearchResults(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -72,7 +77,8 @@ const Explore = () => {
         .limit(5);
 
       if (error) throw error;
-      // Do something with the search results if needed
+      setSearchResults(data || []);
+      setShowSearchResults(true);
     } catch (error) {
       console.error('Error searching users:', error);
     }
@@ -101,24 +107,41 @@ const Explore = () => {
     }
   };
 
+  const handleFollow = async (userId: string) => {
+    try {
+      // Add logic to follow a user
+      toast({
+        title: "Success",
+        description: "You are now following this user",
+      });
+    } catch (error) {
+      console.error('Error following user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to follow user",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-50 via-white to-purple-50/20">
+    <div className="min-h-screen bg-white">
       <div className="container max-w-7xl mx-auto px-4 py-8">
         {/* Search Section */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-12"
+          className="mb-12 relative"
         >
           <div className="max-w-2xl mx-auto text-center space-y-4">
-            <h1 className="text-3xl md:text-4xl font-serif font-bold text-black-800 mb-4">
+            <h1 className="text-3xl md:text-4xl font-serif font-bold text-black mb-4">
               Discover Amazing Thoughts
             </h1>
             <p className="text-gray-600 mb-8 max-w-lg mx-auto">
               Explore a world of creativity and connect with inspiring minds
             </p>
             <div className="relative max-w-xl mx-auto">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-pink-100 blur-xl opacity-50 -z-10 rounded-full" />
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200 blur-xl opacity-50 -z-10 rounded-full" />
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <Input
@@ -126,11 +149,54 @@ const Explore = () => {
                   placeholder="Search users..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-12 h-14 bg-white/80 backdrop-blur-sm border-purple-100 focus:border-purple-200 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
+                  className="pl-12 h-14 bg-white/80 backdrop-blur-sm border-gray-300 focus:border-black rounded-full shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
                 />
               </div>
             </div>
           </div>
+          
+          {/* Search Results Dropdown */}
+          {showSearchResults && searchResults.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute mt-2 w-full max-w-xl mx-auto inset-x-0 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 p-2"
+            >
+              <div className="p-2">
+                <h3 className="text-sm font-medium text-gray-500 mb-2">Search Results</h3>
+                <div className="divide-y divide-gray-100">
+                  {searchResults.map((profile) => (
+                    <motion.div
+                      key={profile.id}
+                      whileHover={{ x: 5 }}
+                      className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <img
+                            src={profile.avatar_url || "/placeholder.svg"}
+                            alt={profile.username}
+                            className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                          />
+                        </div>
+                        <div>
+                          <p className="font-medium text-black">{profile.username}</p>
+                          <p className="text-sm text-gray-500">{profile.full_name}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleFollow(profile.id)}
+                        className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-black rounded-full hover:bg-gray-800 transition-colors"
+                      >
+                        <UserPlus size={12} />
+                        <span>Follow</span>
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -139,7 +205,7 @@ const Explore = () => {
             <motion.h2 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-2xl font-serif font-bold text-gray-800 mb-6 border-b border-purple-100 pb-4"
+              className="text-2xl font-serif font-bold text-black mb-6 border-b border-gray-200 pb-4"
             >
               Latest Thoughts
             </motion.h2>
@@ -184,12 +250,18 @@ const Explore = () => {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-purple-100/50"
+              className="bg-white rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] p-6 border-2 border-black"
             >
-              <h3 className="text-xl font-serif font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-purple-400" />
-                Suggested Users
-              </h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-serif font-semibold text-black flex items-center gap-2">
+                  <Users size={20} className="text-black" />
+                  Suggested Connections
+                </h3>
+                <span className="text-xs font-medium bg-black text-white px-2 py-1 rounded-full">
+                  {suggestedUsers.length}
+                </span>
+              </div>
+              
               {suggestedUsersLoading ? (
                 <div className="space-y-4">
                   {[...Array(3)].map((_, i) => (
@@ -210,34 +282,44 @@ const Explore = () => {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="group flex items-center justify-between gap-4 p-4 rounded-xl hover:bg-purple-50/80 transition-all duration-300 border border-transparent hover:border-purple-100"
+                      className="group flex items-center justify-between gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-300 border border-transparent hover:border-gray-200"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-sm opacity-0 group-hover:opacity-50 transition-opacity" />
+                        <div className="relative overflow-hidden rounded-full">
+                          <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full opacity-0 group-hover:opacity-50 transition-opacity" />
                           <img
                             src={user.avatar_url || "/placeholder.svg"}
                             alt={user.username}
-                            className="relative w-12 h-12 rounded-full object-cover border-2 border-white"
+                            className="relative w-12 h-12 rounded-full object-cover border-2 border-white group-hover:scale-110 transition-all duration-300"
                           />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800 group-hover:text-purple-700 transition-colors">
+                          <p className="font-medium text-black group-hover:text-gray-900 transition-colors">
                             {user.username}
                           </p>
-                          <p className="text-sm text-gray-500">
-                            {user.followers_count} followers
-                          </p>
+                          <div className="flex items-center text-sm text-gray-500">
+                            <span className="inline-block w-2 h-2 bg-black rounded-full mr-1"></span>
+                            <span>{user.followers_count} followers</span>
+                          </div>
                         </div>
                       </div>
                       <button
-                        onClick={() => {/* Add follow logic */}}
-                        className="px-4 py-2 text-sm font-medium text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-full transition-colors"
+                        onClick={() => handleFollow(user.id)}
+                        className="px-4 py-2 text-sm font-medium text-white bg-black rounded-full hover:bg-gray-800 transition-colors flex items-center gap-1 group-hover:scale-105"
                       >
-                        Follow
+                        <UserPlus size={14} />
+                        <span>Follow</span>
                       </button>
                     </motion.div>
                   ))}
+                </div>
+              )}
+              
+              {!suggestedUsersLoading && suggestedUsers.length > 0 && (
+                <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+                  <button className="text-sm font-medium text-black underline hover:text-gray-600 transition-colors">
+                    View all suggested users
+                  </button>
                 </div>
               )}
             </motion.div>
