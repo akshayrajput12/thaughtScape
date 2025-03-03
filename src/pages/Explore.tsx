@@ -7,18 +7,14 @@ import { PoemCard } from "@/components/PoemCard";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useNavigate } from "react-router-dom";
 import type { Profile, Thought } from "@/types";
-import { Button } from "@/components/ui/button";
 
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   // Fetch thoughts with React Query
   const { data: thoughts = [], isLoading: thoughtsLoading } = useQuery({
@@ -103,77 +99,6 @@ const Explore = () => {
         variant: "destructive",
       });
     }
-  };
-
-  const handleFollow = async (profileId: string) => {
-    if (!user?.id) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to follow users",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Check if already following
-      const { data: existingFollow, error: checkError } = await supabase
-        .from('follows')
-        .select('*')
-        .eq('follower_id', user.id)
-        .eq('following_id', profileId)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking follow status:', checkError);
-        throw checkError;
-      }
-
-      if (existingFollow) {
-        // Unfollow if already following
-        const { error: deleteError } = await supabase
-          .from('follows')
-          .delete()
-          .eq('follower_id', user.id)
-          .eq('following_id', profileId);
-
-        if (deleteError) throw deleteError;
-
-        toast({
-          title: "Success",
-          description: "User unfollowed successfully",
-        });
-      } else {
-        // Follow if not following
-        const { error: insertError } = await supabase
-          .from('follows')
-          .insert({
-            follower_id: user.id,
-            following_id: profileId
-          });
-
-        if (insertError) throw insertError;
-
-        toast({
-          title: "Success",
-          description: "User followed successfully",
-        });
-      }
-
-      // Invalidate the cache to refresh the data
-      queryClient.invalidateQueries({ queryKey: ['suggestedUsers', user.id] });
-    } catch (error) {
-      console.error('Error updating follow status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update follow status",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const navigateToProfile = (profileId: string) => {
-    navigate(`/profile/${profileId}`);
   };
 
   return (
@@ -279,46 +204,38 @@ const Explore = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {suggestedUsers.map((suggestedUser: Profile, index) => (
+                  {suggestedUsers.map((user: Profile, index) => (
                     <motion.div
-                      key={suggestedUser.id}
+                      key={user.id}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="group flex items-center justify-between gap-4 p-4 rounded-xl hover:bg-purple-50/80 transition-all duration-300 border border-transparent hover:border-purple-100 cursor-pointer"
-                      onClick={() => navigateToProfile(suggestedUser.id)}
+                      className="group flex items-center justify-between gap-4 p-4 rounded-xl hover:bg-purple-50/80 transition-all duration-300 border border-transparent hover:border-purple-100"
                     >
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-sm opacity-0 group-hover:opacity-50 transition-opacity" />
                           <img
-                            src={suggestedUser.avatar_url || "/placeholder.svg"}
-                            alt={suggestedUser.username}
+                            src={user.avatar_url || "/placeholder.svg"}
+                            alt={user.username}
                             className="relative w-12 h-12 rounded-full object-cover border-2 border-white"
                           />
                         </div>
                         <div>
                           <p className="font-medium text-gray-800 group-hover:text-purple-700 transition-colors">
-                            {suggestedUser.username}
+                            {user.username}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {suggestedUser.followers_count} followers
+                            {user.followers_count} followers
                           </p>
                         </div>
                       </div>
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleFollow(suggestedUser.id);
-                        }}
-                        className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
-                          suggestedUser.is_following 
-                            ? "text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100" 
-                            : "text-white bg-purple-600 hover:bg-purple-700"
-                        }`}
+                      <button
+                        onClick={() => {/* Add follow logic */}}
+                        className="px-4 py-2 text-sm font-medium text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-full transition-colors"
                       >
-                        {suggestedUser.is_following ? "Unfollow" : "Follow"}
-                      </Button>
+                        Follow
+                      </button>
                     </motion.div>
                   ))}
                 </div>
