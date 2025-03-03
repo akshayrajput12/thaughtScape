@@ -311,7 +311,17 @@ const Messages = () => {
         return;
       }
 
-      setSearchResults(data);
+      const profileResults: Profile[] = data.map((user: any) => ({
+        id: user.id,
+        username: user.username,
+        full_name: user.full_name,
+        avatar_url: user.avatar_url,
+        is_following: user.is_following,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+
+      setSearchResults(profileResults);
     };
 
     const debounceTimer = setTimeout(searchUsers, 300);

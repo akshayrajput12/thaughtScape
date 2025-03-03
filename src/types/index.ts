@@ -18,6 +18,7 @@ export interface Profile {
   posts_count?: number;
   college?: string;
   registration_number?: string;
+  is_following?: boolean;
 }
 
 export interface Project {
