@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,7 +36,7 @@ export function useMessagesProvider() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll when new messages come in
-  useAutoScroll(messagesEndRef, [messages]);
+  useAutoScroll(messagesEndRef, messages);
 
   // Filter messages for the selected user
   const messagesToShow = messages.filter(
