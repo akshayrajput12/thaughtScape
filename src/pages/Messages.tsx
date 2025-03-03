@@ -72,6 +72,8 @@ const Messages = () => {
 
   useEffect(() => {
     const fetchFollowStatus = async () => {
+      if (!currentUserId) return;
+      
       const { data, error } = await supabase
         .from('follows')
         .select('following_id')
@@ -111,8 +113,6 @@ const Messages = () => {
   }, [currentUserId, selectedUser]);
 
   useEffect(() => {
-    if (!currentUserId) return;
-
     const fetchConversationsAndRequests = async () => {
       const { data, error } = await supabase
         .from('messages')
@@ -685,6 +685,25 @@ const Messages = () => {
 
       if (isRequest) {
         setMessageCount(prev => prev + 1);
+      }
+
+      const { data: pendingRequests, error: pendingError } = await supabase
+        .from('messages')
+        .select()
+        .eq('sender_id', selectedUser.id)
+        .eq('receiver_id', currentUserId)
+        .eq('is_request', true)
+        .eq('request_status', 'pending');
+
+      if (!pendingError && pendingRequests && pendingRequests.length > 0) {
+        await supabase
+          .from('messages')
+          .update({ request_status: 'accepted' })
+          .eq('sender_id', selectedUser.id)
+          .eq('receiver_id', currentUserId)
+          .eq('request_status', 'pending');
+        
+        fetchFollowStatus();
       }
 
       setMessages(prev => prev.map(msg => 

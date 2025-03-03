@@ -337,6 +337,64 @@ const Freelancing = () => {
     },
   });
 
+  const acceptApplicationMutation = useMutation({
+    mutationFn: async (applicationId: string) => {
+      const { error } = await supabase
+        .from("project_applications")
+        .update({ status: "accepted" })
+        .eq("id", applicationId);
+      
+      if (error) throw error;
+      
+      // Return a success message
+      return { success: true, message: "Application accepted successfully" };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      toast({
+        title: "Success",
+        description: "Application accepted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error accepting application:', error);
+      toast({
+        title: "Error",
+        description: "Failed to accept application",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const rejectApplicationMutation = useMutation({
+    mutationFn: async (applicationId: string) => {
+      const { error } = await supabase
+        .from("project_applications")
+        .update({ status: "rejected" })
+        .eq("id", applicationId);
+      
+      if (error) throw error;
+      
+      // Return a success message
+      return { success: true, message: "Application rejected successfully" };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      toast({
+        title: "Success",
+        description: "Application rejected successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error rejecting application:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject application",
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     if (isMobile) {
@@ -366,7 +424,14 @@ const Freelancing = () => {
     }
   };
 
-  // Effect to mark applications as viewed
+  const handleAcceptApplication = (applicationId: string) => {
+    acceptApplicationMutation.mutate(applicationId);
+  };
+
+  const handleRejectApplication = (applicationId: string) => {
+    rejectApplicationMutation.mutate(applicationId);
+  };
+
   useEffect(() => {
     if (!user?.id) return;
 
@@ -392,12 +457,10 @@ const Freelancing = () => {
     markApplicationsAsViewed();
   }, [user?.id]);
 
-  // Check if user has already applied to a project
   const hasApplied = (projectId: string) => {
     return userApplications.some(app => app.project_id === projectId);
   };
 
-  // Check application status
   const getApplicationStatus = (projectId: string) => {
     const application = userApplications.find(app => app.project_id === projectId);
     return application?.status || null;

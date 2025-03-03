@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -10,13 +9,40 @@ import { ProfileForm } from "@/components/profile/ProfileForm";
 import type { Profile, Thought } from "@/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { UserPlus, UserMinus, MessageSquare } from "lucide-react";
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
   const [isEditing, setIsEditing] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkFollowStatus = async () => {
+      if (!user?.id || !id) return;
+      
+      const { data, error } = await supabase
+        .from('follows')
+        .select('*')
+        .eq('follower_id', user.id)
+        .eq('following_id', id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error checking follow status:', error);
+        return;
+      }
+      
+      setIsFollowing(!!data);
+    };
+    
+    checkFollowStatus();
+  }, [user?.id, id]);
 
   const { data: profileData, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', id],
@@ -74,7 +100,6 @@ const Profile = () => {
     enabled: !!user?.id,
   });
 
-  // Check if user is viewing their own profile and it's not completed
   const showFirstTimeProfileForm = user?.id === id && 
                                   profileData && 
                                   !profileData.is_profile_completed;
@@ -119,6 +144,67 @@ const Profile = () => {
     }
   };
 
+  const handleFollow = async () => {
+    if (!user?.id || !id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('follows')
+        .insert({ follower_id: user.id, following_id: id });
+        
+      if (error) throw error;
+      
+      setIsFollowing(true);
+      queryClient.invalidateQueries({ queryKey: ['profile', id] });
+      
+      toast({
+        title: "Success",
+        description: `You are now following ${profileData?.username || 'this user'}`,
+      });
+    } catch (error) {
+      console.error('Error following user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to follow user",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleUnfollow = async () => {
+    if (!user?.id || !id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('follows')
+        .delete()
+        .eq('follower_id', user.id)
+        .eq('following_id', id);
+        
+      if (error) throw error;
+      
+      setIsFollowing(false);
+      queryClient.invalidateQueries({ queryKey: ['profile', id] });
+      
+      toast({
+        title: "Success",
+        description: `You have unfollowed ${profileData?.username || 'this user'}`,
+      });
+    } catch (error) {
+      console.error('Error unfollowing user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to unfollow user",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMessage = () => {
+    if (!id) return;
+    navigate(`/messages?user=${id}`);
+  };
+
   if (profileLoading || thoughtsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-white via-[#E5DEFF]/20 to-[#FDE1D3]/20">
@@ -141,18 +227,51 @@ const Profile = () => {
     );
   }
 
-  // Show first-time profile form or the editing form
   const shouldShowForm = showFirstTimeProfileForm || isEditing;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-[#E5DEFF]/20 to-[#FDE1D3]/20 px-4 py-12 transition-all duration-500">
       <div className="max-w-4xl mx-auto space-y-12 animate-fadeIn">
-        <ProfileHeader 
-          profile={profileData} 
-          isOwnProfile={user?.id === profileData.id}
-          isEditing={shouldShowForm}
-          onEditClick={handleEditClick}
-        />
+        <div className="flex flex-col md:flex-row justify-between items-start">
+          <ProfileHeader 
+            profile={profileData} 
+            isOwnProfile={user?.id === profileData.id}
+            isEditing={shouldShowForm}
+            onEditClick={handleEditClick}
+          />
+          
+          {user?.id && user.id !== profileData.id && (
+            <div className="flex gap-2 mt-4 md:mt-0">
+              {isFollowing ? (
+                <Button 
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  onClick={handleUnfollow}
+                >
+                  <UserMinus size={16} />
+                  Unfollow
+                </Button>
+              ) : (
+                <Button 
+                  variant="default"
+                  className="flex items-center gap-2"
+                  onClick={handleFollow}
+                >
+                  <UserPlus size={16} />
+                  Follow
+                </Button>
+              )}
+              <Button 
+                variant="secondary"
+                className="flex items-center gap-2"
+                onClick={handleMessage}
+              >
+                <MessageSquare size={16} />
+                Message
+              </Button>
+            </div>
+          )}
+        </div>
         
         {shouldShowForm ? (
           <div className={showFirstTimeProfileForm ? "animate-scale-in" : ""}>
