@@ -1,3 +1,4 @@
+
 export interface Profile {
   id: string;
   username: string;
@@ -19,6 +20,7 @@ export interface Profile {
   college?: string;
   registration_number?: string;
   is_following?: boolean;
+  whatsapp_number?: string;
 }
 
 export interface Project {
@@ -26,7 +28,9 @@ export interface Project {
   title: string;
   description: string;
   required_skills: string[];
-  budget: number;
+  min_budget?: number;
+  max_budget?: number;
+  budget?: number; // Keep for backward compatibility
   deadline: string;
   attachment_url?: string;
   status: 'open' | 'closed' | 'in_progress';
@@ -52,6 +56,7 @@ export interface ProjectApplication {
   project_id: string;
   applicant_id: string;
   message: string;
+  phone_number?: string;
   status: 'pending' | 'accepted' | 'rejected';
   viewed_at?: string;
   created_at: string;

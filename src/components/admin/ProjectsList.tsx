@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -41,11 +40,12 @@ export const ProjectsList = () => {
 
       const projectsWithCounts = projectsData?.map(project => ({
         ...project,
+        budget: project.min_budget,
         applications_count: project.applications_count || 0,
         milestones_count: project.milestones_count || 0
-      })) || [];
+      })) as Project[];
 
-      setProjects(projectsWithCounts as Project[]);
+      setProjects(projectsWithCounts);
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast({
@@ -105,7 +105,7 @@ export const ProjectsList = () => {
 
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary" className="bg-indigo-50 text-indigo-600">
-                  ${project.budget}
+                  ₹{project.budget || project.min_budget}
                 </Badge>
                 <Badge variant="secondary" className="bg-purple-50 text-purple-600">
                   {project.status}

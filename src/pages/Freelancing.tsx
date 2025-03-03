@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,6 +89,7 @@ const Freelancing = () => {
 
       return data.map(project => ({
         ...project,
+        budget: project.min_budget,
         _count: {
           comments: project.comments?.[0]?.count || 0,
           applications: project.applications?.[0]?.count || 0
@@ -155,7 +155,15 @@ const Freelancing = () => {
       }
 
       if (error) throw error;
-      return data as (ProjectApplication & { project: Project })[];
+      
+      // Transform project data to ensure it has the budget field for compatibility
+      return data.map(app => ({
+        ...app,
+        project: {
+          ...app.project,
+          budget: app.project.min_budget
+        }
+      })) as (ProjectApplication & { project: Project })[];
     },
     enabled: !!user?.id,
   });
@@ -164,7 +172,15 @@ const Freelancing = () => {
     mutationFn: async (newProject: Omit<Project, "id" | "created_at" | "updated_at" | "author">) => {
       const { data, error } = await supabase
         .from("projects")
-        .insert([newProject])
+        .insert([{
+          title: newProject.title,
+          description: newProject.description,
+          required_skills: newProject.required_skills,
+          min_budget: newProject.budget,
+          deadline: newProject.deadline,
+          author_id: newProject.author_id,
+          status: newProject.status,
+        }])
         .select()
         .single();
       if (error) throw error;
@@ -189,10 +205,13 @@ const Freelancing = () => {
 
   const updateProjectMutation = useMutation({
     mutationFn: async (updatedProject: Partial<Project> & { id: string }) => {
-      const { id, ...projectData } = updatedProject;
+      const { id, budget, ...projectData } = updatedProject;
       const { data, error } = await supabase
         .from("projects")
-        .update(projectData)
+        .update({
+          ...projectData,
+          min_budget: budget,
+        })
         .eq("id", id)
         .select()
         .single();
