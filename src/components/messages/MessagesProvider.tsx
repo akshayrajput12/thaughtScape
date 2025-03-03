@@ -36,7 +36,21 @@ export function useMessagesProvider() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll when new messages come in
-  useAutoScroll(messagesEndRef, messages);
+  const { scrollRef, scrollToBottom } = useAutoScroll({
+    content: messages,
+  });
+
+  // Set messagesEndRef to scrollRef for scrolling
+  useEffect(() => {
+    if (scrollRef.current) {
+      messagesEndRef.current = scrollRef.current;
+    }
+    
+    // Scroll to bottom when messages change
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages, scrollRef, scrollToBottom]);
 
   // Filter messages for the selected user
   const messagesToShow = messages.filter(
