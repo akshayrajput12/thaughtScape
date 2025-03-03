@@ -70,28 +70,28 @@ const Messages = () => {
     fetchCurrentUser();
   }, [navigate]);
 
+  const fetchFollowStatus = async () => {
+    if (!currentUserId) return;
+    
+    const { data, error } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', currentUserId);
+
+    if (error) {
+      console.error('Error fetching follows:', error);
+      return;
+    }
+
+    const followMap = data.reduce((acc, item) => {
+      acc[item.following_id] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+
+    setFollowStatus(followMap);
+  };
+
   useEffect(() => {
-    const fetchFollowStatus = async () => {
-      if (!currentUserId) return;
-      
-      const { data, error } = await supabase
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', currentUserId);
-
-      if (error) {
-        console.error('Error fetching follows:', error);
-        return;
-      }
-
-      const followMap = data.reduce((acc, item) => {
-        acc[item.following_id] = true;
-        return acc;
-      }, {} as Record<string, boolean>);
-
-      setFollowStatus(followMap);
-    };
-
     fetchFollowStatus();
   }, [currentUserId]);
 
