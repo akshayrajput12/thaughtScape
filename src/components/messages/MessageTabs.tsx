@@ -8,9 +8,10 @@ interface MessageTabsProps {
   activeTab: string;
   onTabChange: (value: string) => void;
   requestsCount: number;
+  children?: React.ReactNode;
 }
 
-export function MessageTabs({ activeTab, onTabChange, requestsCount }: MessageTabsProps) {
+export function MessageTabs({ activeTab, onTabChange, requestsCount, children }: MessageTabsProps) {
   return (
     <Tabs 
       defaultValue={activeTab} 
@@ -40,6 +41,7 @@ export function MessageTabs({ activeTab, onTabChange, requestsCount }: MessageTa
           Users
         </TabsTrigger>
       </TabsList>
+      {children}
     </Tabs>
   );
 }

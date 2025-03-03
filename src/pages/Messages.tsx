@@ -2,31 +2,14 @@ import { useState, useEffect, useRef, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Send, Search, Mail, Users, UserPlus, Paperclip, Mic, CornerDownLeft, 
-  ArrowLeft, Phone, Video, AlertCircle, Ban, UserCheck 
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { CallControls } from "@/components/messages/CallControls";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Search, Input } from "@/components/ui/input";
+import { MessageTabs } from "@/components/messages/MessageTabs";
+import { SidebarContent } from "@/components/messages/SidebarContent";
+import { ChatArea } from "@/components/messages/ChatArea";
 import { CallView } from '@/components/messages/CallView';
 import { IncomingCallDialog } from '@/components/messages/IncomingCallDialog';
 import { CallRequest, WebRTCConnection } from '@/utils/webrtc';
-import { 
-  ChatBubble, 
-  ChatBubbleAvatar, 
-  ChatBubbleMessage 
-} from "@/components/ui/chat-bubble";
-import { ChatMessageList } from "@/components/ui/chat-message-list";
-import { ChatInput } from "@/components/ui/chat-input";
-import { MessageTabs } from "@/components/messages/MessageTabs";
-import { MessageRequests } from "@/components/messages/MessageRequests";
 import { Message, Profile, CallLog } from "@/types";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Conversation {
   user: Profile;
@@ -751,345 +734,64 @@ const Messages = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 min-h-[80vh]">
             {(!isMobileView || showConversations) && (
               <div className="md:border-r border-gray-200">
-                <div className="p-4 border-b border-gray-200">
-                  <MessageTabs 
-                    activeTab={activeTab} 
-                    onTabChange={setActiveTab} 
-                    requestsCount={requestsCount} 
-                  />
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder={activeTab === "chats" ? "Search conversations..." : "Search users..."}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <TabsContent value="chats" className="m-0">
-                  <div className="overflow-y-auto h-[calc(80vh-130px)]">
-                    <AnimatePresence>
-                      {filteredConversations.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-                          <Mail className="h-16 w-16 text-gray-300 mb-4" />
-                          <p className="text-center">No conversations yet</p>
-                          <p className="text-sm text-center mt-2">
-                            Start a new conversation by searching for users
-                          </p>
-                        </div>
-                      )}
-                      
-                      {filteredConversations.map((conv) => (
-                        <motion.div
-                          key={conv.user.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                            selectedUser?.id === conv.user.id ? 'bg-gray-50' : ''
-                          }`}
-                          onClick={() => handleSelectUser(conv.user)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage src={conv.user.avatar_url || undefined} />
-                              <AvatarFallback>{conv.user.username[0].toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">
-                                {conv.user.full_name || conv.user.username}
-                              </p>
-                              <p className="text-sm text-gray-500 truncate">
-                                {conv.lastMessage.content}
-                              </p>
-                            </div>
-                            {conv.unreadCount > 0 && (
-                              <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                                <span className="text-xs text-white">{conv.unreadCount}</span>
-                              </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="requests" className="m-0">
-                  <MessageRequests
-                    requests={messageRequests}
-                    onSelectRequest={handleSelectUser}
+                <MessageTabs 
+                  activeTab={activeTab} 
+                  onTabChange={setActiveTab} 
+                  requestsCount={requestsCount}
+                >
+                  <SidebarContent
+                    activeTab={activeTab}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    conversations={conversations}
+                    messageRequests={messageRequests}
+                    searchResults={searchResults}
+                    selectedUser={selectedUser}
+                    onSelectUser={handleSelectUser}
                     onAcceptRequest={handleAcceptRequest}
                     onDeclineRequest={handleDeclineRequest}
-                    selectedSenderId={selectedUser?.id}
                   />
-                </TabsContent>
-
-                <TabsContent value="users" className="m-0">
-                  <div className="overflow-y-auto h-[calc(80vh-130px)]">
-                    <AnimatePresence>
-                      {searchResults.length === 0 && searchQuery && (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-                          <Users className="h-16 w-16 text-gray-300 mb-4" />
-                          <p className="text-center">No users found</p>
-                          <p className="text-sm text-center mt-2">
-                            Try a different search term
-                          </p>
-                        </div>
-                      )}
-                      
-                      {searchResults.length === 0 && !searchQuery && (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-                          <Search className="h-16 w-16 text-gray-300 mb-4" />
-                          <p className="text-center">Search for users</p>
-                          <p className="text-sm text-center mt-2">
-                            Find people to connect with
-                          </p>
-                        </div>
-                      )}
-                      
-                      {searchResults.map((user) => (
-                        <motion.div
-                          key={user.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                          onClick={() => handleSelectUser(user)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage src={user.avatar_url || undefined} />
-                              <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">
-                                {user.full_name || user.username}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {user.is_following ? (
-                                  <span className="flex items-center text-green-600">
-                                    <UserCheck className="h-3 w-3 mr-1" /> Following
-                                  </span>
-                                ) : ''}
-                              </p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSelectUser(user);
-                              }}
-                            >
-                              <UserPlus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                </TabsContent>
+                </MessageTabs>
               </div>
             )}
 
             {(!isMobileView || !showConversations) && (
               <div className="md:col-span-2 flex flex-col">
-                {selectedUser ? (
-                  <>
-                    <div className="p-4 border-b border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {isMobileView && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={handleBackToList}
-                              className="mr-1"
-                            >
-                              <ArrowLeft className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={selectedUser.avatar_url || undefined} />
-                            <AvatarFallback>{selectedUser.username[0].toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{selectedUser.full_name || selectedUser.username}</p>
-                            {followStatus[selectedUser.id] ? (
-                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                                <UserCheck className="h-3 w-3 mr-1" /> Following
-                              </Badge>
-                            ) : (
-                              !isInCall && activeTab === 'chats' && (
-                                <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
-                                  Not following
-                                </Badge>
-                              )
-                            )}
-                            {isInCall && (
-                              <p className="text-sm text-gray-500">
-                                {new Date(callDuration * 1000).toISOString().substr(11, 8)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        {!isInCall && (
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
-                              onClick={() => handleStartCall(false)}
-                              className="rounded-full"
-                            >
-                              <Phone className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
-                              onClick={() => handleStartCall(true)}
-                              className="rounded-full"
-                            >
-                              <Video className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                        {isInCall && (
-                          <CallControls
-                            isInCall={isInCall}
-                            isVideo={isVideo}
-                            isMuted={isMuted}
-                            onToggleAudio={toggleAudio}
-                            onToggleVideo={toggleVideo}
-                            onStartCall={handleStartCall}
-                            onEndCall={handleEndCall}
-                          />
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="relative flex-1 overflow-hidden">
-                      {isInCall ? (
-                        <CallView
-                          isInCall={isInCall}
-                          isVideo={isVideo}
-                          isMuted={isMuted}
-                          selectedUserId={selectedUser.id}
-                          currentUserId={currentUserId!}
-                          onToggleAudio={toggleAudio}
-                          onToggleVideo={toggleVideo}
-                          onCallEnd={handleEndCall}
-                        />
-                      ) : (
-                        <>
-                          {!followStatus[selectedUser.id] && activeTab === 'chats' && messageCount >= 3 && (
-                            <Alert className="m-4 bg-yellow-50 border-yellow-100">
-                              <AlertCircle className="h-4 w-4 text-yellow-600" />
-                              <AlertTitle className="text-yellow-700">Message limit reached</AlertTitle>
-                              <AlertDescription className="text-yellow-600">
-                                You've sent {messageCount} messages. You can send up to 3 messages until {selectedUser.username} accepts your request.
-                              </AlertDescription>
-                            </Alert>
-                          )}
-
-                          <div className="flex-1 h-[calc(80vh-190px)]">
-                            <ChatMessageList>
-                              {messages.length === 0 && (
-                                <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                                  <Mail className="h-16 w-16 text-gray-300 mb-4" />
-                                  <p className="text-center">No messages yet</p>
-                                  <p className="text-sm text-center mt-2">
-                                    Start a conversation with {selectedUser.username}
-                                  </p>
-                                </div>
-                              )}
-                              
-                              {messages.map((message) => (
-                                <ChatBubble
-                                  key={message.id}
-                                  variant={message.sender_id === currentUserId ? "sent" : "received"}
-                                >
-                                  <ChatBubbleAvatar
-                                    className="h-8 w-8 shrink-0"
-                                    src={message.sender?.avatar_url || undefined}
-                                    fallback={(message.sender?.username?.[0] || '?').toUpperCase()}
-                                  />
-                                  <ChatBubbleMessage
-                                    variant={message.sender_id === currentUserId ? "sent" : "received"}
-                                  >
-                                    {message.content}
-                                  </ChatBubbleMessage>
-                                </ChatBubble>
-                              ))}
-                              <div ref={messagesEndRef} />
-                            </ChatMessageList>
-                          </div>
-                          <div className="p-4 border-t border-gray-200">
-                            {!followStatus[selectedUser.id] && activeTab === 'chats' && (
-                              <div className="mb-2 px-3 py-2 bg-yellow-50 rounded-md text-sm text-yellow-800 flex items-center">
-                                <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
-                                <span>
-                                  You can send {3 - messageCount} more {3 - messageCount === 1 ? 'message' : 'messages'} until {selectedUser.username} accepts your request
-                                </span>
-                              </div>
-                            )}
-                            
-                            <form
-                              onSubmit={sendMessage}
-                              className="relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring p-1"
-                            >
-                              <ChatInput
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                                placeholder={isListening ? "Listening..." : "Type your message..."}
-                                className={`min-h-12 resize-none rounded-lg bg-background border-0 p-3 shadow-none focus-visible:ring-0 ${isListening ? 'bg-primary/10' : ''}`}
-                                onEnterSubmit={sendMessage}
-                                disabled={!followStatus[selectedUser.id] && messageCount >= 3}
-                              />
-                              <div className="flex items-center p-3 pt-0 justify-between">
-                                <div className="flex">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    type="button"
-                                    disabled={!followStatus[selectedUser.id] && messageCount >= 3}
-                                  >
-                                    <Paperclip className="size-4" />
-                                  </Button>
-
-                                  <Button
-                                    variant={isListening ? "secondary" : "ghost"}
-                                    size="icon"
-                                    type="button"
-                                    onClick={toggleSpeechRecognition}
-                                    className={isListening ? "bg-primary/20" : ""}
-                                    disabled={!followStatus[selectedUser.id] && messageCount >= 3}
-                                  >
-                                    <Mic className={`size-4 ${isListening ? "text-primary animate-pulse" : ""}`} />
-                                  </Button>
-                                </div>
-                                <Button 
-                                  type="submit" 
-                                  size="sm" 
-                                  className="ml-auto gap-1.5"
-                                  disabled={!newMessage.trim() || (!followStatus[selectedUser.id] && messageCount >= 3)}
-                                >
-                                  Send Message
-                                  <CornerDownLeft className="size-3.5" />
-                                </Button>
-                              </div>
-                            </form>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </>
+                {isInCall && selectedUser ? (
+                  <CallView
+                    isInCall={isInCall}
+                    isVideo={isVideo}
+                    isMuted={isMuted}
+                    selectedUserId={selectedUser.id}
+                    currentUserId={currentUserId!}
+                    onToggleAudio={toggleAudio}
+                    onToggleVideo={toggleVideo}
+                    onCallEnd={handleEndCall}
+                  />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-500">
-                    Select a conversation to start messaging
-                  </div>
+                  <ChatArea
+                    selectedUser={selectedUser}
+                    currentUserId={currentUserId!}
+                    messages={messages}
+                    newMessage={newMessage}
+                    setNewMessage={setNewMessage}
+                    followStatus={followStatus}
+                    messageCount={messageCount}
+                    isInCall={isInCall}
+                    isVideo={isVideo}
+                    isMuted={isMuted}
+                    callDuration={callDuration}
+                    isListening={isListening}
+                    isMobileView={isMobileView}
+                    messagesEndRef={messagesEndRef}
+                    handleBackToList={handleBackToList}
+                    handleStartCall={handleStartCall}
+                    handleEndCall={handleEndCall}
+                    toggleAudio={toggleAudio}
+                    toggleVideo={toggleVideo}
+                    toggleSpeechRecognition={toggleSpeechRecognition}
+                    sendMessage={sendMessage}
+                  />
                 )}
               </div>
             )}
