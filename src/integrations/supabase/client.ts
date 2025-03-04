@@ -71,3 +71,107 @@ export const checkEmailExists = async (email: string) => {
     return false;
   }
 };
+
+// Block a user
+export const blockUser = async (blockedId: string) => {
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session?.user.id) return { success: false, error: 'Not authenticated' };
+    
+    const blockerId = session.session.user.id;
+    
+    const { error } = await supabase
+      .from('blocked_users')
+      .insert({ blocker_id: blockerId, blocked_id: blockedId });
+    
+    if (error) {
+      console.error("Error blocking user:", error);
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true };
+  } catch (err) {
+    console.error("Error in blockUser:", err);
+    return { success: false, error: 'Unknown error occurred' };
+  }
+};
+
+// Unblock a user
+export const unblockUser = async (blockedId: string) => {
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session?.user.id) return { success: false, error: 'Not authenticated' };
+    
+    const blockerId = session.session.user.id;
+    
+    const { error } = await supabase
+      .from('blocked_users')
+      .delete()
+      .eq('blocker_id', blockerId)
+      .eq('blocked_id', blockedId);
+    
+    if (error) {
+      console.error("Error unblocking user:", error);
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true };
+  } catch (err) {
+    console.error("Error in unblockUser:", err);
+    return { success: false, error: 'Unknown error occurred' };
+  }
+};
+
+// Check if a user is blocked
+export const isUserBlocked = async (userId: string) => {
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session?.user.id) return false;
+    
+    const blockerId = session.session.user.id;
+    
+    const { data, error } = await supabase
+      .from('blocked_users')
+      .select('id')
+      .eq('blocker_id', blockerId)
+      .eq('blocked_id', userId)
+      .maybeSingle();
+    
+    if (error) {
+      console.error("Error checking if user is blocked:", error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (err) {
+    console.error("Error in isUserBlocked:", err);
+    return false;
+  }
+};
+
+// Check if current user is blocked by target user
+export const isBlockedBy = async (userId: string) => {
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session?.user.id) return false;
+    
+    const currentUserId = session.session.user.id;
+    
+    const { data, error } = await supabase
+      .from('blocked_users')
+      .select('id')
+      .eq('blocker_id', userId)
+      .eq('blocked_id', currentUserId)
+      .maybeSingle();
+    
+    if (error) {
+      console.error("Error checking if blocked by user:", error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (err) {
+    console.error("Error in isBlockedBy:", err);
+    return false;
+  }
+};

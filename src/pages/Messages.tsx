@@ -184,7 +184,7 @@ const Messages = () => {
       setConversations(Array.from(conversationsMap.values()));
       setMessageRequests(requestsArray);
     };
-
+    
     fetchConversationsAndRequests();
 
     const subscription = supabase
@@ -243,13 +243,29 @@ const Messages = () => {
 
       setMessages(filteredMessages);
       
-      const incomingMessageCount = typedMessages.filter(
-        msg => msg.sender_id === selectedUser.id && msg.receiver_id === currentUserId
+      const pendingMessageCount = typedMessages.filter(
+        msg => msg.sender_id === currentUserId && 
+              msg.receiver_id === selectedUser.id &&
+              msg.is_request === true &&
+              (msg.request_status === 'pending' || msg.request_status === null)
       ).length;
       
-      setMessageCount(incomingMessageCount);
+      setMessageCount(pendingMessageCount);
 
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      
+      const unreadMessages = typedMessages.filter(
+        msg => msg.sender_id === selectedUser.id && 
+              msg.receiver_id === currentUserId && 
+              !msg.is_read
+      );
+      
+      if (unreadMessages.length > 0) {
+        await supabase
+          .from('messages')
+          .update({ is_read: true })
+          .in('id', unreadMessages.map(msg => msg.id));
+      }
     };
 
     fetchMessages();
@@ -681,7 +697,18 @@ const Messages = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('Message blocked')) {
+          toast({
+            title: "Cannot send message",
+            description: "You cannot exchange messages with this user due to one of you blocking the other",
+            variant: "destructive",
+          });
+          setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+          return;
+        }
+        throw error;
+      }
 
       if (isRequest) {
         setMessageCount(prev => prev + 1);
@@ -716,6 +743,7 @@ const Messages = () => {
         } as Message : msg
       ));
     } catch (error) {
+      console.error("Error sending message:", error);
       setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
       toast({
         title: "Error",
@@ -749,11 +777,11 @@ const Messages = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-b from-white to-primary/10 pt-20">
+      <div className="min-h-screen bg-gradient-to-b from-white to-primary/10 pt-20 pb-10">
         <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-3 min-h-[80vh]">
+          <div className="grid grid-cols-1 md:grid-cols-3 min-h-[80vh] max-h-[80vh]">
             {(!isMobileView || showConversations) && (
-              <div className="md:border-r border-gray-200">
+              <div className="md:border-r border-gray-200 h-full overflow-hidden">
                 <MessageTabs 
                   activeTab={activeTab} 
                   onTabChange={setActiveTab} 
@@ -776,7 +804,7 @@ const Messages = () => {
             )}
 
             {(!isMobileView || !showConversations) && (
-              <div className="md:col-span-2 flex flex-col">
+              <div className="md:col-span-2 flex flex-col h-[80vh]">
                 {isInCall && selectedUser ? (
                   <CallView
                     isInCall={isInCall}
