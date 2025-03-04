@@ -654,6 +654,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      delete_unconfirmed_users: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_suggested_users: {
         Args: {
           user_id: string

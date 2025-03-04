@@ -25,3 +25,15 @@ export const isEmailConfirmed = async (userId: string) => {
   if (error || !data.user) return false;
   return !!data.user.email_confirmed_at;
 };
+
+// Check if an email already exists in the database
+export const checkEmailExists = async (email: string) => {
+  const { data, error } = await supabase.auth.admin.listUsers();
+  if (error) return false;
+  
+  // Check if the email exists in the list of users
+  return data.users.some(user => 
+    user.email?.toLowerCase() === email.toLowerCase()
+  );
+};
+

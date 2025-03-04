@@ -55,6 +55,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setSession(null);
             setUser(null);
             setIsAuthenticated(false);
+            
+            // Sign out the user if their email is not confirmed
+            await supabase.auth.signOut();
           }
         } else {
           setSession(null);
@@ -75,7 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.id);
         
         if (currentSession) {
@@ -92,6 +95,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setSession(null);
             setUser(null);
             setIsAuthenticated(false);
+            
+            // If this is a new sign-up, show a message to check their email
+            if (event === 'SIGNED_IN' || event === 'SIGNED_UP') {
+              // Sign out the user if their email is not confirmed
+              await supabase.auth.signOut();
+            }
           }
         } else {
           setSession(null);

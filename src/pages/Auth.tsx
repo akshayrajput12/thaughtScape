@@ -1,214 +1,138 @@
 
-import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { FiMail, FiLock, FiGithub, FiTwitter } from "react-icons/fi";
-import { FcGoogle } from "react-icons/fc";
-import { RiQuillPenLine } from "react-icons/ri";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { toast } from "@/hooks/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { useState } from 'react';
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SignUpErrorHandler } from '@/components/auth/SignUpErrorHandler';
+import { VerificationReminder } from '@/components/auth/VerificationReminder';
 
-const Auth = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+const AuthPage = () => {
   const { isAuthenticated, loading } = useAuth();
-  const [authError, setAuthError] = useState<string | null>(null);
-  
-  const from = location.state?.from?.pathname || "/";
+  const navigate = useNavigate();
+  const [authError, setAuthError] = useState<any>(null);
+  const [email, setEmail] = useState<string>('');
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [activeTab, setActiveTab] = useState<'sign_in' | 'sign_up'>('sign_in');
 
-  useEffect(() => {
-    if (isAuthenticated && !loading) {
-      navigate(from, { replace: true });
-    }
-    
-    // Set up auth state change listener to catch errors
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'USER_UPDATED' && !session?.user?.email_confirmed_at && session?.user?.app_metadata?.provider === 'email') {
-        toast({
-          title: "Email confirmation required",
-          description: "Please check your inbox and confirm your email address to continue.",
-        });
-      }
-      
-      // Clear any error when auth state changes
-      setAuthError(null);
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [isAuthenticated, loading, navigate, from]);
+  // If authenticated, redirect to home
+  if (isAuthenticated && !loading) {
+    return <Navigate to="/" replace />;
+  }
 
-  // Custom error handler for the Auth UI
-  const handleAuthError = async (error: Error) => {
-    console.error("Auth error:", error);
-    
-    if (error.message.includes("User already registered")) {
-      setAuthError("This email is already registered. Please sign in instead.");
-    } else if (error.message.includes("Invalid login credentials")) {
-      setAuthError("Invalid email or password. Please try again.");
-    } else {
-      setAuthError(error.message);
-    }
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as 'sign_in' | 'sign_up');
+    setAuthError(null);
+    setShowVerificationMessage(false);
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      transition={{ duration: 0.5 }}
-      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#E5DEFF] via-white to-[#FDE1D3] p-4"
-    >
-      <div className="w-full max-w-md">
-        <motion.div 
-          initial={{ y: 20, opacity: 0 }} 
-          animate={{ y: 0, opacity: 1 }} 
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-8 space-y-6 border border-purple-100 relative overflow-hidden"
-        >
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 to-pink-500"></div>
-          <motion.div 
-            initial={{ y: 10, opacity: 0 }} 
-            animate={{ y: 0, opacity: 1 }} 
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="text-center space-y-4 mb-8"
-          >
-            <div className="flex justify-center mb-4">
-              <motion.div
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.5 }}
-                className="p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full"
-              >
-                <RiQuillPenLine className="w-8 h-8 text-white" />
-              </motion.div>
-            </div>
-            <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Welcome Back
-            </h1>
-            <p className="text-gray-600 text-lg">
-              Connect with creative minds and share your thoughts
-            </p>
-          </motion.div>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-4">
+      <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-lg">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Welcome
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Sign in to access your account or create a new one
+          </p>
+        </div>
 
-          {authError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{authError}</AlertDescription>
-            </Alert>
-          )}
+        <SignUpErrorHandler error={authError} email={email} />
+        <VerificationReminder email={email} isVisible={showVerificationMessage} />
 
-          <motion.div 
-            initial={{ y: 20, opacity: 0 }} 
-            animate={{ y: 0, opacity: 1 }} 
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="relative"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl blur-xl opacity-40"></div>
-            <div className="relative space-y-4">
-              <SupabaseAuth 
-                supabaseClient={supabase}
-                onError={handleAuthError}
-                appearance={{ 
-                  theme: ThemeSupa,
-                  variables: {
-                    default: {
-                      colors: {
-                        brand: '#8B5CF6',
-                        brandAccent: '#7C3AED',
-                        brandButtonText: 'white',
-                        defaultButtonBackground: 'white',
-                        defaultButtonBackgroundHover: '#F9FAFB',
-                        inputBackground: 'white',
-                        inputBorder: '#E5E7EB',
-                        inputBorderHover: '#D1D5DB',
-                        inputBorderFocus: '#8B5CF6',
-                      },
-                      space: {
-                        labelBottomMargin: '8px',
-                        anchorBottomMargin: '4px',
-                        buttonPadding: '10px 15px',
-                        inputPadding: '10px 15px',
-                      },
-                      borderWidths: {
-                        buttonBorderWidth: '1px',
-                        inputBorderWidth: '1px',
-                      },
-                      radii: {
-                        borderRadiusButton: '8px',
-                        buttonBorderRadius: '8px',
-                        inputBorderRadius: '8px',
-                      },
+        <Tabs defaultValue="sign_in" value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="sign_in">Sign In</TabsTrigger>
+            <TabsTrigger value="sign_up">Sign Up</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="sign_in" className="space-y-4">
+            <Auth
+              supabaseClient={supabase}
+              appearance={{
+                theme: ThemeSupa,
+                variables: {
+                  default: {
+                    colors: {
+                      brand: '#6366f1',
+                      brandAccent: '#4f46e5',
                     },
                   },
-                  className: {
-                    container: 'space-y-4',
-                    button: 'group w-full px-4 py-3 text-sm font-medium transition-all duration-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]',
-                    input: 'w-full pl-10 pr-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200',
-                    label: 'block text-sm font-medium text-gray-700 mb-1 flex items-center space-x-2',
-                    anchor: 'text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200',
-                  },
-                }}
-                providers={[]}
-              />
-              <div className="mt-6 flex justify-center space-x-4">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
-                >
-                  <FcGoogle className="w-5 h-5" />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
-                >
-                  <FiGithub className="w-5 h-5 text-gray-600" />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
-                >
-                  <FiTwitter className="w-5 h-5 text-gray-600" />
-                </motion.button>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
+                },
+                className: {
+                  container: 'auth-container',
+                  button: 'auth-button',
+                  input: 'auth-input',
+                  label: 'auth-label',
+                },
+              }}
+              providers={[]}
+              view="sign_in"
+              onlyThirdPartyProviders={false}
+              redirectTo={window.location.origin}
+              onError={(error) => {
+                console.error('Auth error:', error);
+                setAuthError(error);
+              }}
+              onSubmit={(formData) => {
+                setEmail(formData.email);
+              }}
+            />
+          </TabsContent>
 
-        <motion.div 
-          initial={{ y: 20, opacity: 0 }} 
-          animate={{ y: 0, opacity: 1 }} 
-          transition={{ delay: 0.5, duration: 0.5 }}
-          className="mt-8 text-center text-sm text-gray-500"
-        >
-          By signing in, you agree to our{' '}
-          <motion.a 
-            whileHover={{ color: '#7C3AED' }}
-            href="#" 
-            className="text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200"
+          <TabsContent value="sign_up" className="space-y-4">
+            <Auth
+              supabaseClient={supabase}
+              appearance={{
+                theme: ThemeSupa,
+                variables: {
+                  default: {
+                    colors: {
+                      brand: '#6366f1',
+                      brandAccent: '#4f46e5',
+                    },
+                  },
+                },
+                className: {
+                  container: 'auth-container',
+                  button: 'auth-button',
+                  input: 'auth-input',
+                  label: 'auth-label',
+                },
+              }}
+              providers={[]}
+              view="sign_up"
+              onlyThirdPartyProviders={false}
+              redirectTo={window.location.origin}
+              onError={(error) => {
+                console.error('Auth error:', error);
+                setAuthError(error);
+              }}
+              onSubmit={(formData) => {
+                setEmail(formData.email);
+              }}
+              onSuccess={() => {
+                setShowVerificationMessage(true);
+                setActiveTab('sign_in');
+              }}
+            />
+          </TabsContent>
+        </Tabs>
+
+        <div className="mt-4 text-center text-sm text-gray-500">
+          <button
+            onClick={() => navigate('/')}
+            className="font-medium text-indigo-600 hover:text-indigo-500"
           >
-            Terms of Service
-          </motion.a>{' '}
-          and{' '}
-          <motion.a 
-            whileHover={{ color: '#7C3AED' }}
-            href="#" 
-            className="text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200"
-          >
-            Privacy Policy
-          </motion.a>
-        </motion.div>
+            Return to Home
+          </button>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
-export default Auth;
+export default AuthPage;
