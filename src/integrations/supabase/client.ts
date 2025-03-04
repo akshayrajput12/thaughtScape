@@ -43,16 +43,29 @@ export const isEmailConfirmed = async (userId: string) => {
 // Check if an email already exists in the database
 export const checkEmailExists = async (email: string) => {
   try {
-    const { data, error } = await supabase.auth.admin.listUsers();
-    if (error) {
-      console.error("Error checking email existence:", error);
+    // Instead of using admin.listUsers which isn't available in the client,
+    // we'll check if we can sign up with this email
+    const { data, error } = await supabase.auth.signInWithOtp({
+      email: email,
+      options: {
+        shouldCreateUser: false // We don't want to create a user, just check if it exists
+      }
+    });
+    
+    // If there's no error when trying to send OTP to a non-existing email,
+    // then the email doesn't exist
+    if (!error) {
       return false;
     }
     
-    // Check if the email exists in the list of users
-    return data.users.some(user => 
-      user.email?.toLowerCase() === email.toLowerCase()
-    );
+    // If we get an error about user not found, the email doesn't exist
+    if (error.message.includes("Email not found") || 
+        error.message.includes("User not found")) {
+      return false;
+    }
+    
+    // For other errors, assume the email exists
+    return true;
   } catch (err) {
     console.error("Error in checkEmailExists:", err);
     return false;

@@ -42,7 +42,7 @@ export const SignUpErrorHandler = ({ error, email }: SignUpErrorHandlerProps) =>
 
     // Add listener for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_UP') {
+      if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at === null) {
         const userEmail = session?.user?.email;
         if (userEmail) {
           setMessage(`A verification email has been sent to ${userEmail}. Please check your inbox.`);
