@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { AuthError } from '@supabase/supabase-js';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { checkEmailExists } from '@/integrations/supabase/client';
+import { checkEmailExists, supabase } from '@/integrations/supabase/client';
 
 type SignUpErrorHandlerProps = {
   error: AuthError | null;
@@ -13,6 +13,51 @@ type SignUpErrorHandlerProps = {
 export const SignUpErrorHandler = ({ error, email }: SignUpErrorHandlerProps) => {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Listen for auth form submissions
+  useEffect(() => {
+    const handleFormSubmission = () => {
+      const form = document.querySelector('form');
+      if (form) {
+        const originalSubmit = form.onsubmit;
+        form.onsubmit = async (e) => {
+          const emailInput = form.querySelector('input[name="email"]') as HTMLInputElement;
+          if (emailInput && emailInput.value) {
+            setMessage(null);
+            const exists = await checkEmailExists(emailInput.value);
+            if (exists) {
+              e.preventDefault();
+              setMessage("This email is already registered. Please try signing in instead.");
+              return false;
+            }
+          }
+          if (originalSubmit) {
+            // @ts-ignore - This is a workaround for the form submission
+            return originalSubmit.call(form, e);
+          }
+          return true;
+        };
+      }
+    };
+
+    // Add listener for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_UP') {
+        const userEmail = session?.user?.email;
+        if (userEmail) {
+          setMessage(`A verification email has been sent to ${userEmail}. Please check your inbox.`);
+        }
+      } else if (event === 'USER_UPDATED') {
+        setMessage(null);
+      }
+    });
+
+    handleFormSubmission();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const checkEmail = async () => {

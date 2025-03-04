@@ -73,13 +73,6 @@ const AuthPage = () => {
               view="sign_in"
               onlyThirdPartyProviders={false}
               redirectTo={window.location.origin}
-              onError={(error) => {
-                console.error('Auth error:', error);
-                setAuthError(error);
-              }}
-              onSubmit={(formData) => {
-                setEmail(formData.email);
-              }}
             />
           </TabsContent>
 
@@ -107,17 +100,6 @@ const AuthPage = () => {
               view="sign_up"
               onlyThirdPartyProviders={false}
               redirectTo={window.location.origin}
-              onError={(error) => {
-                console.error('Auth error:', error);
-                setAuthError(error);
-              }}
-              onSubmit={(formData) => {
-                setEmail(formData.email);
-              }}
-              onSuccess={() => {
-                setShowVerificationMessage(true);
-                setActiveTab('sign_in');
-              }}
             />
           </TabsContent>
         </Tabs>

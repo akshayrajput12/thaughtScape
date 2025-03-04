@@ -21,19 +21,40 @@ export const supabase = createClient<Database>(
 
 // Export a function to check if a user's email is confirmed
 export const isEmailConfirmed = async (userId: string) => {
-  const { data, error } = await supabase.auth.admin.getUserById(userId);
-  if (error || !data.user) return false;
-  return !!data.user.email_confirmed_at;
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+    
+    if (error) {
+      console.error("Error checking email confirmation:", error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (err) {
+    console.error("Error in isEmailConfirmed:", err);
+    return false;
+  }
 };
 
 // Check if an email already exists in the database
 export const checkEmailExists = async (email: string) => {
-  const { data, error } = await supabase.auth.admin.listUsers();
-  if (error) return false;
-  
-  // Check if the email exists in the list of users
-  return data.users.some(user => 
-    user.email?.toLowerCase() === email.toLowerCase()
-  );
+  try {
+    const { data, error } = await supabase.auth.admin.listUsers();
+    if (error) {
+      console.error("Error checking email existence:", error);
+      return false;
+    }
+    
+    // Check if the email exists in the list of users
+    return data.users.some(user => 
+      user.email?.toLowerCase() === email.toLowerCase()
+    );
+  } catch (err) {
+    console.error("Error in checkEmailExists:", err);
+    return false;
+  }
 };
-

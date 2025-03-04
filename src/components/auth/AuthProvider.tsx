@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setIsAuthenticated(false);
             
             // If this is a new sign-up, show a message to check their email
-            if (event === 'SIGNED_IN' || event === 'SIGNED_UP') {
+            if (event === 'SIGNED_IN') {
               // Sign out the user if their email is not confirmed
               await supabase.auth.signOut();
             }
