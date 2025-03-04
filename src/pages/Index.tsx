@@ -141,7 +141,7 @@ const Index = () => {
             setNewProjects(projectsCount || 0);
             
             // Show notification if there are any unread items
-            if ((messagesCount || 0) + (applicationsCount || 0) + (projectsCount || 0) > 0) {
+            if ((messagesCount || 0) + (unviewedApplications || 0) + (projectsCount || 0) > 0) {
               // Delay showing notification to allow page to load first
               setTimeout(() => setShowNotification(true), 1500);
             }
