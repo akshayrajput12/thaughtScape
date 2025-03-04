@@ -398,9 +398,11 @@ export type Database = {
         Row: {
           applicant_id: string
           created_at: string
+          experience: string | null
           id: string
           message: string
           phone_number: string | null
+          portfolio: string | null
           project_id: string
           status: string | null
           viewed_at: string | null
@@ -408,9 +410,11 @@ export type Database = {
         Insert: {
           applicant_id: string
           created_at?: string
+          experience?: string | null
           id?: string
           message: string
           phone_number?: string | null
+          portfolio?: string | null
           project_id: string
           status?: string | null
           viewed_at?: string | null
@@ -418,9 +422,11 @@ export type Database = {
         Update: {
           applicant_id?: string
           created_at?: string
+          experience?: string | null
           id?: string
           message?: string
           phone_number?: string | null
+          portfolio?: string | null
           project_id?: string
           status?: string | null
           viewed_at?: string | null
@@ -444,6 +450,8 @@ export type Database = {
       }
       projects: {
         Row: {
+          allow_normal_apply: boolean | null
+          allow_whatsapp_apply: boolean | null
           attachment_url: string | null
           author_id: string
           created_at: string
@@ -459,6 +467,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_normal_apply?: boolean | null
+          allow_whatsapp_apply?: boolean | null
           attachment_url?: string | null
           author_id: string
           created_at?: string
@@ -474,6 +484,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_normal_apply?: boolean | null
+          allow_whatsapp_apply?: boolean | null
           attachment_url?: string | null
           author_id?: string
           created_at?: string
