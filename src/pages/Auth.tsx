@@ -1,18 +1,23 @@
+
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FiMail, FiLock, FiGithub, FiTwitter } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 import { RiQuillPenLine } from "react-icons/ri";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { toast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, loading } = useAuth();
+  const [authError, setAuthError] = useState<string | null>(null);
   
   const from = location.state?.from?.pathname || "/";
 
@@ -20,7 +25,37 @@ const Auth = () => {
     if (isAuthenticated && !loading) {
       navigate(from, { replace: true });
     }
+    
+    // Set up auth state change listener to catch errors
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'USER_UPDATED' && !session?.user?.email_confirmed_at && session?.user?.app_metadata?.provider === 'email') {
+        toast({
+          title: "Email confirmation required",
+          description: "Please check your inbox and confirm your email address to continue.",
+        });
+      }
+      
+      // Clear any error when auth state changes
+      setAuthError(null);
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [isAuthenticated, loading, navigate, from]);
+
+  // Custom error handler for the Auth UI
+  const handleAuthError = async (error: Error) => {
+    console.error("Auth error:", error);
+    
+    if (error.message.includes("User already registered")) {
+      setAuthError("This email is already registered. Please sign in instead.");
+    } else if (error.message.includes("Invalid login credentials")) {
+      setAuthError("Invalid email or password. Please try again.");
+    } else {
+      setAuthError(error.message);
+    }
+  };
 
   return (
     <motion.div 
@@ -60,6 +95,14 @@ const Auth = () => {
             </p>
           </motion.div>
 
+          {authError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{authError}</AlertDescription>
+            </Alert>
+          )}
+
           <motion.div 
             initial={{ y: 20, opacity: 0 }} 
             animate={{ y: 0, opacity: 1 }} 
@@ -69,7 +112,8 @@ const Auth = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl blur-xl opacity-40"></div>
             <div className="relative space-y-4">
               <SupabaseAuth 
-                supabaseClient={supabase} 
+                supabaseClient={supabase}
+                onError={handleAuthError}
                 appearance={{ 
                   theme: ThemeSupa,
                   variables: {

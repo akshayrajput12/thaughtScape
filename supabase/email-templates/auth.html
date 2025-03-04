@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -112,6 +113,17 @@
       margin-top: 1.5rem;
       font-style: italic;
     }
+    .warning {
+      background-color: #FEF2F2;
+      border-left: 4px solid #EF4444;
+      padding: 1rem;
+      margin: 1.5rem 0;
+      border-radius: 0.375rem;
+    }
+    .warning-text {
+      color: #B91C1C;
+      font-weight: 500;
+    }
   </style>
 </head>
 <body style="background: linear-gradient(135deg, #F9FAFB, #EEF2FF, #F3E8FF);">
@@ -124,6 +136,14 @@
       <div class="greeting">Welcome to Thoughtscape, {{ or .Email "Friend" }}!</div>
       <p class="message">Thank you for choosing Thoughtscape. To ensure the security of your account and access all features, please verify your email address by clicking the button below:</p>
       <a href="{{ .ConfirmationURL }}" class="button">Verify Email Address</a>
+      
+      <div class="warning">
+        <p class="warning-text">Important: Please verify your email within 7 days!</p>
+        <p style="color: #B91C1C; margin-top: 0.5rem; font-size: 0.875rem;">
+          For security reasons, unverified accounts will be automatically deleted after 7 days.
+        </p>
+      </div>
+      
       <p style="color: #6B7280; font-size: 1rem; margin-top: 1.5rem;">This verification link will expire in 24 hours for security reasons.</p>
       <p class="disclaimer">If you did not create a Thoughtscape account, please disregard this email. Your security is our top priority.</p>
     </div>

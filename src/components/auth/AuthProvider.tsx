@@ -41,10 +41,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         
         if (initialSession) {
-          setSession(initialSession);
-          setUser(initialSession.user);
-          setIsAuthenticated(true);
-          console.log("Session restored from storage:", initialSession.user?.id);
+          // Only set the user if their email is confirmed
+          const isEmailConfirmed = initialSession.user?.email_confirmed_at || 
+                                  initialSession.user?.app_metadata?.provider !== 'email';
+          
+          if (isEmailConfirmed) {
+            setSession(initialSession);
+            setUser(initialSession.user);
+            setIsAuthenticated(true);
+            console.log("Session restored from storage:", initialSession.user?.id);
+          } else {
+            console.log("User email not confirmed, not setting as authenticated");
+            setSession(null);
+            setUser(null);
+            setIsAuthenticated(false);
+          }
         } else {
           setSession(null);
           setUser(null);
@@ -67,9 +78,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.id);
         
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        setIsAuthenticated(!!currentSession?.user);
+        if (currentSession) {
+          // Only set the user if their email is confirmed
+          const isEmailConfirmed = currentSession.user?.email_confirmed_at || 
+                                  currentSession.user?.app_metadata?.provider !== 'email';
+          
+          if (isEmailConfirmed) {
+            setSession(currentSession);
+            setUser(currentSession.user);
+            setIsAuthenticated(true);
+          } else {
+            console.log("User email not confirmed, not setting as authenticated");
+            setSession(null);
+            setUser(null);
+            setIsAuthenticated(false);
+          }
+        } else {
+          setSession(null);
+          setUser(null);
+          setIsAuthenticated(false);
+        }
         setLoading(false);
       }
     );
