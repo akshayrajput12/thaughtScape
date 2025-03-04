@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      blocked_users: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocked_users_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocked_users_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookmarks: {
         Row: {
           created_at: string
@@ -709,6 +745,13 @@ export type Database = {
         Args: {
           project_id: string
           user_id: string
+        }
+        Returns: boolean
+      }
+      is_blocked: {
+        Args: {
+          user_id: string
+          target_id: string
         }
         Returns: boolean
       }

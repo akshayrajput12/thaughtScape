@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useRef, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, blockUser, unblockUser, isUserBlocked, isBlockedBy } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -39,6 +40,8 @@ const Messages = () => {
   const [transcribedText, setTranscribedText] = useState("");
   const [messageCount, setMessageCount] = useState(0);
   const [followStatus, setFollowStatus] = useState<{[key: string]: boolean}>({});
+  const [isUserBlockedState, setIsUserBlockedState] = useState(false);
+  const [isBlockedByState, setIsBlockedByState] = useState(false);
   const callDurationInterval = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -94,6 +97,21 @@ const Messages = () => {
   useEffect(() => {
     fetchFollowStatus();
   }, [currentUserId]);
+
+  // Check if selected user is blocked
+  useEffect(() => {
+    const checkBlockStatus = async () => {
+      if (!selectedUser || !currentUserId) return;
+      
+      const isBlocked = await isUserBlocked(selectedUser.id);
+      const blockedBy = await isBlockedBy(selectedUser.id);
+      
+      setIsUserBlockedState(isBlocked);
+      setIsBlockedByState(blockedBy);
+    };
+    
+    checkBlockStatus();
+  }, [selectedUser, currentUserId]);
 
   useEffect(() => {
     const markMessagesAsRead = async () => {
@@ -243,6 +261,7 @@ const Messages = () => {
 
       setMessages(filteredMessages);
       
+      // Count pending requests from the current user to the selected user
       const pendingMessageCount = typedMessages.filter(
         msg => msg.sender_id === currentUserId && 
               msg.receiver_id === selectedUser.id &&
@@ -595,6 +614,9 @@ const Messages = () => {
       
       setActiveTab('chats');
 
+      // After accepting, update the follow status
+      fetchFollowStatus();
+
       toast({
         title: "Request accepted",
         description: `You can now chat with ${senderData.username}`,
@@ -640,16 +662,91 @@ const Messages = () => {
     }
   };
 
+  const handleBlockUser = async () => {
+    if (!selectedUser || !currentUserId) return;
+    
+    try {
+      const result = await blockUser(selectedUser.id);
+      
+      if (result.success) {
+        setIsUserBlockedState(true);
+        
+        toast({
+          title: "User blocked",
+          description: `You've blocked ${selectedUser.username}. They can no longer message you.`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to block user",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to block user",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUnblockUser = async () => {
+    if (!selectedUser || !currentUserId) return;
+    
+    try {
+      const result = await unblockUser(selectedUser.id);
+      
+      if (result.success) {
+        setIsUserBlockedState(false);
+        
+        toast({
+          title: "User unblocked",
+          description: `You've unblocked ${selectedUser.username}.`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to unblock user",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to unblock user",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const viewUserProfile = (userId: string) => {
+    navigate(`/profile/${userId}`);
+  };
+
   const sendMessage = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     if (!currentUserId || !selectedUser || !newMessage.trim()) return;
 
     const isRequest = !followStatus[selectedUser.id];
     
+    // Check if the message limit (3) is reached for requests
     if (isRequest && messageCount >= 3) {
       toast({
         title: "Message limit reached",
         description: "You can only send up to 3 messages until the other user accepts your request",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if user is blocked
+    if (isUserBlockedState || isBlockedByState) {
+      toast({
+        title: "Cannot send message",
+        description: "You cannot exchange messages with this user due to one of you blocking the other",
         variant: "destructive",
       });
       return;
@@ -839,6 +936,11 @@ const Messages = () => {
                     toggleVideo={toggleVideo}
                     toggleSpeechRecognition={toggleSpeechRecognition}
                     sendMessage={sendMessage}
+                    viewUserProfile={viewUserProfile}
+                    isUserBlocked={isUserBlockedState}
+                    isBlockedBy={isBlockedByState}
+                    onBlockUser={handleBlockUser}
+                    onUnblockUser={handleUnblockUser}
                   />
                 )}
               </div>

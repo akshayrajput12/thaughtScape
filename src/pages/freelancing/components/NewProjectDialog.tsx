@@ -1,177 +1,91 @@
 
-// Use the internal scroll styling for the form
-
-import React, { useEffect, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogClose,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { X, Plus, Upload, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+import { X } from "lucide-react";
 
-interface NewProjectDialogProps {
+export interface NewProjectDialogProps {
   isOpen: boolean;
-  onClose: () => void;
-  onCreated: () => void;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (newProject: any) => void;
+  isSubmitting: boolean;
 }
 
-export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
-  isOpen,
-  onClose,
-  onCreated,
-}) => {
+export const NewProjectDialog = ({ isOpen, onOpenChange, onSubmit, isSubmitting }: NewProjectDialogProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [minBudget, setMinBudget] = useState<string>("");
-  const [maxBudget, setMaxBudget] = useState<string>("");
+  const [minBudget, setMinBudget] = useState<number | undefined>(undefined);
+  const [maxBudget, setMaxBudget] = useState<number | undefined>(undefined);
   const [deadline, setDeadline] = useState("");
-  const [allowNormalApply, setAllowNormalApply] = useState(true);
-  const [allowWhatsappApply, setAllowWhatsappApply] = useState(true);
-  const [skill, setSkill] = useState("");
+  const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
-  const [attachment, setAttachment] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [allowWhatsappApply, setAllowWhatsappApply] = useState(true);
+  const [allowNormalApply, setAllowNormalApply] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!isOpen) {
-      resetForm();
-    }
-  }, [isOpen]);
-
-  const resetForm = () => {
-    setTitle("");
-    setDescription("");
-    setMinBudget("");
-    setMaxBudget("");
-    setDeadline("");
-    setAllowNormalApply(true);
-    setAllowWhatsappApply(true);
-    setSkill("");
-    setSkills([]);
-    setAttachment(null);
-    setIsLoading(false);
-  };
-
   const handleAddSkill = () => {
-    if (skill.trim() && !skills.includes(skill.trim())) {
-      setSkills([...skills, skill.trim()]);
-      setSkill("");
+    if (skillInput.trim() && !skills.includes(skillInput.trim())) {
+      setSkills([...skills, skillInput.trim()]);
+      setSkillInput("");
     }
   };
 
-  const handleRemoveSkill = (skillToRemove: string) => {
-    setSkills(skills.filter((s) => s !== skillToRemove));
+  const handleRemoveSkill = (skill: string) => {
+    setSkills(skills.filter(s => s !== skill));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setAttachment(e.target.files[0]);
-    }
-  };
-
-  const validateForm = () => {
-    if (!title.trim()) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title.trim() || !description.trim() || skills.length === 0) {
       toast({
-        title: "Missing title",
-        description: "Please enter a project title",
+        title: "Missing information",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
-      return false;
+      return;
     }
-
-    if (!description.trim()) {
+    
+    if ((minBudget !== undefined && maxBudget !== undefined) && minBudget > maxBudget) {
       toast({
-        title: "Missing description",
-        description: "Please enter a project description",
+        title: "Invalid budget range",
+        description: "Minimum budget cannot be greater than maximum budget",
         variant: "destructive",
       });
-      return false;
+      return;
     }
 
-    if (skills.length === 0) {
-      toast({
-        title: "Missing skills",
-        description: "Please add at least one required skill",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-
-    setIsLoading(true);
+    const newProject = {
+      title,
+      description,
+      min_budget: minBudget,
+      max_budget: maxBudget,
+      deadline: deadline || null,
+      required_skills: skills,
+      allow_whatsapp_apply: allowWhatsappApply,
+      allow_normal_apply: allowNormalApply
+    };
+    
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      let attachmentUrl = null;
-      if (attachment) {
-        const fileExt = attachment.name.split(".").pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${userData.user.id}/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("project_attachments")
-          .upload(filePath, attachment);
-
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-          .from("project_attachments")
-          .getPublicUrl(filePath);
-
-        attachmentUrl = urlData.publicUrl;
-      }
-
-      const minBudgetNum = minBudget ? parseFloat(minBudget) : null;
-      const maxBudgetNum = maxBudget ? parseFloat(maxBudget) : null;
-
-      const { error } = await supabase.from("projects").insert({
-        title,
-        description,
-        min_budget: minBudgetNum,
-        max_budget: maxBudgetNum,
-        deadline: deadline || null,
-        author_id: userData.user.id,
-        required_skills: skills,
-        attachment_url: attachmentUrl,
-        allow_normal_apply: allowNormalApply,
-        allow_whatsapp_apply: allowWhatsappApply,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Project created successfully",
-      });
-      onCreated();
-      onClose();
+      onSubmit(newProject);
+      
+      // Reset form on successful submission
+      setTitle("");
+      setDescription("");
+      setMinBudget(undefined);
+      setMaxBudget(undefined);
+      setDeadline("");
+      setSkills([]);
+      setSkillInput("");
+      setAllowWhatsappApply(true);
+      setAllowNormalApply(true);
     } catch (error) {
       console.error("Error creating project:", error);
       toast({
@@ -179,207 +93,146 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
         description: "Failed to create project",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-2xl font-bold mb-2">
-            Create a New Project
-          </DialogTitle>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>Create New Project</DialogTitle>
           <DialogDescription>
-            Fill in the details to post a new project.
+            Post a new project for freelancers to apply.
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[calc(90vh-180px)] px-6">
-          <div className="space-y-6 py-4">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Project Title *</Label>
+        <div className="overflow-y-auto max-h-[70vh] pr-2">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Project Title *</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter a concise project title"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Description *</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe your project requirements in detail"
+                rows={5}
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="minBudget">Minimum Budget</Label>
                 <Input
-                  id="title"
-                  placeholder="Enter project title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  id="minBudget"
+                  type="number"
+                  value={minBudget || ''}
+                  onChange={(e) => setMinBudget(e.target.value ? Number(e.target.value) : undefined)}
+                  placeholder="0"
                 />
               </div>
-
-              <div>
-                <Label htmlFor="description">Project Description *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe your project requirements..."
-                  rows={6}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="resize-none"
-                />
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <Label htmlFor="minBudget">Minimum Budget</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2">₹</span>
-                    <Input
-                      id="minBudget"
-                      type="number"
-                      placeholder="Min"
-                      className="pl-7"
-                      value={minBudget}
-                      onChange={(e) => setMinBudget(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <Label htmlFor="maxBudget">Maximum Budget</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2">₹</span>
-                    <Input
-                      id="maxBudget"
-                      type="number"
-                      placeholder="Max"
-                      className="pl-7"
-                      value={maxBudget}
-                      onChange={(e) => setMaxBudget(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="deadline">Deadline</Label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="maxBudget">Maximum Budget</Label>
                 <Input
-                  id="deadline"
-                  type="date"
-                  value={deadline}
-                  onChange={(e) => setDeadline(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
+                  id="maxBudget"
+                  type="number"
+                  value={maxBudget || ''}
+                  onChange={(e) => setMaxBudget(e.target.value ? Number(e.target.value) : undefined)}
+                  placeholder="1000"
                 />
-              </div>
-
-              <div>
-                <Label htmlFor="skills">Required Skills *</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="skills"
-                    placeholder="Add a required skill"
-                    value={skill}
-                    onChange={(e) => setSkill(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddSkill();
-                      }
-                    }}
-                  />
-                  <Button type="button" onClick={handleAddSkill} size="sm">
-                    <Plus className="h-4 w-4 mr-1" /> Add
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {skills.map((s) => (
-                    <Badge variant="secondary" key={s} className="px-2 py-1">
-                      {s}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSkill(s)}
-                        className="ml-1 text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                  {skills.length === 0 && (
-                    <span className="text-sm text-muted-foreground">
-                      No skills added yet
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="attachment">Attachment</Label>
-                <div className="mt-1">
-                  <label className="flex justify-center w-full h-32 px-4 transition border-2 border-gray-300 border-dashed rounded-md appearance-none cursor-pointer hover:border-gray-400 focus:outline-none">
-                    <span className="flex flex-col items-center justify-center space-y-2">
-                      <Upload className="w-6 h-6 text-gray-600" />
-                      <span className="font-medium text-gray-600">
-                        {attachment
-                          ? attachment.name
-                          : "Click to upload project files"}
-                      </span>
-                    </span>
-                    <input
-                      id="attachment"
-                      name="attachment"
-                      type="file"
-                      className="hidden"
-                      onChange={handleFileChange}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="normalApply">Allow Direct Applications</Label>
-                    <div className="text-sm text-muted-foreground">
-                      Let users apply directly through the platform
-                    </div>
-                  </div>
-                  <Switch
-                    id="normalApply"
-                    checked={allowNormalApply}
-                    onCheckedChange={setAllowNormalApply}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="whatsappApply">Allow WhatsApp Applications</Label>
-                    <div className="text-sm text-muted-foreground">
-                      Let users apply via WhatsApp
-                    </div>
-                  </div>
-                  <Switch
-                    id="whatsappApply"
-                    checked={allowWhatsappApply}
-                    onCheckedChange={setAllowWhatsappApply}
-                  />
-                </div>
               </div>
             </div>
-          </div>
-        </ScrollArea>
-
-        <DialogFooter className="p-6 pt-2">
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancel
-            </Button>
-          </DialogClose>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="min-w-[100px]"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              "Create Project"
-            )}
-          </Button>
-        </DialogFooter>
+            
+            <div className="space-y-2">
+              <Label htmlFor="deadline">Deadline</Label>
+              <Input
+                id="deadline"
+                type="date"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="skills">Required Skills *</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="skills"
+                  value={skillInput}
+                  onChange={(e) => setSkillInput(e.target.value)}
+                  placeholder="Enter a skill and press Add"
+                />
+                <Button type="button" onClick={handleAddSkill}>Add</Button>
+              </div>
+              
+              <div className="flex flex-wrap gap-2 mt-2">
+                {skills.map((skill) => (
+                  <Badge key={skill} variant="secondary" className="gap-1">
+                    {skill}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSkill(skill)}
+                      className="ml-1 rounded-full hover:bg-gray-200 p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Application Methods</h4>
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="allowWhatsappApply" className="cursor-pointer">
+                  Allow WhatsApp applications
+                </Label>
+                <Switch
+                  id="allowWhatsappApply"
+                  checked={allowWhatsappApply}
+                  onCheckedChange={setAllowWhatsappApply}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="allowNormalApply" className="cursor-pointer">
+                  Allow in-app applications
+                </Label>
+                <Switch
+                  id="allowNormalApply"
+                  checked={allowNormalApply}
+                  onCheckedChange={setAllowNormalApply}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create Project"}
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
