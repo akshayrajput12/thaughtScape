@@ -189,6 +189,55 @@ const Index = () => {
 
   const handleDeleteThought = async (thoughtId: string) => {
     try {
+      // First delete any likes associated with this thought
+      const { error: likesError } = await supabase
+        .from('likes')
+        .delete()
+        .eq('thought_id', thoughtId);
+
+      if (likesError) {
+        console.error("Error deleting likes:", likesError);
+        toast({
+          title: "Error",
+          description: "Failed to delete associated likes",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Then delete any comments associated with this thought
+      const { error: commentsError } = await supabase
+        .from('comments')
+        .delete()
+        .eq('thought_id', thoughtId);
+
+      if (commentsError) {
+        console.error("Error deleting comments:", commentsError);
+        toast({
+          title: "Error",
+          description: "Failed to delete associated comments",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Then delete any bookmarks associated with this thought
+      const { error: bookmarksError } = await supabase
+        .from('bookmarks')
+        .delete()
+        .eq('thought_id', thoughtId);
+
+      if (bookmarksError) {
+        console.error("Error deleting bookmarks:", bookmarksError);
+        toast({
+          title: "Error",
+          description: "Failed to delete associated bookmarks",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Finally delete the thought itself
       const { error } = await supabase
         .from('thoughts')
         .delete()

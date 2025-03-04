@@ -1,4 +1,3 @@
-
 export interface Profile {
   id: string;
   username: string;
@@ -49,6 +48,8 @@ export interface Project {
   };
   applications_count?: number | { count: number }[];
   milestones_count?: number | { count: number }[];
+  allow_whatsapp_apply?: boolean;
+  allow_normal_apply?: boolean;
 }
 
 export interface ProjectApplication {
@@ -61,6 +62,8 @@ export interface ProjectApplication {
   viewed_at?: string;
   created_at: string;
   applicant?: Profile;
+  experience?: string;
+  portfolio?: string;
 }
 
 export interface Thought {

@@ -1,163 +1,191 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { MessageSquare, Info } from "lucide-react";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, A
+  CardTitle 
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import type { Project, ProjectApplication } from "@/types";
+import { 
+  CheckCircle, 
+  X, 
+  ExternalLink, 
+  Phone,
+  FileText,
+  Briefcase
+} from "lucide-react";
+import { format } from "date-fns";
+import type { ProjectApplication } from "@/types";
 
 interface ProjectApplicationCardProps {
-  application: ProjectApplication & { project?: Project };
+  application: ProjectApplication & { project?: any };
   onUpdateStatus: (applicationId: string, status: "accepted" | "rejected") => void;
 }
 
-export const ProjectApplicationCard = ({ application, onUpdateStatus }: ProjectApplicationCardProps) => {
-  const navigate = useNavigate();
-  const [showProjectDetails, setShowProjectDetails] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const { toast } = useToast();
-
-  const handleMessageClick = () => {
-    navigate(`/messages?user=${application.applicant_id}`);
+export const ProjectApplicationCard = ({
+  application,
+  onUpdateStatus
+}: ProjectApplicationCardProps) => {
+  const [isMessageOpen, setIsMessageOpen] = useState(false);
+  
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'PPP');
+    } catch (e) {
+      return dateString;
+    }
   };
 
-  const handleStatusUpdate = async (status: "accepted" | "rejected") => {
-    try {
-      setIsUpdating(true);
-      await onUpdateStatus(application.id, status);
-      toast({
-        title: `Application ${status}`,
-        description: `You have ${status} the application from ${application.applicant?.full_name || application.applicant?.username}`,
-      });
-    } catch (error) {
-      console.error(`Error ${status} application:`, error);
-      toast({
-        title: "Error",
-        description: `Failed to ${status} the application. Please try again.`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdating(false);
+  const getInitials = (name?: string) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map(n => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "accepted":
+        return "bg-green-100 text-green-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100">
-      <div className="flex justify-between items-start">
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader className="flex flex-row items-center gap-4 pb-2">
+        <Avatar className="h-10 w-10">
+          <AvatarImage 
+            src={application.applicant?.avatar_url || ""} 
+            alt={application.applicant?.username || "Applicant"}
+          />
+          <AvatarFallback>{getInitials(application.applicant?.username || application.applicant?.full_name)}</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col">
+          <CardTitle className="text-base">
+            {application.applicant?.full_name || application.applicant?.username || "Applicant"}
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Applied {formatDate(application.created_at)}
+          </CardDescription>
+        </div>
+        <div className="ml-auto">
+          <span 
+            className={`inline-block px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusClass(application.status)}`}
+          >
+            {application.status}
+          </span>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="pb-2">
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <h3 className="text-xl font-semibold text-gray-900">
-              {application.applicant?.full_name || application.applicant?.username}
-            </h3>
-            {application.project && (
-              <Dialog open={showProjectDetails} onOpenChange={setShowProjectDetails}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-7 px-2 rounded-full"
-                  >
-                    <Info className="h-4 w-4 text-gray-400" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Project Details</DialogTitle>
-                    <DialogDescription>
-                      Information about the project this application is for.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div>
-                      <h4 className="font-medium text-lg">{application.project.title}</h4>
-                      <p className="text-gray-600 mt-1">{application.project.description}</p>
-                    </div>
-                    <Separator />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-500">Budget</h5>
-                        <p>₹{application.project.budget?.toLocaleString('en-IN') || 'Not specified'}</p>
-                      </div>
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-500">Status</h5>
-                        <p className="capitalize">{application.project.status}</p>
-                      </div>
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-500">Required Skills</h5>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {application.project.required_skills?.map((skill, index) => (
-                            <span 
-                              key={index} 
-                              className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-500">Deadline</h5>
-                        <p>{application.project.deadline ? new Date(application.project.deadline).toLocaleDateString() : 'No deadline'}</p>
-                      </div>
+          <h4 className="font-medium text-sm">Project: {application.project?.title}</h4>
+          
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Phone className="h-4 w-4" />
+            <span>{application.phone_number || "No phone provided"}</span>
+          </div>
+          
+          <Dialog open={isMessageOpen} onOpenChange={setIsMessageOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="px-0 text-primary">
+                <FileText className="h-4 w-4 mr-1" />
+                View Cover Letter
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Application Details</DialogTitle>
+                <DialogDescription>
+                  From {application.applicant?.full_name || application.applicant?.username}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Cover Letter</h4>
+                  <p className="text-sm whitespace-pre-wrap">{application.message}</p>
+                </div>
+                
+                {application.experience && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Relevant Experience</h4>
+                    <p className="text-sm whitespace-pre-wrap">{application.experience}</p>
+                  </div>
+                )}
+                
+                {application.portfolio && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Portfolio/Previous Work</h4>
+                    <div className="flex items-center">
+                      <a 
+                        href={application.portfolio.startsWith('http') ? application.portfolio : `https://${application.portfolio}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary flex items-center text-sm"
+                      >
+                        {application.portfolio}
+                        <ExternalLink className="ml-1 h-3 w-3" />
+                      </a>
                     </div>
                   </div>
-                </DialogContent>
-              </Dialog>
-            )}
+                )}
+                
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Contact Information</h4>
+                  <p className="text-sm">Phone: {application.phone_number || "Not provided"}</p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardContent>
+      
+      <CardFooter className="pt-2">
+        {application.status === "pending" && (
+          <div className="flex gap-2 w-full">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex-1 border-green-500 text-green-600 hover:bg-green-50"
+              onClick={() => onUpdateStatus(application.id, "accepted")}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Accept
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex-1 border-red-500 text-red-600 hover:bg-red-50"
+              onClick={() => onUpdateStatus(application.id, "rejected")}
+            >
+              <X className="h-4 w-4 mr-1" />
+              Reject
+            </Button>
           </div>
-          <p className="text-sm text-gray-600">{application.message}</p>
-          {application.project && (
-            <div className="mt-2 p-2 bg-gray-50 rounded-md">
-              <p className="text-xs text-gray-500">Applied for:</p>
-              <p className="text-sm font-medium truncate">{application.project.title}</p>
-            </div>
-          )}
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleMessageClick}
-          className="hover:bg-gray-100"
-        >
-          <MessageSquare className="h-5 w-5" />
-        </Button>
-      </div>
-      <div className="flex justify-between items-center">
-        <span className="text-sm text-gray-600">
-          Status: <span className="capitalize">{application.status}</span>
-        </span>
-        <div className="flex gap-2">
-          {application.status === "pending" && (
-            <>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => handleStatusUpdate("accepted")}
-                disabled={isUpdating}
-              >
-                Accept
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleStatusUpdate("rejected")}
-                disabled={isUpdating}
-              >
-                Reject
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+        )}
+      </CardFooter>
+    </Card>
   );
 };
