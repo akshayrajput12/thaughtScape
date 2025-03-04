@@ -285,13 +285,28 @@ const Freelancing = () => {
   });
 
   const applyProjectMutation = useMutation({
-    mutationFn: async ({ projectId, message, phoneNumber }: { projectId: string; message: string; phoneNumber: string }) => {
+    mutationFn: async ({ 
+      projectId, 
+      message, 
+      phoneNumber, 
+      experience, 
+      portfolio 
+    }: { 
+      projectId: string; 
+      message: string; 
+      phoneNumber: string;
+      experience?: string;
+      portfolio?: string; 
+    }) => {
       const { data, error } = await supabase
         .from("project_applications")
         .insert([{
           project_id: projectId,
           applicant_id: user?.id,
           message,
+          phone_number: phoneNumber,
+          experience,
+          portfolio,
           status: "pending" as const,
         }])
         .select()
