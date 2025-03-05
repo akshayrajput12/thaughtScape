@@ -70,6 +70,10 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
     enabled: showFollowingDialog, // Only fetch when dialog is open
   });
 
+  // Verify actual counts when dialogs are opened
+  const actualFollowersCount = followers.length;
+  const actualFollowingCount = following.length;
+
   const handleFollowersClick = () => {
     setShowFollowersDialog(true);
   };
@@ -156,7 +160,7 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
       <Dialog open={showFollowersDialog} onOpenChange={setShowFollowersDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Followers ({followers.length})</DialogTitle>
+            <DialogTitle>Followers ({actualFollowersCount})</DialogTitle>
           </DialogHeader>
           <UserList users={followers} />
         </DialogContent>
@@ -165,7 +169,7 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
       <Dialog open={showFollowingDialog} onOpenChange={setShowFollowingDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Following ({following.length})</DialogTitle>
+            <DialogTitle>Following ({actualFollowingCount})</DialogTitle>
           </DialogHeader>
           <UserList users={following} />
         </DialogContent>

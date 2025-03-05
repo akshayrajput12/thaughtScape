@@ -1,15 +1,16 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, UserPlus, Users } from "lucide-react";
+import { Search, UserPlus, UserMinus, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PoemCard } from "@/components/PoemCard";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { Profile, Thought } from "@/types";
+import { useNavigate } from "react-router-dom";
 
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -17,6 +18,8 @@ const Explore = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch thoughts with React Query
   const { data: thoughts = [], isLoading: thoughtsLoading } = useQuery({
@@ -77,6 +80,24 @@ const Explore = () => {
         .limit(5);
 
       if (error) throw error;
+
+      // Check follow status for each search result
+      if (user?.id && data?.length > 0) {
+        const userIds = data.map(profile => profile.id);
+        const { data: followData } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id)
+          .in('following_id', userIds);
+        
+        const followingMap = new Set(followData?.map(item => item.following_id) || []);
+        
+        // Add is_following property to each profile
+        data.forEach(profile => {
+          profile.is_following = followingMap.has(profile.id);
+        });
+      }
+
       setSearchResults(data || []);
       setShowSearchResults(true);
     } catch (error) {
@@ -108,20 +129,99 @@ const Explore = () => {
   };
 
   const handleFollow = async (userId: string) => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    
     try {
-      // Add logic to follow a user
-      toast({
-        title: "Success",
-        description: "You are now following this user",
-      });
+      const isFollowing = suggestedUsers.find(u => u.id === userId)?.is_following || 
+                         searchResults.find(u => u.id === userId)?.is_following;
+      
+      if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', userId);
+
+        if (error) throw error;
+        
+        // Update local state
+        if (showSearchResults) {
+          setSearchResults(prevResults => 
+            prevResults.map(profile => 
+              profile.id === userId 
+                ? { ...profile, is_following: false }
+                : profile
+            )
+          );
+        }
+        
+        // Invalidate queries to refetch data
+        queryClient.invalidateQueries({ queryKey: ['suggestedUsers'] });
+        queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+        
+        toast({
+          title: "Success",
+          description: "You have unfollowed this user",
+        });
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: user.id,
+            following_id: userId
+          });
+
+        if (error) throw error;
+        
+        // Update notification for the followed user
+        await supabase
+          .from('notifications')
+          .insert({
+            type: 'follow',
+            user_id: userId,
+            content: 'Someone started following you',
+            related_user_id: user.id
+          });
+        
+        // Update local state
+        if (showSearchResults) {
+          setSearchResults(prevResults => 
+            prevResults.map(profile => 
+              profile.id === userId 
+                ? { ...profile, is_following: true }
+                : profile
+            )
+          );
+        }
+        
+        // Invalidate queries to refetch data
+        queryClient.invalidateQueries({ queryKey: ['suggestedUsers'] });
+        queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+        
+        toast({
+          title: "Success",
+          description: "You are now following this user",
+        });
+      }
     } catch (error) {
-      console.error('Error following user:', error);
+      console.error('Error following/unfollowing user:', error);
       toast({
         title: "Error",
-        description: "Failed to follow user",
+        description: "Failed to update follow status",
         variant: "destructive",
       });
     }
+  };
+
+  const isUserFollowing = (userId: string) => {
+    return suggestedUsers.find(u => u.id === userId)?.is_following || 
+           searchResults.find(u => u.id === userId)?.is_following || 
+           false;
   };
 
   return (
@@ -171,7 +271,10 @@ const Explore = () => {
                       whileHover={{ x: 5 }}
                       className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer" 
+                        onClick={() => navigate(`/profile/${profile.id}`)}
+                      >
                         <div className="relative">
                           <img
                             src={profile.avatar_url || "/placeholder.svg"}
@@ -186,10 +289,23 @@ const Explore = () => {
                       </div>
                       <button
                         onClick={() => handleFollow(profile.id)}
-                        className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-black rounded-full hover:bg-gray-800 transition-colors"
+                        className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                          profile.is_following 
+                            ? "text-red-600 bg-red-50 hover:bg-red-100" 
+                            : "text-white bg-black hover:bg-gray-800"
+                        }`}
                       >
-                        <UserPlus size={12} />
-                        <span>Follow</span>
+                        {profile.is_following ? (
+                          <>
+                            <UserMinus size={12} />
+                            <span>Unfollow</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus size={12} />
+                            <span>Follow</span>
+                          </>
+                        )}
                       </button>
                     </motion.div>
                   ))}
@@ -284,7 +400,10 @@ const Explore = () => {
                       transition={{ delay: index * 0.1 }}
                       className="group flex items-center justify-between gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-300 border border-transparent hover:border-gray-200"
                     >
-                      <div className="flex items-center gap-3">
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer" 
+                        onClick={() => navigate(`/profile/${user.id}`)}
+                      >
                         <div className="relative overflow-hidden rounded-full">
                           <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full opacity-0 group-hover:opacity-50 transition-opacity" />
                           <img
@@ -305,10 +424,23 @@ const Explore = () => {
                       </div>
                       <button
                         onClick={() => handleFollow(user.id)}
-                        className="px-4 py-2 text-sm font-medium text-white bg-black rounded-full hover:bg-gray-800 transition-colors flex items-center gap-1 group-hover:scale-105"
+                        className={`px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-1 group-hover:scale-105 ${
+                          user.is_following 
+                            ? "text-red-600 bg-red-50 hover:bg-red-100" 
+                            : "text-white bg-black hover:bg-gray-800"
+                        }`}
                       >
-                        <UserPlus size={14} />
-                        <span>Follow</span>
+                        {user.is_following ? (
+                          <>
+                            <UserMinus size={14} />
+                            <span>Unfollow</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus size={14} />
+                            <span>Follow</span>
+                          </>
+                        )}
                       </button>
                     </motion.div>
                   ))}
@@ -317,7 +449,10 @@ const Explore = () => {
               
               {!suggestedUsersLoading && suggestedUsers.length > 0 && (
                 <div className="mt-6 pt-4 border-t border-gray-100 text-center">
-                  <button className="text-sm font-medium text-black underline hover:text-gray-600 transition-colors">
+                  <button 
+                    className="text-sm font-medium text-black underline hover:text-gray-600 transition-colors"
+                    onClick={() => navigate('/explore')}
+                  >
                     View all suggested users
                   </button>
                 </div>
