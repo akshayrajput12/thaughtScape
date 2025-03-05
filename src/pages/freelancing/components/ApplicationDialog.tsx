@@ -45,7 +45,7 @@ export function ApplicationDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Apply for Project</DialogTitle>
           <DialogDescription>

@@ -24,7 +24,7 @@ export function ChatBubble({
     <div
       className={cn(
         "flex items-start gap-2 mb-4",
-        variant === "sent" ? "flex-row-reverse" : "",
+        variant === "sent" && "flex-row-reverse",
         className,
       )}
     >
@@ -50,9 +50,7 @@ export function ChatBubbleMessage({
     <div
       className={cn(
         "rounded-lg p-3",
-        variant === "sent" 
-          ? "bg-primary text-primary-foreground rounded-tr-none" 
-          : "bg-muted rounded-tl-none",
+        variant === "sent" ? "bg-primary text-primary-foreground" : "bg-muted",
         className
       )}
     >

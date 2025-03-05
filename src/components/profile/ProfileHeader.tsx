@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { User, X, Plus } from "lucide-react";
+import { User, X } from "lucide-react";
 import type { Profile } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
@@ -32,28 +32,6 @@ interface Genre {
   name: string;
 }
 
-interface HighlightProps {
-  icon?: React.ReactNode;
-  label: string;
-  isNew?: boolean;
-  onClick?: () => void;
-}
-
-const Highlight = ({ icon, label, isNew, onClick }: HighlightProps) => (
-  <div className="flex flex-col items-center gap-1" onClick={onClick}>
-    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center overflow-hidden border-2 border-white shadow-md hover:shadow-lg transition-all cursor-pointer">
-      {isNew ? (
-        <Plus className="text-purple-500 w-6 h-6" />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          {icon || <span className="text-purple-500 text-xl">★</span>}
-        </div>
-      )}
-    </div>
-    <span className="text-xs font-medium text-gray-700">{label}</span>
-  </div>
-);
-
 export const ProfileHeader = ({ 
   profile, 
   isOwnProfile, 
@@ -63,11 +41,6 @@ export const ProfileHeader = ({
   const [userGenres, setUserGenres] = useState<Genre[]>([]);
   const [availableGenres, setAvailableGenres] = useState<Genre[]>([]);
   const [open, setOpen] = useState(false);
-  const [stats, setStats] = useState({
-    followers: 0,
-    following: 0,
-    posts: 0
-  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -116,64 +89,7 @@ export const ProfileHeader = ({
       }
     };
 
-    const fetchStats = async () => {
-      try {
-        // Fetch follower count
-        const { count: followerCount, error: followerError } = await supabase
-          .from('follows')
-          .select('follower_id', { count: 'exact', head: true })
-          .eq('following_id', profile.id);
-          
-        // Fetch following count
-        const { count: followingCount, error: followingError } = await supabase
-          .from('follows')
-          .select('following_id', { count: 'exact', head: true })
-          .eq('follower_id', profile.id);
-          
-        // Fetch post count - Fix: changed 'poems' to 'thoughts'
-        const { count: postCount, error: postError } = await supabase
-          .from('thoughts')
-          .select('id', { count: 'exact', head: true })
-          .eq('author_id', profile.id);
-          
-        if (followerError) throw followerError;
-        if (followingError) throw followingError;
-        if (postError) throw postError;
-        
-        setStats({
-          followers: followerCount || 0,
-          following: followingCount || 0,
-          posts: postCount || 0
-        });
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      }
-    };
-
     fetchGenres();
-    fetchStats();
-    
-    // Set up real-time listeners for stat changes
-    const followsChannel = supabase.channel('profile-follows-changes')
-      .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'follows', filter: `follower_id=eq.${profile.id}` },
-          () => fetchStats())
-      .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'follows', filter: `following_id=eq.${profile.id}` },
-          () => fetchStats())
-      .subscribe();
-          
-    // Fix: changed 'poems' to 'thoughts' in channel name and filter
-    const thoughtsChannel = supabase.channel('profile-thoughts-changes')
-      .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'thoughts', filter: `author_id=eq.${profile.id}` },
-          () => fetchStats())
-      .subscribe();
-          
-    return () => {
-      supabase.removeChannel(followsChannel);
-      supabase.removeChannel(thoughtsChannel);
-    };
   }, [profile.id, toast]);
 
   const handleAddGenre = async (genreId: string) => {
@@ -232,14 +148,6 @@ export const ProfileHeader = ({
     }
   };
 
-  const highlights = [
-    { label: 'New', isNew: true },
-    { label: 'Poems' },
-    { label: 'Life' },
-    { label: 'Art' },
-    { label: 'Travel' }
-  ];
-
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-8 border border-purple-100/50 backdrop-blur-sm w-full">
       <div className="flex flex-col items-center text-center md:items-start md:text-left gap-6">
@@ -280,34 +188,19 @@ export const ProfileHeader = ({
             </p>
           )}
           
-          {/* Stats section */}
-          <div className="flex gap-6 mt-3 justify-center md:justify-start">
-            <div className="flex flex-col items-center">
-              <span className="font-bold text-lg">{stats.posts}</span>
-              <span className="text-sm text-gray-600">Posts</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="font-bold text-lg">{stats.followers}</span>
-              <span className="text-sm text-gray-600">Followers</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="font-bold text-lg">{stats.following}</span>
-              <span className="text-sm text-gray-600">Following</span>
-            </div>
-          </div>
-          
-          {/* Story highlights section */}
+          {/* Stories highlight section like in the reference image */}
           {!isEditing && (
-            <div className="mt-6 w-full overflow-x-auto no-scrollbar">
-              <div className="flex gap-4 min-w-max pb-2">
-                {highlights.map((highlight, i) => (
-                  <Highlight 
-                    key={i} 
-                    label={highlight.label} 
-                    isNew={highlight.isNew} 
-                  />
-                ))}
-              </div>
+            <div className="mt-6 flex flex-wrap gap-4 justify-center md:justify-start">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300">
+                    {i === 0 && <span className="text-gray-500 text-2xl">+</span>}
+                  </div>
+                  <span className="text-xs text-gray-600">
+                    {i === 0 ? 'New' : ['Poems', 'Life', 'Art', 'Travel'][i-1]}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -317,12 +210,12 @@ export const ProfileHeader = ({
         <div className="mt-6 space-y-4">
           <div className="flex flex-wrap gap-4 text-sm text-gray-600 justify-center md:justify-start">
             {profile.city && profile.country && (
-              <span className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-purple-50 to-blue-50 rounded-full shadow-sm">
+              <span className="flex items-center gap-1 px-3 py-1 bg-gray-50 rounded-full">
                 📍 {profile.city}, {profile.country}
               </span>
             )}
             {profile.age && (
-              <span className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full shadow-sm">
+              <span className="flex items-center gap-1 px-3 py-1 bg-gray-50 rounded-full">
                 🎂 {profile.age} years old
               </span>
             )}
@@ -367,7 +260,7 @@ export const ProfileHeader = ({
                 <Badge 
                   key={genre.id}
                   variant="secondary" 
-                  className="bg-gradient-to-r from-purple-50 to-blue-50 text-purple-700 hover:bg-purple-100 pl-3 pr-2 py-1 flex items-center gap-1 shadow-sm"
+                  className="bg-purple-50 text-purple-700 hover:bg-purple-100 pl-3 pr-2 py-1 flex items-center gap-1"
                 >
                   {genre.name}
                   {isOwnProfile && (
