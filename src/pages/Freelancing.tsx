@@ -1038,6 +1038,7 @@ const Freelancing = () => {
           isOpen={isNewProjectDialogOpen}
           onOpenChange={setIsNewProjectDialogOpen}
           onSubmit={handleCreateProject}
+          isSubmitting={createProjectMutation.isPending}
         />
 
         <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
