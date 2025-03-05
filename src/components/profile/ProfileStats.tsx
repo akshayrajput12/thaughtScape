@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Users, BookText, UserPlus } from "lucide-react";
 import {
@@ -10,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/types";
 
@@ -22,10 +22,10 @@ interface ProfileStatsProps {
 }
 
 export const ProfileStats = ({ postsCount, followersCount, followingCount, userId }: ProfileStatsProps) => {
-  const [showFollowers, setShowFollowers] = useState(false);
-  const [showFollowing, setShowFollowing] = useState(false);
   const [followers, setFollowers] = useState<Profile[]>([]);
   const [following, setFollowing] = useState<Profile[]>([]);
+  const [showFollowersDialog, setShowFollowersDialog] = useState(false);
+  const [showFollowingDialog, setShowFollowingDialog] = useState(false);
   const navigate = useNavigate();
 
   const fetchFollowers = async () => {
@@ -42,7 +42,10 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
       .eq('following_id', userId);
 
     if (!error && data) {
-      setFollowers(data.map(d => d.follower) as Profile[]);
+      const followerProfiles = data.map(d => d.follower as Profile).filter(Boolean);
+      setFollowers(followerProfiles);
+    } else {
+      console.error('Error fetching followers:', error);
     }
   };
 
@@ -60,18 +63,21 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
       .eq('follower_id', userId);
 
     if (!error && data) {
-      setFollowing(data.map(d => d.following) as Profile[]);
+      const followingProfiles = data.map(d => d.following as Profile).filter(Boolean);
+      setFollowing(followingProfiles);
+    } else {
+      console.error('Error fetching following:', error);
     }
   };
 
-  const handleFollowersClick = async () => {
-    await fetchFollowers();
-    setShowFollowers(true);
+  const handleFollowersClick = () => {
+    fetchFollowers();
+    setShowFollowersDialog(true);
   };
 
-  const handleFollowingClick = async () => {
-    await fetchFollowing();
-    setShowFollowing(true);
+  const handleFollowingClick = () => {
+    fetchFollowing();
+    setShowFollowingDialog(true);
   };
 
   const stats = [
@@ -96,29 +102,35 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
   ];
 
   const UserList = ({ users }: { users: Profile[] }) => (
-    <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-      {users.map((user) => (
-        <motion.div
-          key={user.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
-          onClick={() => {
-            navigate(`/profile/${user.id}`);
-            setShowFollowers(false);
-            setShowFollowing(false);
-          }}
-        >
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={user.avatar_url || undefined} />
-            <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium">{user.full_name || user.username}</p>
-            <p className="text-sm text-gray-500">@{user.username}</p>
-          </div>
-        </motion.div>
-      ))}
+    <div className="space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar">
+      {users.length === 0 ? (
+        <div className="text-center p-4 text-gray-500">
+          No users to display
+        </div>
+      ) : (
+        users.map((user) => (
+          <motion.div
+            key={user.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
+            onClick={() => {
+              navigate(`/profile/${user.id}`);
+              setShowFollowersDialog(false);
+              setShowFollowingDialog(false);
+            }}
+          >
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={user.avatar_url || undefined} />
+              <AvatarFallback>{user.username ? user.username[0].toUpperCase() : 'U'}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium">{user.full_name || user.username}</p>
+              <p className="text-sm text-gray-500">@{user.username}</p>
+            </div>
+          </motion.div>
+        ))
+      )}
     </div>
   );
 
@@ -143,7 +155,7 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
         ))}
       </div>
 
-      <Dialog open={showFollowers} onOpenChange={setShowFollowers}>
+      <Dialog open={showFollowersDialog} onOpenChange={setShowFollowersDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Followers</DialogTitle>
@@ -152,7 +164,7 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showFollowing} onOpenChange={setShowFollowing}>
+      <Dialog open={showFollowingDialog} onOpenChange={setShowFollowingDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Following</DialogTitle>

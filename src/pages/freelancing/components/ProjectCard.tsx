@@ -1,107 +1,87 @@
 
-import { motion } from "framer-motion";
-import { format } from "date-fns";
-import { useNavigate } from "react-router-dom";
-import { IndianRupee, User, Calendar, CheckCircle2, MessageCircle } from "lucide-react";
+import React from "react";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Users, DollarSign } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { ApplicationDialog } from "./ApplicationDialog";
 import type { Project } from "@/types";
 
 interface ProjectCardProps {
   project: Project;
-  currentUserId?: string;
-  hasApplied: boolean;
-  onApply: (project: Project) => void;
+  onApply: (project: Project, message: string) => void;
+  isSubmitting: boolean;
 }
 
-export const ProjectCard = ({ project, currentUserId, hasApplied, onApply }: ProjectCardProps) => {
-  const navigate = useNavigate();
-  
-  // Function to navigate to author's profile
-  const handleViewProfile = () => {
-    if (project.author?.id) {
-      navigate(`/profile/${project.author.id}`);
-    }
+export function ProjectCard({ project, onApply, isSubmitting }: ProjectCardProps) {
+  const [message, setMessage] = React.useState("");
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const handleApply = () => {
+    onApply(project, message);
+    setIsOpen(false);
+    setMessage("");
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="group h-full"
-    >
-      <div className="relative h-full bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 p-4 sm:p-6 border border-purple-100/50 overflow-hidden flex flex-col">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 via-transparent to-pink-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        
-        <div className="relative flex-1 flex flex-col space-y-3">
-          <div className="flex justify-between items-start gap-2">
-            <div className="space-y-1 flex-1">
-              <h3 className="text-lg sm:text-xl font-serif font-semibold text-gray-900 line-clamp-2 group-hover:text-purple-700 transition-colors">
-                {project.title}
-              </h3>
-              <button 
-                onClick={handleViewProfile}
-                className="text-xs sm:text-sm text-purple-600 hover:text-purple-800 transition-colors flex items-center gap-1"
-              >
-                <span>by {project.author?.full_name || project.author?.username}</span>
-              </button>
+    <Card className="overflow-hidden transition-all hover:shadow-md">
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex justify-between items-start">
+              <h3 className="text-xl font-semibold">{project.title}</h3>
+              <Badge variant={project.status === "open" ? "default" : "secondary"}>
+                {project.status}
+              </Badge>
             </div>
-            {project.budget && (
-              <div className="flex items-center text-green-600 font-medium text-xs sm:text-sm bg-green-50 px-2 py-1 rounded-full">
-                <IndianRupee className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                {project.budget.toLocaleString()}
-              </div>
-            )}
+            <p className="text-muted-foreground line-clamp-3">{project.description}</p>
           </div>
 
-          <p className="text-sm text-gray-600 line-clamp-3 flex-grow">{project.description}</p>
-
-          <div className="flex flex-wrap gap-1 sm:gap-2 my-2">
-            {project.required_skills?.map((skill) => (
-              <span
-                key={skill}
-                className="px-2 py-0.5 bg-purple-100 text-purple-600 rounded-full text-xs font-medium"
-              >
+          <div className="flex flex-wrap gap-3">
+            {project.skills?.map((skill, index) => (
+              <Badge key={index} variant="outline">
                 {skill}
-              </span>
+              </Badge>
             ))}
           </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto">
-            <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>{format(new Date(project.deadline || project.created_at), 'MMM d')}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <User className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>{project._count?.applications || 0} applied</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>{project._count?.comments || 0} comments</span>
-              </div>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>{formatDistanceToNow(new Date(project.created_at), { addSuffix: true })}</span>
             </div>
-            
-            <Button
-              variant={hasApplied ? "secondary" : "default"}
-              size="sm"
-              onClick={() => onApply(project)}
-              disabled={project.status !== "open" || project.author_id === currentUserId || hasApplied}
-              className="ml-2 text-xs sm:text-sm px-2 sm:px-3"
-            >
-              {hasApplied ? (
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Applied</span>
-                </span>
-              ) : (
-                "Apply Now"
-              )}
-            </Button>
+            <div className="flex items-center">
+              <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>{project.applications_count || 0} applicants</span>
+            </div>
+            <div className="flex items-center col-span-2">
+              <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Budget: ${project.budget}</span>
+            </div>
           </div>
         </div>
-      </div>
-    </motion.div>
+      </CardContent>
+      
+      <CardFooter className="bg-muted/50 px-6 py-4">
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogTrigger asChild>
+            <Button className="w-full" disabled={project.status !== "open"}>
+              Apply Now
+            </Button>
+          </DialogTrigger>
+          <ApplicationDialog
+            isOpen={isOpen}
+            onOpenChange={setIsOpen}
+            project={project}
+            message={message}
+            onMessageChange={setMessage}
+            onSubmit={handleApply}
+            isSubmitting={isSubmitting}
+          />
+        </Dialog>
+      </CardFooter>
+    </Card>
   );
-};
+}
