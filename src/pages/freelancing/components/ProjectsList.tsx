@@ -6,17 +6,17 @@ import type { Project } from "@/types";
 interface ProjectsListProps {
   projects: Project[];
   isLoading: boolean;
-  currentUserId?: string;
   userApplications: string[];
-  onApply: (project: Project) => void;
+  onApply: (project: Project, message: string) => void;
+  isSubmitting?: boolean;
 }
 
 export const ProjectsList = ({
   projects,
   isLoading,
-  currentUserId,
   userApplications,
   onApply,
+  isSubmitting = false,
 }: ProjectsListProps) => {
   if (isLoading) {
     return (
@@ -51,9 +51,9 @@ export const ProjectsList = ({
         <ProjectCard
           key={project.id}
           project={project}
-          currentUserId={currentUserId}
           hasApplied={userApplications.includes(project.id)}
           onApply={onApply}
+          isSubmitting={isSubmitting}
         />
       ))}
     </div>

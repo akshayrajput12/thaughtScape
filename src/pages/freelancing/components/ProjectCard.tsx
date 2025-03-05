@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, DollarSign } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { ApplicationDialog } from "./ApplicationDialog";
 import type { Project } from "@/types";
 
@@ -13,9 +13,10 @@ interface ProjectCardProps {
   project: Project;
   onApply: (project: Project, message: string) => void;
   isSubmitting: boolean;
+  hasApplied?: boolean;
 }
 
-export function ProjectCard({ project, onApply, isSubmitting }: ProjectCardProps) {
+export function ProjectCard({ project, onApply, isSubmitting, hasApplied }: ProjectCardProps) {
   const [message, setMessage] = React.useState("");
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -40,7 +41,7 @@ export function ProjectCard({ project, onApply, isSubmitting }: ProjectCardProps
           </div>
 
           <div className="flex flex-wrap gap-3">
-            {project.skills?.map((skill, index) => (
+            {project.required_skills?.map((skill, index) => (
               <Badge key={index} variant="outline">
                 {skill}
               </Badge>
@@ -54,11 +55,17 @@ export function ProjectCard({ project, onApply, isSubmitting }: ProjectCardProps
             </div>
             <div className="flex items-center">
               <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>{project.applications_count || 0} applicants</span>
+              <span>
+                {typeof project.applications_count === 'number' 
+                  ? project.applications_count 
+                  : Array.isArray(project.applications_count) 
+                    ? project.applications_count.length 
+                    : 0} applicants
+              </span>
             </div>
             <div className="flex items-center col-span-2">
               <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>Budget: ${project.budget}</span>
+              <span>Budget: ₹{project.budget || project.min_budget}</span>
             </div>
           </div>
         </div>
@@ -67,8 +74,11 @@ export function ProjectCard({ project, onApply, isSubmitting }: ProjectCardProps
       <CardFooter className="bg-muted/50 px-6 py-4">
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full" disabled={project.status !== "open"}>
-              Apply Now
+            <Button 
+              className="w-full" 
+              disabled={project.status !== "open" || hasApplied}
+            >
+              {hasApplied ? "Applied" : "Apply Now"}
             </Button>
           </DialogTrigger>
           <ApplicationDialog
