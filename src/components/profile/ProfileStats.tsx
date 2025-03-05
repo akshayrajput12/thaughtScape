@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Users, BookText, UserPlus } from "lucide-react";
 import {
@@ -7,12 +7,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/types";
+import { useQuery } from "@tanstack/react-query";
 
 interface ProfileStatsProps {
   postsCount: number;
@@ -22,61 +22,59 @@ interface ProfileStatsProps {
 }
 
 export const ProfileStats = ({ postsCount, followersCount, followingCount, userId }: ProfileStatsProps) => {
-  const [followers, setFollowers] = useState<Profile[]>([]);
-  const [following, setFollowing] = useState<Profile[]>([]);
   const [showFollowersDialog, setShowFollowersDialog] = useState(false);
   const [showFollowingDialog, setShowFollowingDialog] = useState(false);
   const navigate = useNavigate();
 
-  const fetchFollowers = async () => {
-    const { data, error } = await supabase
-      .from('follows')
-      .select(`
-        follower:profiles!follows_follower_id_fkey(
-          id,
-          username,
-          full_name,
-          avatar_url
-        )
-      `)
-      .eq('following_id', userId);
+  // Use React Query to fetch followers
+  const { data: followers = [] } = useQuery({
+    queryKey: ['followers', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('follows')
+        .select(`
+          follower:profiles!follows_follower_id_fkey(
+            id,
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('following_id', userId);
 
-    if (!error && data) {
-      const followerProfiles = data.map(d => d.follower as Profile).filter(Boolean);
-      setFollowers(followerProfiles);
-    } else {
-      console.error('Error fetching followers:', error);
-    }
-  };
+      if (error) throw error;
+      return data.map(d => d.follower as Profile).filter(Boolean);
+    },
+    enabled: showFollowersDialog, // Only fetch when dialog is open
+  });
 
-  const fetchFollowing = async () => {
-    const { data, error } = await supabase
-      .from('follows')
-      .select(`
-        following:profiles!follows_following_id_fkey(
-          id,
-          username,
-          full_name,
-          avatar_url
-        )
-      `)
-      .eq('follower_id', userId);
+  // Use React Query to fetch following
+  const { data: following = [] } = useQuery({
+    queryKey: ['following', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('follows')
+        .select(`
+          following:profiles!follows_following_id_fkey(
+            id,
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('follower_id', userId);
 
-    if (!error && data) {
-      const followingProfiles = data.map(d => d.following as Profile).filter(Boolean);
-      setFollowing(followingProfiles);
-    } else {
-      console.error('Error fetching following:', error);
-    }
-  };
+      if (error) throw error;
+      return data.map(d => d.following as Profile).filter(Boolean);
+    },
+    enabled: showFollowingDialog, // Only fetch when dialog is open
+  });
 
   const handleFollowersClick = () => {
-    fetchFollowers();
     setShowFollowersDialog(true);
   };
 
   const handleFollowingClick = () => {
-    fetchFollowing();
     setShowFollowingDialog(true);
   };
 
@@ -158,7 +156,7 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
       <Dialog open={showFollowersDialog} onOpenChange={setShowFollowersDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Followers</DialogTitle>
+            <DialogTitle>Followers ({followers.length})</DialogTitle>
           </DialogHeader>
           <UserList users={followers} />
         </DialogContent>
@@ -167,7 +165,7 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
       <Dialog open={showFollowingDialog} onOpenChange={setShowFollowingDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Following</DialogTitle>
+            <DialogTitle>Following ({following.length})</DialogTitle>
           </DialogHeader>
           <UserList users={following} />
         </DialogContent>

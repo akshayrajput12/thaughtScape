@@ -10,26 +10,6 @@ import { ProfileForm } from "@/components/profile/ProfileForm";
 import type { Profile, Thought } from "@/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { Button } from "@/components/ui/button";
-import {
-  UserPlus,
-  UserMinus,
-  MessageSquare,
-  ShieldAlert,
-  Shield,
-  AlertCircle
-} from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +22,7 @@ const Profile = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  // Check if the current user is following the profile being viewed
   useEffect(() => {
     const checkFollowStatus = async () => {
       if (!user?.id || !id) return;
@@ -64,6 +45,7 @@ const Profile = () => {
     checkFollowStatus();
   }, [user?.id, id]);
 
+  // Check if the current user has blocked or is blocked by the profile being viewed
   useEffect(() => {
     const checkBlockStatus = async () => {
       if (!user?.id || !id) return;
@@ -78,6 +60,7 @@ const Profile = () => {
     checkBlockStatus();
   }, [user?.id, id]);
 
+  // Fetch profile data
   const { data: profileData, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', id],
     queryFn: async () => {
@@ -93,6 +76,7 @@ const Profile = () => {
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
+  // Fetch thoughts (poems) for the profile
   const { data: thoughtsData, isLoading: thoughtsLoading } = useQuery({
     queryKey: ['thoughts', id],
     queryFn: async () => {
@@ -118,6 +102,7 @@ const Profile = () => {
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
+  // Check if the current user is an admin
   const { data: adminData } = useQuery({
     queryKey: ['isAdmin', user?.id],
     queryFn: async () => {
@@ -134,6 +119,7 @@ const Profile = () => {
     enabled: !!user?.id,
   });
 
+  // Check if this is the first time the user is setting up their profile
   const showFirstTimeProfileForm = user?.id === id && 
                                   profileData && 
                                   !profileData.is_profile_completed;
@@ -165,9 +151,19 @@ const Profile = () => {
         description: "Thought deleted successfully",
       });
 
+      // Update local state
       queryClient.setQueryData(['thoughts', id], (oldData: Thought[] | undefined) => 
         oldData ? oldData.filter(thought => thought.id !== thoughtId) : []
       );
+      
+      // Update the post count
+      if (profileData) {
+        const updatedProfile = {
+          ...profileData,
+          posts_count: Math.max(0, (profileData.posts_count || 0) - 1)
+        };
+        queryClient.setQueryData(['profile', id], updatedProfile);
+      }
     } catch (error) {
       console.error("Error deleting thought:", error);
       toast({
@@ -189,6 +185,17 @@ const Profile = () => {
       if (error) throw error;
       
       setIsFollowing(true);
+      
+      // Update followers count in the profile data
+      if (profileData) {
+        const updatedProfile = {
+          ...profileData,
+          followers_count: (profileData.followers_count || 0) + 1
+        };
+        queryClient.setQueryData(['profile', id], updatedProfile);
+      }
+      
+      // Invalidate queries that might be affected
       queryClient.invalidateQueries({ queryKey: ['profile', id] });
       
       toast({
@@ -218,6 +225,17 @@ const Profile = () => {
       if (error) throw error;
       
       setIsFollowing(false);
+      
+      // Update followers count in the profile data
+      if (profileData) {
+        const updatedProfile = {
+          ...profileData,
+          followers_count: Math.max(0, (profileData.followers_count || 0) - 1)
+        };
+        queryClient.setQueryData(['profile', id], updatedProfile);
+      }
+      
+      // Invalidate queries that might be affected
       queryClient.invalidateQueries({ queryKey: ['profile', id] });
       
       toast({
@@ -316,105 +334,35 @@ const Profile = () => {
 
   const shouldShowForm = showFirstTimeProfileForm || isEditing;
 
+  // Make sure counts match actual data
+  const postsCount = (thoughtsData?.length || 0);
+  
+  // Update profile counts if needed before rendering
+  if (profileData.posts_count !== postsCount && !isEditing) {
+    const updatedProfile = {
+      ...profileData,
+      posts_count: postsCount
+    };
+    queryClient.setQueryData(['profile', id], updatedProfile);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-[#E5DEFF]/20 to-[#FDE1D3]/20 px-4 py-12 transition-all duration-500">
       <div className="max-w-4xl mx-auto space-y-12 animate-fadeIn">
-        <div className="flex flex-col md:flex-row justify-between items-start">
-          <ProfileHeader 
-            profile={profileData} 
-            isOwnProfile={user?.id === profileData.id}
-            isEditing={shouldShowForm}
-            onEditClick={handleEditClick}
-          />
-          
-          {user?.id && user.id !== profileData.id && (
-            <div className="flex flex-col gap-2 mt-4 md:mt-0 w-full md:w-auto">
-              <div className="flex gap-2 w-full md:w-auto">
-                {isBlockedByUser ? (
-                  <div className="flex items-center gap-2 text-red-600 font-medium bg-red-50 px-4 py-2 rounded-lg w-full md:w-auto">
-                    <AlertCircle size={16} />
-                    <span>You've been blocked by this user</span>
-                  </div>
-                ) : (
-                  <>
-                    {isBlocked ? (
-                      <Button 
-                        variant="outline"
-                        className="flex items-center gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 w-full md:w-auto"
-                        onClick={handleUnblockUser}
-                      >
-                        <Shield size={16} />
-                        Unblock User
-                      </Button>
-                    ) : (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="outline"
-                            className="flex items-center gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 w-full md:w-auto"
-                          >
-                            <ShieldAlert size={16} />
-                            Block User
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Block {profileData.username}?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Blocking this user will prevent them from sending you messages or seeing your content.
-                              They will not be notified that you've blocked them.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={handleBlockUser}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Block User
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </>
-                )}
-              </div>
-              
-              {!isBlocked && !isBlockedByUser && (
-                <div className="flex gap-2 w-full md:w-auto">
-                  {isFollowing ? (
-                    <Button 
-                      variant="outline"
-                      className="flex items-center gap-2 w-full md:w-auto"
-                      onClick={handleUnfollow}
-                    >
-                      <UserMinus size={16} />
-                      Unfollow
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="default"
-                      className="flex items-center gap-2 w-full md:w-auto"
-                      onClick={handleFollow}
-                    >
-                      <UserPlus size={16} />
-                      Follow
-                    </Button>
-                  )}
-                  <Button 
-                    variant="secondary"
-                    className="flex items-center gap-2 w-full md:w-auto"
-                    onClick={handleMessage}
-                  >
-                    <MessageSquare size={16} />
-                    Message
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <ProfileHeader 
+          profile={profileData} 
+          isOwnProfile={user?.id === profileData.id}
+          isEditing={shouldShowForm}
+          onEditClick={handleEditClick}
+          isFollowing={isFollowing}
+          isBlocked={isBlocked}
+          isBlockedByUser={isBlockedByUser}
+          onFollow={handleFollow}
+          onUnfollow={handleUnfollow}
+          onBlock={handleBlockUser}
+          onUnblock={handleUnblockUser}
+          onMessage={handleMessage}
+        />
         
         {shouldShowForm ? (
           <div className={showFirstTimeProfileForm ? "animate-scale-in" : ""}>
@@ -431,7 +379,7 @@ const Profile = () => {
         ) : (
           <>
             <ProfileStats 
-              postsCount={profileData.posts_count || 0}
+              postsCount={postsCount}
               followersCount={profileData.followers_count || 0}
               followingCount={profileData.following_count || 0}
               userId={profileData.id}

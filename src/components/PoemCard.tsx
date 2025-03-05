@@ -11,6 +11,7 @@ import { CommentSection } from "./poem/CommentSection";
 import { PoemHeader } from "./poem/PoemHeader";
 import { ShareDialog } from "./poem/ShareDialog";
 import type { Thought, Profile } from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PoemCardProps {
   poem: Thought;
@@ -25,6 +26,7 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
   const [showShareDialog, setShowShareDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const {
     likesCount,
     bookmarksCount,
@@ -72,6 +74,10 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
         if (error) throw error;
 
         setIsFollowing(false);
+        
+        // Invalidate related queries
+        queryClient.invalidateQueries({ queryKey: ['profile', poem.author.id] });
+        
         toast({
           title: "Success",
           description: "Unfollowed successfully",
@@ -96,6 +102,10 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
           });
 
         setIsFollowing(true);
+        
+        // Invalidate related queries
+        queryClient.invalidateQueries({ queryKey: ['profile', poem.author.id] });
+        
         toast({
           title: "Success",
           description: "Followed successfully",
