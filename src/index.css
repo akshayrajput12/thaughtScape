@@ -1,5 +1,9 @@
 
-/* Add this to your existing CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add custom utilities */
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
