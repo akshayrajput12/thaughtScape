@@ -587,9 +587,11 @@ const Freelancing = () => {
           <TabsContent value="browse" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-3xl font-serif font-bold text-gray-900">Available Projects</h2>
-              <DialogTrigger asChild>
-                <Button onClick={() => setIsNewProjectDialogOpen(true)}>Post a Project</Button>
-              </DialogTrigger>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button onClick={() => setIsNewProjectDialogOpen(true)}>Post a Project</Button>
+                </DialogTrigger>
+              </Dialog>
             </div>
 
             {isLoadingProjects ? (
@@ -918,3 +920,158 @@ const Freelancing = () => {
                       deadline,
                       allow_whatsapp_apply: allowWhatsappApply,
                       allow_normal_apply: allowNormalApply,
+                      whatsapp_number: whatsappNumber,
+                    });
+                  }}
+                  className="space-y-6 p-2"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Project Title</Label>
+                    <Input
+                      id="title"
+                      name="title"
+                      defaultValue={selectedProject.title}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      rows={5}
+                      defaultValue={selectedProject.description}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="skills">Required Skills (comma separated)</Label>
+                    <Input
+                      id="skills"
+                      name="skills"
+                      defaultValue={selectedProject.required_skills?.join(", ") || ""}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="budget">Budget (in ₹)</Label>
+                    <Input
+                      id="budget"
+                      name="budget"
+                      type="number"
+                      defaultValue={selectedProject.budget}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="deadline">Deadline</Label>
+                    <Input
+                      id="deadline"
+                      name="deadline"
+                      type="date"
+                      defaultValue={selectedProject.deadline?.split("T")[0] || ""}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp_number">WhatsApp Number (optional)</Label>
+                    <Input
+                      id="whatsapp_number"
+                      name="whatsapp_number"
+                      type="tel"
+                      placeholder="e.g. 919876543210 (with country code)"
+                      defaultValue={selectedProject.author?.whatsapp_number || ""}
+                    />
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <Label>Application Settings</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="allow_normal_apply" 
+                          name="allow_normal_apply"
+                          defaultChecked={selectedProject.allow_normal_apply !== false}
+                        />
+                        <label
+                          htmlFor="allow_normal_apply"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Allow normal applications
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="allow_whatsapp_apply" 
+                          name="allow_whatsapp_apply"
+                          defaultChecked={selectedProject.allow_whatsapp_apply !== false}
+                        />
+                        <label
+                          htmlFor="allow_whatsapp_apply"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Allow WhatsApp applications
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <DialogClose asChild>
+                      <Button variant="outline" type="button">Cancel</Button>
+                    </DialogClose>
+                    <Button type="submit" disabled={updateProjectMutation.isPending}>
+                      {updateProjectMutation.isPending ? "Updating..." : "Update Project"}
+                    </Button>
+                  </div>
+                </form>
+              </ScrollArea>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <NewProjectDialog 
+          isOpen={isNewProjectDialogOpen}
+          onOpenChange={setIsNewProjectDialogOpen}
+          onSubmit={handleCreateProject}
+        />
+
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the project. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => selectedProject && deleteProjectMutation.mutate(selectedProject.id)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {deleteProjectMutation.isPending ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <ApplicationDialog
+          isOpen={isApplicationDialogOpen}
+          onOpenChange={setIsApplicationDialogOpen}
+          project={selectedProject}
+          message={applicationMessage}
+          onMessageChange={setApplicationMessage}
+          onSubmit={handleApplyToProject}
+          isSubmitting={applyProjectMutation.isPending}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default Freelancing;
