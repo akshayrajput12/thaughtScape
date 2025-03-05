@@ -39,6 +39,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   IndianRupee, 
   User, 
@@ -63,6 +64,8 @@ import { format } from "date-fns";
 import { ProjectApplicationCard } from "@/components/freelancing/ProjectApplicationCard";
 import { useMobile } from "@/hooks/use-mobile";
 import { Checkbox } from "@/components/ui/checkbox";
+import { NewProjectDialog } from "@/pages/freelancing/components/NewProjectDialog";
+import { ApplicationDialog } from "@/pages/freelancing/components/ApplicationDialog";
 
 const Freelancing = () => {
   const { user } = useAuth();
@@ -464,6 +467,35 @@ const Freelancing = () => {
     rejectApplicationMutation.mutate(applicationId);
   };
 
+  const handleCreateProject = (newProject: any) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create a project",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createProjectMutation.mutate({
+      ...newProject,
+      author_id: user.id,
+      status: "open",
+    });
+  };
+
+  const handleApplyToProject = () => {
+    if (!selectedProject) return;
+    
+    applyProjectMutation.mutate({
+      projectId: selectedProject.id,
+      message: applicationMessage,
+      phoneNumber: "",
+      experience: "",
+      portfolio: "",
+    });
+  };
+
   useEffect(() => {
     if (!user?.id) return;
 
@@ -555,225 +587,9 @@ const Freelancing = () => {
           <TabsContent value="browse" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-3xl font-serif font-bold text-gray-900">Available Projects</h2>
-              <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>Post a Project</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Post a New Project</DialogTitle>
-                    <DialogDescription>
-                      Provide details about the project you want to create.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const formData = new FormData(e.currentTarget);
-                      const title = String(formData.get("title"));
-                      const description = String(formData.get("description"));
-                      const skills = String(formData.get("skills"))
-                        .split(",")
-                        .map((skill) => skill.trim());
-                      const minBudget = Number(formData.get("min_budget"));
-                      const whatsappNumber = String(formData.get("whatsapp_number") || "");
-                      const deadline = String(formData.get("deadline"));
-                      const allowWhatsappApply = formData.get("allow_whatsapp_apply") === "on";
-                      const allowNormalApply = formData.get("allow_normal_apply") === "on";
-                      const projectCategory = String(formData.get("project_category") || "");
-                      const experienceLevel = String(formData.get("experience_level") || "");
-
-                      if (!user?.id) {
-                        toast({
-                          title: "Error",
-                          description: "You must be logged in to create a project",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-
-                      if (!allowWhatsappApply && !allowNormalApply) {
-                        toast({
-                          title: "Error",
-                          description: "You must allow at least one application method",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-
-                      createProjectMutation.mutate({
-                        title,
-                        description,
-                        required_skills: skills,
-                        budget: minBudget,
-                        deadline,
-                        author_id: user.id,
-                        status: "open",
-                        allow_whatsapp_apply: allowWhatsappApply,
-                        allow_normal_apply: allowNormalApply,
-                        whatsapp_number: whatsappNumber,
-                      });
-                    }}
-                    className="grid gap-4 py-4"
-                  >
-                    <div className="grid gap-2">
-                      <Label htmlFor="title">Project Title</Label>
-                      <Input 
-                        id="title" 
-                        name="title" 
-                        type="text"
-                        placeholder="Enter a clear, descriptive title for your project" 
-                        required 
-                      />
-                    </div>
-                    
-                    <div className="grid gap-2">
-                      <Label htmlFor="description">Project Description</Label>
-                      <Textarea 
-                        id="description" 
-                        name="description" 
-                        placeholder="Describe your project requirements, goals, and any specific instructions"
-                        className="min-h-[150px]"
-                        required 
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="project_category">Project Category</Label>
-                        <select
-                          id="project_category"
-                          name="project_category"
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                          defaultValue=""
-                        >
-                          <option value="" disabled>Select category</option>
-                          <option value="web_development">Web Development</option>
-                          <option value="mobile_app">Mobile App Development</option>
-                          <option value="design">Design</option>
-                          <option value="writing">Content Writing</option>
-                          <option value="marketing">Digital Marketing</option>
-                          <option value="other">Other</option>
-                        </select>
-                      </div>
-                      
-                      <div className="grid gap-2">
-                        <Label htmlFor="experience_level">Required Experience Level</Label>
-                        <select
-                          id="experience_level"
-                          name="experience_level"
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                          defaultValue=""
-                        >
-                          <option value="" disabled>Select level</option>
-                          <option value="entry">Entry Level</option>
-                          <option value="intermediate">Intermediate</option>
-                          <option value="expert">Expert</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="grid gap-2">
-                      <Label htmlFor="skills">Required Skills (comma-separated)</Label>
-                      <Input 
-                        id="skills" 
-                        name="skills" 
-                        type="text"
-                        placeholder="e.g., React, Node.js, TypeScript" 
-                        required 
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="min_budget">Budget (₹)</Label>
-                        <Input 
-                          id="min_budget" 
-                          name="min_budget" 
-                          type="number"
-                          min="0"
-                          placeholder="Enter project budget" 
-                          required 
-                        />
-                      </div>
-                      
-                      <div className="grid gap-2">
-                        <Label htmlFor="deadline">Deadline</Label>
-                        <Input 
-                          id="deadline" 
-                          name="deadline" 
-                          type="date" 
-                          required 
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid gap-2">
-                      <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
-                      <Input 
-                        id="whatsapp_number" 
-                        name="whatsapp_number" 
-                        type="tel"
-                        placeholder="Enter your WhatsApp number (e.g., +919876543210)" 
-                      />
-                      <p className="text-xs text-gray-500">Format: Country code followed by number without spaces</p>
-                    </div>
-                    
-                    <div className="space-y-4 pt-2">
-                      <Label>Application Methods</Label>
-                      <div className="flex flex-col space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="allow_normal_apply" 
-                            name="allow_normal_apply" 
-                            defaultChecked={true}
-                            onCheckedChange={(checked) => {
-                              setAllowNormalApply(checked as boolean);
-                            }}
-                          />
-                          <label
-                            htmlFor="allow_normal_apply"
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            Allow normal application through platform
-                          </label>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="allow_whatsapp_apply" 
-                            name="allow_whatsapp_apply" 
-                            defaultChecked={true}
-                            onCheckedChange={(checked) => {
-                              setAllowWhatsappApply(checked as boolean);
-                            }}
-                          />
-                          <label
-                            htmlFor="allow_whatsapp_apply"
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            Allow applications through WhatsApp
-                          </label>
-                        </div>
-                      </div>
-                      {!allowNormalApply && !allowWhatsappApply && (
-                        <p className="text-xs text-red-500">At least one application method must be selected</p>
-                      )}
-                    </div>
-                    
-                    <div className="flex justify-end gap-2">
-                      <DialogClose asChild>
-                        <Button type="button" variant="secondary">
-                          Cancel
-                        </Button>
-                      </DialogClose>
-                      <Button type="submit" disabled={createProjectMutation.isPending || (!allowNormalApply && !allowWhatsappApply)}>
-                        {createProjectMutation.isPending ? "Creating..." : "Create Project"}
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
+              <DialogTrigger asChild>
+                <Button onClick={() => setIsNewProjectDialogOpen(true)}>Post a Project</Button>
+              </DialogTrigger>
             </div>
 
             {isLoadingProjects ? (
@@ -1068,262 +884,186 @@ const Freelancing = () => {
               </DialogDescription>
             </DialogHeader>
             {selectedProject && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.currentTarget);
-                  const title = String(formData.get("title"));
-                  const description = String(formData.get("description"));
-                  const skills = String(formData.get("skills"))
-                    .split(",")
-                    .map((skill) => skill.trim());
-                  const budget = Number(formData.get("budget"));
-                  const deadline = String(formData.get("deadline"));
-                  const whatsappNumber = String(formData.get("whatsapp_number") || "");
-                  const allowWhatsappApply = formData.get("allow_whatsapp_apply") === "on";
-                  const allowNormalApply = formData.get("allow_normal_apply") === "on";
+              <ScrollArea className="max-h-[70vh]">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const title = String(formData.get("title"));
+                    const description = String(formData.get("description"));
+                    const skills = String(formData.get("skills"))
+                      .split(",")
+                      .map((skill) => skill.trim());
+                    const budget = Number(formData.get("budget"));
+                    const deadline = String(formData.get("deadline"));
+                    const whatsappNumber = String(formData.get("whatsapp_number") || "");
+                    const allowWhatsappApply = formData.get("allow_whatsapp_apply") === "on";
+                    const allowNormalApply = formData.get("allow_normal_apply") === "on";
 
-                  if (!allowWhatsappApply && !allowNormalApply) {
-                    toast({
-                      title: "Error",
-                      description: "You must allow at least one application method",
-                      variant: "destructive",
+                    if (!allowWhatsappApply && !allowNormalApply) {
+                      toast({
+                        title: "Error",
+                        description: "You must allow at least one application method",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    updateProjectMutation.mutate({
+                      id: selectedProject.id,
+                      title,
+                      description,
+                      required_skills: skills,
+                      budget,
+                      deadline,
+                      allow_whatsapp_apply: allowWhatsappApply,
+                      allow_normal_apply: allowNormalApply,
+                      whatsapp_number: whatsappNumber,
                     });
-                    return;
-                  }
-
-                  updateProjectMutation.mutate({
-                    id: selectedProject.id,
-                    title,
-                    description,
-                    required_skills: skills,
-                    budget,
-                    deadline,
-                    allow_whatsapp_apply: allowWhatsappApply,
-                    allow_normal_apply: allowNormalApply,
-                    whatsapp_number: whatsappNumber,
-                  });
-                }}
-                className="grid gap-4 py-4"
-              >
-                <div className="grid gap-2">
-                  <Label htmlFor="title">Project Title</Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    defaultValue={selectedProject.title}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Project Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    defaultValue={selectedProject.description}
-                    className="min-h-[150px]"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="skills">Required Skills (comma-separated)</Label>
-                  <Input
-                    id="skills"
-                    name="skills"
-                    defaultValue={selectedProject.required_skills?.join(", ")}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  }}
+                  className="grid gap-4 py-4 px-1"
+                >
                   <div className="grid gap-2">
-                    <Label htmlFor="budget">Budget (₹)</Label>
+                    <Label htmlFor="title">Project Title</Label>
                     <Input
-                      id="budget"
-                      name="budget"
-                      type="number"
-                      defaultValue={selectedProject.budget}
-                      min="0"
+                      id="title"
+                      name="title"
+                      defaultValue={selectedProject.title}
                       required
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="deadline">Deadline</Label>
-                    <Input
-                      id="deadline"
-                      name="deadline"
-                      type="date"
-                      defaultValue={selectedProject.deadline?.split("T")[0]}
+                    <Label htmlFor="description">Project Description</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      defaultValue={selectedProject.description}
+                      className="min-h-[150px]"
                       required
                     />
                   </div>
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
-                  <Input 
-                    id="whatsapp_number" 
-                    name="whatsapp_number" 
-                    type="tel"
-                    defaultValue={selectedProject.author?.whatsapp_number || ""}
-                    placeholder="Enter your WhatsApp number (e.g., +919876543210)" 
-                  />
-                  <p className="text-xs text-gray-500">Format: Country code followed by number without spaces</p>
-                </div>
-                
-                <div className="space-y-4 pt-2">
-                  <Label>Application Methods</Label>
-                  <div className="flex flex-col space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="allow_normal_apply" 
-                        name="allow_normal_apply" 
-                        defaultChecked={selectedProject.allow_normal_apply !== false}
-                        onCheckedChange={(checked) => {
-                          setAllowNormalApply(checked as boolean);
-                        }}
+                  <div className="grid gap-2">
+                    <Label htmlFor="skills">Required Skills (comma-separated)</Label>
+                    <Input
+                      id="skills"
+                      name="skills"
+                      defaultValue={selectedProject.required_skills?.join(", ")}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="budget">Budget (₹)</Label>
+                      <Input
+                        id="budget"
+                        name="budget"
+                        type="number"
+                        defaultValue={selectedProject.budget}
+                        min="0"
+                        required
                       />
-                      <label
-                        htmlFor="allow_normal_apply"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Allow normal application through platform
-                      </label>
                     </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="allow_whatsapp_apply" 
-                        name="allow_whatsapp_apply" 
-                        defaultChecked={selectedProject.allow_whatsapp_apply !== false}
-                        onCheckedChange={(checked) => {
-                          setAllowWhatsappApply(checked as boolean);
-                        }}
+                    <div className="grid gap-2">
+                      <Label htmlFor="deadline">Deadline</Label>
+                      <Input
+                        id="deadline"
+                        name="deadline"
+                        type="date"
+                        defaultValue={selectedProject.deadline?.split("T")[0]}
+                        required
                       />
-                      <label
-                        htmlFor="allow_whatsapp_apply"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Allow applications through WhatsApp
-                      </label>
                     </div>
                   </div>
-                  {!allowNormalApply && !allowWhatsappApply && (
-                    <p className="text-xs text-red-500">At least one application method must be selected</p>
-                  )}
-                </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
+                    <Input 
+                      id="whatsapp_number" 
+                      name="whatsapp_number" 
+                      type="tel"
+                      defaultValue={selectedProject.author?.whatsapp_number || ""}
+                      placeholder="Enter your WhatsApp number (e.g., +919876543210)" 
+                    />
+                    <p className="text-xs text-gray-500">Format: Country code followed by number without spaces</p>
+                  </div>
+                  
+                  <div className="space-y-4 pt-2">
+                    <Label>Application Methods</Label>
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="allow_normal_apply" 
+                          name="allow_normal_apply" 
+                          defaultChecked={selectedProject.allow_normal_apply !== false}
+                          onCheckedChange={(checked) => {
+                            setAllowNormalApply(checked as boolean);
+                          }}
+                        />
+                        <label
+                          htmlFor="allow_normal_apply"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Allow normal application through platform
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="allow_whatsapp_apply" 
+                          name="allow_whatsapp_apply" 
+                          defaultChecked={selectedProject.allow_whatsapp_apply !== false}
+                          onCheckedChange={(checked) => {
+                            setAllowWhatsappApply(checked as boolean);
+                          }}
+                        />
+                        <label
+                          htmlFor="allow_whatsapp_apply"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Allow applications through WhatsApp
+                        </label>
+                      </div>
+                    </div>
+                    {!allowNormalApply && !allowWhatsappApply && (
+                      <p className="text-xs text-red-500">At least one application method must be selected</p>
+                    )}
+                  </div>
 
-                <div className="flex justify-end gap-2">
-                  <DialogClose asChild>
-                    <Button type="button" variant="secondary">
-                      Cancel
+                  <div className="flex justify-end gap-2">
+                    <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                        Cancel
+                      </Button>
+                    </DialogClose>
+                    <Button 
+                      type="submit" 
+                      disabled={updateProjectMutation.isPending || (!allowNormalApply && !allowWhatsappApply)}
+                    >
+                      {updateProjectMutation.isPending ? "Updating..." : "Update Project"}
                     </Button>
-                  </DialogClose>
-                  <Button 
-                    type="submit" 
-                    disabled={updateProjectMutation.isPending || (!allowNormalApply && !allowWhatsappApply)}
-                  >
-                    {updateProjectMutation.isPending ? "Updating..." : "Update Project"}
-                  </Button>
-                </div>
-              </form>
+                  </div>
+                </form>
+              </ScrollArea>
             )}
           </DialogContent>
         </Dialog>
 
-        <Dialog open={isApplicationDialogOpen} onOpenChange={setIsApplicationDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Apply for Project</DialogTitle>
-              <DialogDescription>
-                Submit your application for this project.
-              </DialogDescription>
-            </DialogHeader>
-            {selectedProject && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.currentTarget);
-                  const message = String(formData.get("message"));
-                  const phoneNumber = String(formData.get("phone_number") || "");
-                  const experience = String(formData.get("experience") || "");
-                  const portfolio = String(formData.get("portfolio") || "");
-                  
-                  if (!message.trim()) {
-                    toast({
-                      title: "Error",
-                      description: "Please provide a message for your application",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  
-                  applyProjectMutation.mutate({
-                    projectId: selectedProject.id,
-                    message,
-                    phoneNumber,
-                    experience,
-                    portfolio
-                  });
-                }}
-                className="grid gap-4 py-4"
-              >
-                <div className="grid gap-2">
-                  <Label htmlFor="message">Cover Letter</Label>
-                  <Textarea
-                    id="message"
-                    name="message"
-                    placeholder="Introduce yourself and explain why you're a good fit for this project"
-                    className="min-h-[150px]"
-                    value={applicationMessage}
-                    onChange={(e) => setApplicationMessage(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="phone_number">Phone Number</Label>
-                  <Input 
-                    id="phone_number" 
-                    name="phone_number" 
-                    type="tel"
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="experience">Relevant Experience</Label>
-                  <Textarea
-                    id="experience"
-                    name="experience"
-                    placeholder="Describe your relevant experience for this project"
-                    className="min-h-[100px]"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="portfolio">Portfolio/Previous Work (URL)</Label>
-                  <Input 
-                    id="portfolio" 
-                    name="portfolio" 
-                    type="url"
-                    placeholder="https://your-portfolio-site.com"
-                  />
-                </div>
+        <NewProjectDialog 
+          isOpen={isNewProjectDialogOpen}
+          onOpenChange={setIsNewProjectDialogOpen}
+          onSubmit={handleCreateProject}
+          isSubmitting={createProjectMutation.isPending}
+        />
 
-                <div className="flex justify-end gap-2">
-                  <DialogClose asChild>
-                    <Button type="button" variant="secondary">
-                      Cancel
-                    </Button>
-                  </DialogClose>
-                  <Button type="submit" disabled={applyProjectMutation.isPending}>
-                    {applyProjectMutation.isPending ? "Applying..." : "Submit Application"}
-                  </Button>
-                </div>
-              </form>
-            )}
-          </DialogContent>
-        </Dialog>
+        <ApplicationDialog
+          isOpen={isApplicationDialogOpen}
+          onOpenChange={setIsApplicationDialogOpen}
+          project={selectedProject as Project}
+          message={applicationMessage}
+          onMessageChange={setApplicationMessage}
+          onSubmit={handleApplyToProject}
+          isSubmitting={applyProjectMutation.isPending}
+        />
 
         <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
           <AlertDialogContent>

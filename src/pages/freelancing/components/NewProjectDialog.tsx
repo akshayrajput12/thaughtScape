@@ -1,268 +1,236 @@
 
-import React, { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { DatePicker } from "@/components/ui/date-picker";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DatePicker } from "@/components/ui/date-picker";
 
-interface NewProjectDialogProps {
+export interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  isSubmitting: boolean;
+  onSubmit: (newProject: any) => void;
 }
 
-export function NewProjectDialog({
-  isOpen,
-  onOpenChange,
+export function NewProjectDialog({ 
+  isOpen, 
+  onOpenChange, 
+  isSubmitting, 
+  onSubmit 
 }: NewProjectDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [skills, setSkills] = useState("");
-  const [minBudget, setMinBudget] = useState("");
-  const [maxBudget, setMaxBudget] = useState("");
+  const [budget, setBudget] = useState("");
   const [deadline, setDeadline] = useState<Date | undefined>(undefined);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [allowWhatsApp, setAllowWhatsApp] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [allowWhatsappApply, setAllowWhatsappApply] = useState(true);
   const [allowNormalApply, setAllowNormalApply] = useState(true);
-  const { toast } = useToast();
+  const [category, setCategory] = useState("");
+  const [experienceLevel, setExperienceLevel] = useState("");
 
-  const handleSubmit = async () => {
-    if (!title.trim() || !description.trim() || !deadline) {
-      toast({
-        title: "Required Fields Missing",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!allowWhatsappApply && !allowNormalApply) {
+      return; // Handle validation error
     }
 
-    // Parse budget values
-    const minBudgetNum = minBudget ? parseFloat(minBudget) : undefined;
-    const maxBudgetNum = maxBudget ? parseFloat(maxBudget) : undefined;
-
-    // Parse skills into array
-    const skillsArray = skills
-      .split(",")
-      .map((skill) => skill.trim())
-      .filter((skill) => skill.length > 0);
-
-    if (skillsArray.length === 0) {
-      toast({
-        title: "Required Fields Missing",
-        description: "Please add at least one required skill.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session?.session?.user) {
-        toast({
-          title: "Authentication Error",
-          description: "You must be logged in to post a project.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
-      const { error } = await supabase.from("projects").insert({
-        title,
-        description,
-        required_skills: skillsArray,
-        min_budget: minBudgetNum,
-        max_budget: maxBudgetNum,
-        deadline: deadline?.toISOString(),
-        status: "open",
-        author_id: session.session.user.id,
-        allow_whatsapp_apply: allowWhatsApp,
-        allow_normal_apply: allowNormalApply,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Project Posted",
-        description: "Your project has been posted successfully!",
-      });
-
-      // Reset form
-      setTitle("");
-      setDescription("");
-      setSkills("");
-      setMinBudget("");
-      setMaxBudget("");
-      setDeadline(undefined);
-      setAllowWhatsApp(false);
-      setAllowNormalApply(true);
-      onOpenChange(false);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to post project.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    onSubmit({
+      title,
+      description,
+      required_skills: skills.split(",").map(skill => skill.trim()),
+      budget: Number(budget),
+      deadline: deadline?.toISOString().split("T")[0],
+      whatsapp_number: whatsappNumber,
+      allow_whatsapp_apply: allowWhatsappApply,
+      allow_normal_apply: allowNormalApply,
+      project_category: category,
+      experience_level: experienceLevel
+    });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Post a New Project</DialogTitle>
           <DialogDescription>
-            Fill in the details below to post your project for freelancers.
+            Provide details about the project you want to create.
           </DialogDescription>
         </DialogHeader>
-        
-        <ScrollArea className="max-h-[60vh] pr-4">
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-right">
-                Project Title *
-              </Label>
-              <Input
-                id="title"
+        <ScrollArea className="max-h-[70vh]">
+          <form onSubmit={handleSubmit} className="grid gap-4 py-4 px-1">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Project Title</Label>
+              <Input 
+                id="title" 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter a clear title for your project"
+                placeholder="Enter a clear, descriptive title for your project" 
+                required 
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-right">
-                Description *
-              </Label>
-              <Textarea
-                id="description"
+            <div className="grid gap-2">
+              <Label htmlFor="description">Project Description</Label>
+              <Textarea 
+                id="description" 
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe your project requirements, goals, and expectations"
+                placeholder="Describe your project requirements, goals, and any specific instructions"
                 className="min-h-[150px]"
+                required 
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="skills" className="text-right">
-                Required Skills *
-              </Label>
-              <Textarea
-                id="skills"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="project_category">Project Category</Label>
+                <select
+                  id="project_category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="" disabled>Select category</option>
+                  <option value="web_development">Web Development</option>
+                  <option value="mobile_app">Mobile App Development</option>
+                  <option value="design">Design</option>
+                  <option value="writing">Content Writing</option>
+                  <option value="marketing">Digital Marketing</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="experience_level">Required Experience Level</Label>
+                <select
+                  id="experience_level"
+                  value={experienceLevel}
+                  onChange={(e) => setExperienceLevel(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="" disabled>Select level</option>
+                  <option value="entry">Entry Level</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="expert">Expert</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="skills">Required Skills (comma-separated)</Label>
+              <Input 
+                id="skills" 
                 value={skills}
                 onChange={(e) => setSkills(e.target.value)}
-                placeholder="Enter skills separated by commas (e.g., React, Node.js, UI/UX Design)"
+                placeholder="e.g., React, Node.js, TypeScript" 
+                required 
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="minBudget" className="text-right">
-                  Minimum Budget
-                </Label>
-                <Input
-                  id="minBudget"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="budget">Budget (₹)</Label>
+                <Input 
+                  id="budget" 
                   type="number"
-                  value={minBudget}
-                  onChange={(e) => setMinBudget(e.target.value)}
-                  placeholder="Min budget (optional)"
+                  min="0"
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                  placeholder="Enter project budget" 
+                  required 
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="maxBudget" className="text-right">
-                  Maximum Budget
-                </Label>
-                <Input
-                  id="maxBudget"
-                  type="number"
-                  value={maxBudget}
-                  onChange={(e) => setMaxBudget(e.target.value)}
-                  placeholder="Max budget (optional)"
+              
+              <div className="grid gap-2">
+                <Label htmlFor="deadline">Deadline</Label>
+                <DatePicker
+                  date={deadline}
+                  setDate={setDeadline}
                 />
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="deadline" className="text-right">
-                Deadline *
-              </Label>
-              <DatePicker
-                date={deadline}
-                setDate={setDeadline}
-                className="w-full"
+            <div className="grid gap-2">
+              <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
+              <Input 
+                id="whatsapp_number" 
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+                type="tel"
+                placeholder="Enter your WhatsApp number (e.g., +919876543210)" 
               />
+              <p className="text-xs text-gray-500">Format: Country code followed by number without spaces</p>
             </div>
             
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="whatsapp" className="cursor-pointer">
-                  Allow WhatsApp applications
-                </Label>
-                <Switch
-                  id="whatsapp"
-                  checked={allowWhatsApp}
-                  onCheckedChange={setAllowWhatsApp}
-                />
+            <div className="space-y-4 pt-2">
+              <Label>Application Methods</Label>
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="allow_normal_apply" 
+                    checked={allowNormalApply}
+                    onCheckedChange={(checked) => {
+                      setAllowNormalApply(checked as boolean);
+                    }}
+                  />
+                  <label
+                    htmlFor="allow_normal_apply"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Allow normal application through platform
+                  </label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="allow_whatsapp_apply" 
+                    checked={allowWhatsappApply}
+                    onCheckedChange={(checked) => {
+                      setAllowWhatsappApply(checked as boolean);
+                    }}
+                  />
+                  <label
+                    htmlFor="allow_whatsapp_apply"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Allow applications through WhatsApp
+                  </label>
+                </div>
               </div>
-              <p className="text-sm text-gray-500">
-                Enable this to allow applicants to share their WhatsApp number.
-              </p>
+              {!allowNormalApply && !allowWhatsappApply && (
+                <p className="text-xs text-red-500">At least one application method must be selected</p>
+              )}
             </div>
             
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="normal-apply" className="cursor-pointer">
-                  Allow direct applications
-                </Label>
-                <Switch
-                  id="normal-apply"
-                  checked={allowNormalApply}
-                  onCheckedChange={setAllowNormalApply}
-                />
-              </div>
-              <p className="text-sm text-gray-500">
-                Enable this to allow direct platform applications.
-              </p>
+            <div className="flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button 
+                type="submit" 
+                disabled={isSubmitting || (!allowNormalApply && !allowWhatsappApply)}
+              >
+                {isSubmitting ? "Creating..." : "Create Project"}
+              </Button>
             </div>
-          </div>
+          </form>
         </ScrollArea>
-        
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Posting...
-              </>
-            ) : (
-              "Post Project"
-            )}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -1,26 +1,26 @@
 
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Project } from "@/types";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { Project } from "@/types";
 
 export interface ApplicationDialogProps {
   isOpen: boolean;
-  onOpenChange: React.Dispatch<React.SetStateAction<boolean>>;
+  onOpenChange: (open: boolean) => void;
   project: Project;
   message: string;
-  onMessageChange: React.Dispatch<React.SetStateAction<string>>;
+  onMessageChange: (message: string) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
 }
@@ -34,80 +34,83 @@ export function ApplicationDialog({
   onSubmit,
   isSubmitting,
 }: ApplicationDialogProps) {
-  const [phone, setPhone] = useState("");
-  const [portfolio, setPortfolio] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [experience, setExperience] = useState("");
+  const [portfolio, setPortfolio] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Apply for Project</DialogTitle>
           <DialogDescription>
-            Send a message to the project owner explaining why you're a good fit
-            for "{project?.title}".
+            Submit your application for "{project?.title}"
           </DialogDescription>
         </DialogHeader>
-        
-        <ScrollArea className="max-h-[60vh] pr-4">
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="message">Message</Label>
+        <ScrollArea className="max-h-[70vh]">
+          <form onSubmit={handleSubmit} className="grid gap-4 py-4 px-1">
+            <div className="grid gap-2">
+              <Label htmlFor="message">Cover Letter</Label>
               <Textarea
                 id="message"
-                placeholder="Introduce yourself and explain why you're interested in this project..."
+                placeholder="Introduce yourself and explain why you're a good fit for this project"
+                className="min-h-[150px]"
                 value={message}
                 onChange={(e) => onMessageChange(e.target.value)}
-                className="min-h-[150px]"
+                required
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="grid gap-2">
+              <Label htmlFor="phone_number">Phone Number</Label>
+              <Input 
+                id="phone_number" 
+                type="tel"
+                placeholder="Enter your phone number"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+              />
+            </div>
+            
+            <div className="grid gap-2">
               <Label htmlFor="experience">Relevant Experience</Label>
               <Textarea
                 id="experience"
-                placeholder="Describe your relevant experience for this project..."
+                placeholder="Describe your relevant experience for this project"
+                className="min-h-[100px]"
                 value={experience}
                 onChange={(e) => setExperience(e.target.value)}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="portfolio">Portfolio/Past Work</Label>
-              <Textarea
-                id="portfolio"
-                placeholder="Share links or descriptions of your past work..."
+            <div className="grid gap-2">
+              <Label htmlFor="portfolio">Portfolio/Previous Work (URL)</Label>
+              <Input 
+                id="portfolio" 
+                type="url"
+                placeholder="https://your-portfolio-site.com"
                 value={portfolio}
                 onChange={(e) => setPortfolio(e.target.value)}
               />
             </div>
-            
-            {project?.allow_whatsapp_apply && (
-              <div className="space-y-2">
-                <Label htmlFor="phone">WhatsApp Number (Optional)</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="e.g., +1234567890"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-                <p className="text-sm text-gray-500">
-                  The project owner requested WhatsApp contact.
-                </p>
-              </div>
-            )}
-          </div>
+
+            <div className="flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Applying..." : "Submit Application"}
+              </Button>
+            </div>
+          </form>
         </ScrollArea>
-        
-        <DialogFooter>
-          <Button onClick={() => onOpenChange(false)} variant="outline">
-            Cancel
-          </Button>
-          <Button onClick={onSubmit} disabled={!message.trim() || isSubmitting}>
-            {isSubmitting ? "Sending..." : "Send Application"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
