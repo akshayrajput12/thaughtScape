@@ -130,11 +130,11 @@ export const ProfileHeader = ({
           .select('following_id', { count: 'exact', head: true })
           .eq('follower_id', profile.id);
           
-        // Fetch post count
+        // Fetch post count - Fix: changed 'poems' to 'thoughts'
         const { count: postCount, error: postError } = await supabase
-          .from('poems')
+          .from('thoughts')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', profile.id);
+          .eq('author_id', profile.id);
           
         if (followerError) throw followerError;
         if (followingError) throw followingError;
@@ -163,15 +163,16 @@ export const ProfileHeader = ({
           () => fetchStats())
       .subscribe();
           
-    const poemsChannel = supabase.channel('profile-poems-changes')
+    // Fix: changed 'poems' to 'thoughts' in channel name and filter
+    const thoughtsChannel = supabase.channel('profile-thoughts-changes')
       .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'poems', filter: `user_id=eq.${profile.id}` },
+          { event: '*', schema: 'public', table: 'thoughts', filter: `author_id=eq.${profile.id}` },
           () => fetchStats())
       .subscribe();
           
     return () => {
       supabase.removeChannel(followsChannel);
-      supabase.removeChannel(poemsChannel);
+      supabase.removeChannel(thoughtsChannel);
     };
   }, [profile.id, toast]);
 
