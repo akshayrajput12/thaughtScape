@@ -3,8 +3,8 @@ import { Dispatch, RefObject, SetStateAction, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar } from "@/components/ui/avatar";
-import { ChatBubble } from "@/components/ui/chat-bubble";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ChatBubble, ChatBubbleMessage, ChatBubbleAvatar } from "@/components/ui/chat-bubble";
 import { MessageLoading } from "@/components/ui/message-loading";
 import { ArrowLeftIcon, Mic, Video, Phone, UserX, Shield, UserCheck } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -106,11 +106,10 @@ export const ChatArea = ({
           className="flex items-center cursor-pointer"
           onClick={() => viewUserProfile(selectedUser.id)}
         >
-          <Avatar
-            className="h-10 w-10 mr-3"
-            src={selectedUser.avatar_url || ''}
-            fallback={selectedUser.username?.[0]?.toUpperCase() || 'U'}
-          />
+          <Avatar className="h-10 w-10 mr-3">
+            <AvatarImage src={selectedUser.avatar_url || ''} />
+            <AvatarFallback>{selectedUser.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+          </Avatar>
           <div>
             <div className="font-semibold">{selectedUser.username}</div>
             <div className="text-xs text-gray-500">
@@ -214,21 +213,27 @@ export const ChatArea = ({
             return (
               <ChatBubble
                 key={message.id}
-                message={message.content}
-                sender={isCurrentUser ? 'user' : 'other'}
-                time={time}
-                showAvatar={showAvatar}
-                avatar={
-                  !isCurrentUser && showAvatar ? (
-                    <Avatar
-                      className="h-8 w-8"
-                      src={message.sender?.avatar_url || ''}
-                      fallback={(message.sender?.username?.[0] || 'U').toUpperCase()}
-                      onClick={() => viewUserProfile(message.sender_id)}
-                    />
-                  ) : undefined
-                }
-              />
+                variant={isCurrentUser ? "sent" : "received"}
+                className={isCurrentUser ? "justify-end" : ""}
+              >
+                {!isCurrentUser && showAvatar && (
+                  <Avatar
+                    className="h-8 w-8 cursor-pointer"
+                    onClick={() => viewUserProfile(message.sender_id)}
+                  >
+                    <AvatarImage src={message.sender?.avatar_url || ''} />
+                    <AvatarFallback>{(message.sender?.username?.[0] || 'U').toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                )}
+                <div>
+                  <ChatBubbleMessage variant={isCurrentUser ? "sent" : "received"}>
+                    {message.content}
+                  </ChatBubbleMessage>
+                  <div className="text-xs text-gray-500 mt-1 px-1">
+                    {time}
+                  </div>
+                </div>
+              </ChatBubble>
             );
           })
         )}

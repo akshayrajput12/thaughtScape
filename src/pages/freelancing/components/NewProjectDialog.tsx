@@ -1,98 +1,126 @@
 
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { X } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-export interface NewProjectDialogProps {
+interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (newProject: any) => void;
-  isSubmitting: boolean;
 }
 
-export const NewProjectDialog = ({ isOpen, onOpenChange, onSubmit, isSubmitting }: NewProjectDialogProps) => {
+export function NewProjectDialog({
+  isOpen,
+  onOpenChange,
+}: NewProjectDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [minBudget, setMinBudget] = useState<number | undefined>(undefined);
-  const [maxBudget, setMaxBudget] = useState<number | undefined>(undefined);
-  const [deadline, setDeadline] = useState("");
-  const [skillInput, setSkillInput] = useState("");
-  const [skills, setSkills] = useState<string[]>([]);
-  const [allowWhatsappApply, setAllowWhatsappApply] = useState(true);
+  const [skills, setSkills] = useState("");
+  const [minBudget, setMinBudget] = useState("");
+  const [maxBudget, setMaxBudget] = useState("");
+  const [deadline, setDeadline] = useState<Date | undefined>(undefined);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [allowWhatsApp, setAllowWhatsApp] = useState(false);
   const [allowNormalApply, setAllowNormalApply] = useState(true);
   const { toast } = useToast();
 
-  const handleAddSkill = () => {
-    if (skillInput.trim() && !skills.includes(skillInput.trim())) {
-      setSkills([...skills, skillInput.trim()]);
-      setSkillInput("");
-    }
-  };
-
-  const handleRemoveSkill = (skill: string) => {
-    setSkills(skills.filter(s => s !== skill));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!title.trim() || !description.trim() || skills.length === 0) {
+  const handleSubmit = async () => {
+    if (!title.trim() || !description.trim() || !deadline) {
       toast({
-        title: "Missing information",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if ((minBudget !== undefined && maxBudget !== undefined) && minBudget > maxBudget) {
-      toast({
-        title: "Invalid budget range",
-        description: "Minimum budget cannot be greater than maximum budget",
+        title: "Required Fields Missing",
+        description: "Please fill in all required fields.",
         variant: "destructive",
       });
       return;
     }
 
-    const newProject = {
-      title,
-      description,
-      min_budget: minBudget,
-      max_budget: maxBudget,
-      deadline: deadline || null,
-      required_skills: skills,
-      allow_whatsapp_apply: allowWhatsappApply,
-      allow_normal_apply: allowNormalApply
-    };
-    
+    // Parse budget values
+    const minBudgetNum = minBudget ? parseFloat(minBudget) : undefined;
+    const maxBudgetNum = maxBudget ? parseFloat(maxBudget) : undefined;
+
+    // Parse skills into array
+    const skillsArray = skills
+      .split(",")
+      .map((skill) => skill.trim())
+      .filter((skill) => skill.length > 0);
+
+    if (skillsArray.length === 0) {
+      toast({
+        title: "Required Fields Missing",
+        description: "Please add at least one required skill.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      onSubmit(newProject);
+      const { data: session } = await supabase.auth.getSession();
       
-      // Reset form on successful submission
+      if (!session?.session?.user) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to post a project.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const { error } = await supabase.from("projects").insert({
+        title,
+        description,
+        required_skills: skillsArray,
+        min_budget: minBudgetNum,
+        max_budget: maxBudgetNum,
+        deadline: deadline?.toISOString(),
+        status: "open",
+        author_id: session.session.user.id,
+        allow_whatsapp_apply: allowWhatsApp,
+        allow_normal_apply: allowNormalApply,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Project Posted",
+        description: "Your project has been posted successfully!",
+      });
+
+      // Reset form
       setTitle("");
       setDescription("");
-      setMinBudget(undefined);
-      setMaxBudget(undefined);
-      setDeadline("");
-      setSkills([]);
-      setSkillInput("");
-      setAllowWhatsappApply(true);
+      setSkills("");
+      setMinBudget("");
+      setMaxBudget("");
+      setDeadline(undefined);
+      setAllowWhatsApp(false);
       setAllowNormalApply(true);
-    } catch (error) {
-      console.error("Error creating project:", error);
+      onOpenChange(false);
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to create project",
+        description: error.message || "Failed to post project.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -100,140 +128,142 @@ export const NewProjectDialog = ({ isOpen, onOpenChange, onSubmit, isSubmitting 
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
+          <DialogTitle>Post a New Project</DialogTitle>
           <DialogDescription>
-            Post a new project for freelancers to apply.
+            Fill in the details below to post your project for freelancers.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="overflow-y-auto max-h-[70vh] pr-2">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <ScrollArea className="max-h-[60vh] pr-4">
+          <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="title">Project Title *</Label>
+              <Label htmlFor="title" className="text-right">
+                Project Title *
+              </Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter a concise project title"
-                required
+                placeholder="Enter a clear title for your project"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="description" className="text-right">
+                Description *
+              </Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe your project requirements in detail"
-                rows={5}
-                required
+                placeholder="Describe your project requirements, goals, and expectations"
+                className="min-h-[150px]"
               />
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="skills" className="text-right">
+                Required Skills *
+              </Label>
+              <Textarea
+                id="skills"
+                value={skills}
+                onChange={(e) => setSkills(e.target.value)}
+                placeholder="Enter skills separated by commas (e.g., React, Node.js, UI/UX Design)"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="minBudget">Minimum Budget</Label>
+                <Label htmlFor="minBudget" className="text-right">
+                  Minimum Budget
+                </Label>
                 <Input
                   id="minBudget"
                   type="number"
-                  value={minBudget || ''}
-                  onChange={(e) => setMinBudget(e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder="0"
+                  value={minBudget}
+                  onChange={(e) => setMinBudget(e.target.value)}
+                  placeholder="Min budget (optional)"
                 />
               </div>
-              
               <div className="space-y-2">
-                <Label htmlFor="maxBudget">Maximum Budget</Label>
+                <Label htmlFor="maxBudget" className="text-right">
+                  Maximum Budget
+                </Label>
                 <Input
                   id="maxBudget"
                   type="number"
-                  value={maxBudget || ''}
-                  onChange={(e) => setMaxBudget(e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder="1000"
+                  value={maxBudget}
+                  onChange={(e) => setMaxBudget(e.target.value)}
+                  placeholder="Max budget (optional)"
                 />
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="deadline">Deadline</Label>
-              <Input
-                id="deadline"
-                type="date"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
+              <Label htmlFor="deadline" className="text-right">
+                Deadline *
+              </Label>
+              <DatePicker
+                date={deadline}
+                setDate={setDeadline}
+                className="w-full"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="skills">Required Skills *</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="skills"
-                  value={skillInput}
-                  onChange={(e) => setSkillInput(e.target.value)}
-                  placeholder="Enter a skill and press Add"
-                />
-                <Button type="button" onClick={handleAddSkill}>Add</Button>
-              </div>
-              
-              <div className="flex flex-wrap gap-2 mt-2">
-                {skills.map((skill) => (
-                  <Badge key={skill} variant="secondary" className="gap-1">
-                    {skill}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSkill(skill)}
-                      className="ml-1 rounded-full hover:bg-gray-200 p-0.5"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Application Methods</h4>
-              
               <div className="flex items-center justify-between">
-                <Label htmlFor="allowWhatsappApply" className="cursor-pointer">
+                <Label htmlFor="whatsapp" className="cursor-pointer">
                   Allow WhatsApp applications
                 </Label>
                 <Switch
-                  id="allowWhatsappApply"
-                  checked={allowWhatsappApply}
-                  onCheckedChange={setAllowWhatsappApply}
+                  id="whatsapp"
+                  checked={allowWhatsApp}
+                  onCheckedChange={setAllowWhatsApp}
                 />
               </div>
-              
+              <p className="text-sm text-gray-500">
+                Enable this to allow applicants to share their WhatsApp number.
+              </p>
+            </div>
+            
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="allowNormalApply" className="cursor-pointer">
-                  Allow in-app applications
+                <Label htmlFor="normal-apply" className="cursor-pointer">
+                  Allow direct applications
                 </Label>
                 <Switch
-                  id="allowNormalApply"
+                  id="normal-apply"
                   checked={allowNormalApply}
                   onCheckedChange={setAllowNormalApply}
                 />
               </div>
+              <p className="text-sm text-gray-500">
+                Enable this to allow direct platform applications.
+              </p>
             </div>
-            
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create Project"}
-              </Button>
-            </div>
-          </form>
-        </div>
+          </div>
+        </ScrollArea>
+        
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Posting...
+              </>
+            ) : (
+              "Post Project"
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
+}
