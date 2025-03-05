@@ -175,7 +175,7 @@ export const ChatArea = ({
         </div>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1 p-4 overflow-y-auto no-scrollbar">
         {isBlockedBy && (
           <div className="bg-yellow-50 p-3 mb-4 rounded-lg border border-yellow-200 flex items-center">
             <Shield className="text-yellow-500 mr-2 h-5 w-5" />
@@ -214,7 +214,6 @@ export const ChatArea = ({
               <ChatBubble
                 key={message.id}
                 variant={isCurrentUser ? "sent" : "received"}
-                className={isCurrentUser ? "justify-end" : ""}
               >
                 {!isCurrentUser && showAvatar && (
                   <Avatar
@@ -225,14 +224,23 @@ export const ChatArea = ({
                     <AvatarFallback>{(message.sender?.username?.[0] || 'U').toUpperCase()}</AvatarFallback>
                   </Avatar>
                 )}
-                <div>
+                <div className="flex flex-col max-w-[75%]">
                   <ChatBubbleMessage variant={isCurrentUser ? "sent" : "received"}>
                     {message.content}
                   </ChatBubbleMessage>
-                  <div className="text-xs text-gray-500 mt-1 px-1">
+                  <div className={`text-xs text-gray-500 mt-1 px-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
                     {time}
                   </div>
                 </div>
+                {isCurrentUser && showAvatar && (
+                  <Avatar
+                    className="h-8 w-8 cursor-pointer"
+                    onClick={() => viewUserProfile(currentUserId)}
+                  >
+                    <AvatarImage src={message.sender?.avatar_url || ''} />
+                    <AvatarFallback>{(message.sender?.username?.[0] || 'U').toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                )}
               </ChatBubble>
             );
           })
