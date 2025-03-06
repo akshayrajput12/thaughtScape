@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { Project } from "@/types";
+import type { Project, ProjectApplication } from "@/types";
 
 export interface ApplicationDialogProps {
   isOpen: boolean;
@@ -40,6 +40,7 @@ export function ApplicationDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Pass additional fields to parent component if needed
     onSubmit();
   };
 

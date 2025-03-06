@@ -1,3 +1,4 @@
+
 export interface Profile {
   id: string;
   username: string;
@@ -139,4 +140,10 @@ export interface Tag {
   user_id: string;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
+}
+
+// Define a new interface for the simplified user application data
+export interface UserApplication {
+  project_id: string;
+  status: 'pending' | 'accepted' | 'rejected';
 }
