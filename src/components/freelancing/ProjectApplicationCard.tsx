@@ -24,7 +24,8 @@ import {
   ExternalLink, 
   Phone,
   FileText,
-  Briefcase
+  Briefcase,
+  User
 } from "lucide-react";
 import { format } from "date-fns";
 import type { ProjectApplication } from "@/types";
@@ -111,10 +112,10 @@ export const ProjectApplicationCard = ({
             <DialogTrigger asChild>
               <Button variant="ghost" size="sm" className="px-0 text-primary">
                 <FileText className="h-4 w-4 mr-1" />
-                View Cover Letter
+                View Complete Application
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Application Details</DialogTitle>
                 <DialogDescription>
@@ -122,28 +123,61 @@ export const ProjectApplicationCard = ({
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="space-y-4">
+              <div className="space-y-6 mt-4">
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage 
+                        src={application.applicant?.avatar_url || ""} 
+                        alt={application.applicant?.username || "Applicant"}
+                      />
+                      <AvatarFallback>{getInitials(application.applicant?.username || application.applicant?.full_name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-medium text-lg">
+                        {application.applicant?.full_name || application.applicant?.username || "Applicant"}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        Applied on {formatDate(application.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
                 <div>
-                  <h4 className="text-sm font-medium mb-1">Cover Letter</h4>
-                  <p className="text-sm whitespace-pre-wrap">{application.message}</p>
+                  <h4 className="text-sm font-medium mb-2 flex items-center">
+                    <FileText className="h-4 w-4 mr-2 text-blue-500" />
+                    Cover Letter
+                  </h4>
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <p className="text-sm whitespace-pre-wrap">{application.message}</p>
+                  </div>
                 </div>
                 
                 {application.experience && (
                   <div>
-                    <h4 className="text-sm font-medium mb-1">Relevant Experience</h4>
-                    <p className="text-sm whitespace-pre-wrap">{application.experience}</p>
+                    <h4 className="text-sm font-medium mb-2 flex items-center">
+                      <Briefcase className="h-4 w-4 mr-2 text-purple-500" />
+                      Relevant Experience
+                    </h4>
+                    <div className="bg-gray-50 p-3 rounded-md">
+                      <p className="text-sm whitespace-pre-wrap">{application.experience}</p>
+                    </div>
                   </div>
                 )}
                 
                 {application.portfolio && (
                   <div>
-                    <h4 className="text-sm font-medium mb-1">Portfolio/Previous Work</h4>
-                    <div className="flex items-center">
+                    <h4 className="text-sm font-medium mb-2 flex items-center">
+                      <ExternalLink className="h-4 w-4 mr-2 text-green-500" />
+                      Portfolio/Previous Work
+                    </h4>
+                    <div className="bg-gray-50 p-3 rounded-md">
                       <a 
                         href={application.portfolio.startsWith('http') ? application.portfolio : `https://${application.portfolio}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-primary flex items-center text-sm"
+                        className="text-primary flex items-center text-sm hover:underline"
                       >
                         {application.portfolio}
                         <ExternalLink className="ml-1 h-3 w-3" />
@@ -153,8 +187,52 @@ export const ProjectApplicationCard = ({
                 )}
                 
                 <div>
-                  <h4 className="text-sm font-medium mb-1">Contact Information</h4>
-                  <p className="text-sm">Phone: {application.phone_number || "Not provided"}</p>
+                  <h4 className="text-sm font-medium mb-2 flex items-center">
+                    <Phone className="h-4 w-4 mr-2 text-red-500" />
+                    Contact Information
+                  </h4>
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <p className="text-sm flex items-center">
+                      <Phone className="h-3 w-3 mr-2 text-gray-500" />
+                      {application.phone_number || "Not provided"}
+                    </p>
+                    {application.applicant?.whatsapp_number && (
+                      <p className="text-sm mt-1 flex items-center">
+                        WhatsApp: {application.applicant.whatsapp_number}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="border-t pt-4 flex justify-end gap-2">
+                  {application.status === "pending" && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="border-green-500 text-green-600 hover:bg-green-50"
+                        onClick={() => {
+                          onUpdateStatus(application.id, "accepted");
+                          setIsMessageOpen(false);
+                        }}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Accept
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="border-red-500 text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                          onUpdateStatus(application.id, "rejected");
+                          setIsMessageOpen(false);
+                        }}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Reject
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </DialogContent>

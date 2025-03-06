@@ -8,18 +8,34 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { EditUserForm } from "./EditUserForm";
 import { UserStats } from "./UserStats";
+import { Trash2, UserCog, Shield, ShieldOff, RefreshCw } from "lucide-react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function UsersList() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchUsers = async () => {
+    setIsLoading(true);
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
 
+    setIsLoading(false);
+    
     if (error) {
       toast({
         title: "Error",
@@ -129,13 +145,43 @@ export function UsersList() {
     }
   };
   
+  // Add delete user functionality
+  const deleteUser = async (userId: string) => {
+    try {
+      // First delete the profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+      
+      if (profileError) throw profileError;
+      
+      // Remove the user from the UI
+      setUsers(users.filter(user => user.id !== userId));
+      
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast({
+        title: "Error",
+        description: "Could not delete user",
+        variant: "destructive",
+      });
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <Button 
         onClick={fetchUsers}
-        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+        disabled={isLoading}
       >
-        Refresh Users List
+        <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+        {isLoading ? "Loading..." : "Refresh Users List"}
       </Button>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -208,7 +254,8 @@ export function UsersList() {
                       onClick={() => setEditingUser(user)}
                       className="w-full bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900 transition-colors"
                     >
-                      Edit Profile
+                      <UserCog className="w-4 h-4 mr-2" />
+                      Edit
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="bg-white/95 backdrop-blur-xl border-gray-200 text-gray-800">
@@ -227,15 +274,55 @@ export function UsersList() {
                 </Dialog>
 
                 <Button
-                  variant={user.is_admin ? "destructive" : "default"}
+                  variant={user.is_admin ? "outline" : "default"}
                   onClick={() => toggleAdminStatus(user.id, user.is_admin)}
                   className={user.is_admin 
-                    ? "w-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700" 
-                    : "w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-700"
+                    ? "w-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200" 
+                    : "w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-700 border-emerald-200"
                   }
                 >
-                  {user.is_admin ? "Remove Admin" : "Make Admin"}
+                  {user.is_admin ? (
+                    <>
+                      <ShieldOff className="w-4 h-4 mr-2" />
+                      Remove Admin
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="w-4 h-4 mr-2" />
+                      Make Admin
+                    </>
+                  )}
                 </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the user
+                        account and all associated data.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteUser(user.id)}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </div>

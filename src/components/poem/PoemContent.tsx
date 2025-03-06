@@ -6,9 +6,10 @@ import { Link, useNavigate } from "react-router-dom";
 interface PoemContentProps {
   content: string;
   isLuxury?: boolean;
+  acceptedTags?: string[];
 }
 
-export const PoemContent = ({ content, isLuxury = false }: PoemContentProps) => {
+export const PoemContent = ({ content, isLuxury = false, acceptedTags = [] }: PoemContentProps) => {
   const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
   
@@ -30,15 +31,23 @@ export const PoemContent = ({ content, isLuxury = false }: PoemContentProps) => 
       // Handle user mentions (@username)
       else if (word.startsWith('@')) {
         const username = word.substring(1); // Remove the @ symbol
-        return (
-          <span 
-            key={index} 
-            onClick={() => handleProfileClick(username)}
-            className="text-purple-500 hover:underline cursor-pointer font-medium"
-          >
-            {word}
-          </span>
-        );
+        const isAccepted = acceptedTags?.includes(username);
+        
+        // Only show mentions that are accepted or don't have acceptedTags specified
+        if (acceptedTags?.length === 0 || isAccepted) {
+          return (
+            <span 
+              key={index} 
+              onClick={() => handleProfileClick(username)}
+              className="text-purple-500 hover:underline cursor-pointer font-medium"
+            >
+              {word}
+            </span>
+          );
+        } else {
+          // Return just normal text if the tag was not accepted
+          return <span key={index}>{word.replace(`@${username}`, username)}</span>;
+        }
       }
       
       // Regular text
@@ -47,8 +56,7 @@ export const PoemContent = ({ content, isLuxury = false }: PoemContentProps) => 
   };
 
   const handleProfileClick = (username: string) => {
-    // In a real implementation, you might need to first fetch the user ID by username
-    // For now, we'll just navigate to a search or profile page
+    // Navigate to user profile
     navigate(`/explore?search=${username}`);
   };
 

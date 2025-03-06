@@ -2,13 +2,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Tag, Check, X } from "lucide-react";
+import { Tag, Check, X, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PoemCard } from "@/components/PoemCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Thought } from "@/types";
+import type { Thought, Tag as TagType } from "@/types";
 
 interface TaggedPostsProps {
   userId: string;
@@ -29,24 +29,42 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
   const fetchTaggedPosts = async () => {
     setIsLoading(true);
     try {
-      // In a real implementation, you would have a table for tags and query that
-      // For this example, we'll just fetch thoughts that mention the user
-      // This is a placeholder implementation
-      const { data, error } = await supabase
+      // Fetch tags for this user
+      const { data: tags, error: tagsError } = await supabase
+        .from('tags')
+        .select('*')
+        .eq('user_id', userId);
+        
+      if (tagsError) throw tagsError;
+      
+      // Get all thoughts where this user is tagged
+      const acceptedTagsIds = tags?.filter(tag => tag.status === 'accepted').map(tag => tag.thought_id) || [];
+      const pendingTagsIds = tags?.filter(tag => tag.status === 'pending').map(tag => tag.thought_id) || [];
+      
+      // Fetch accepted thoughts
+      const { data: acceptedThoughts, error: acceptedError } = await supabase
         .from('thoughts')
         .select(`
           *,
           author:profiles!thoughts_author_id_fkey(*)
         `)
-        .or(`content.ilike.%@${userId}%,content.ilike.%@${userId.substring(0, 8)}%`)
-        .order('created_at', { ascending: false });
+        .in('id', acceptedTagsIds.length > 0 ? acceptedTagsIds : ['none']);
         
-      if (error) throw error;
+      if (acceptedError) throw acceptedError;
       
-      // In a real implementation, you would filter based on accepted/pending tags
-      // For now, we'll just display all as accepted
-      setTaggedPosts(data || []);
-      setPendingTags([]);
+      // Fetch pending thoughts
+      const { data: pendingThoughts, error: pendingError } = await supabase
+        .from('thoughts')
+        .select(`
+          *,
+          author:profiles!thoughts_author_id_fkey(*)
+        `)
+        .in('id', pendingTagsIds.length > 0 ? pendingTagsIds : ['none']);
+        
+      if (pendingError) throw pendingError;
+      
+      setTaggedPosts(acceptedThoughts || []);
+      setPendingTags(pendingThoughts || []);
     } catch (error) {
       console.error('Error fetching tagged posts:', error);
       toast({
@@ -60,22 +78,97 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
   };
   
   const handleAcceptTag = async (thoughtId: string) => {
-    // This would update your tagging system to mark the tag as accepted
-    toast({
-      title: "Success",
-      description: "Tag accepted successfully",
-    });
-    fetchTaggedPosts();
+    try {
+      // Update tag status to accepted
+      const { error } = await supabase
+        .from('tags')
+        .update({ status: 'accepted' })
+        .eq('thought_id', thoughtId)
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+      
+      // Create notification for the author
+      const taggedThought = pendingTags.find(thought => thought.id === thoughtId);
+      if (taggedThought) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: taggedThought.author_id,
+            type: 'tag',
+            content: `${userId} accepted your tag in "${taggedThought.title}"`,
+            related_user_id: userId,
+            related_thought_id: thoughtId,
+            tag_status: 'accepted'
+          });
+      }
+      
+      toast({
+        title: "Success",
+        description: "Tag accepted successfully",
+      });
+      
+      // Move the thought from pending to accepted
+      const thought = pendingTags.find(t => t.id === thoughtId);
+      if (thought) {
+        setTaggedPosts(prev => [...prev, thought]);
+        setPendingTags(prev => prev.filter(t => t.id !== thoughtId));
+      }
+    } catch (error) {
+      console.error('Error accepting tag:', error);
+      toast({
+        title: "Error",
+        description: "Failed to accept tag",
+        variant: "destructive",
+      });
+    }
   };
   
   const handleRejectTag = async (thoughtId: string) => {
-    // This would update your tagging system to remove the tag
-    toast({
-      title: "Success",
-      description: "Tag rejected successfully",
-    });
-    fetchTaggedPosts();
+    try {
+      // Update tag status to rejected
+      const { error } = await supabase
+        .from('tags')
+        .update({ status: 'rejected' })
+        .eq('thought_id', thoughtId)
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+      
+      // Create notification for the author
+      const taggedThought = pendingTags.find(thought => thought.id === thoughtId);
+      if (taggedThought) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: taggedThought.author_id,
+            type: 'tag',
+            content: `${userId} rejected your tag in "${taggedThought.title}"`,
+            related_user_id: userId,
+            related_thought_id: thoughtId,
+            tag_status: 'rejected'
+          });
+      }
+      
+      toast({
+        title: "Success",
+        description: "Tag rejected successfully",
+      });
+      
+      // Remove the thought from pending
+      setPendingTags(prev => prev.filter(t => t.id !== thoughtId));
+    } catch (error) {
+      console.error('Error rejecting tag:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject tag",
+        variant: "destructive",
+      });
+    }
   };
+  
+  // Only show the pending tab for the current user
+  const isOwnProfile = userId === currentUserId;
   
   return (
     <div className="mt-10">
@@ -89,14 +182,16 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
           <TabsTrigger value="accepted" className="px-4">
             Accepted
           </TabsTrigger>
-          <TabsTrigger value="pending" className="px-4">
-            Pending
-            {pendingTags.length > 0 && (
-              <span className="ml-2 bg-purple-600 text-white text-xs rounded-full px-2 py-0.5">
-                {pendingTags.length}
-              </span>
-            )}
-          </TabsTrigger>
+          {isOwnProfile && (
+            <TabsTrigger value="pending" className="px-4">
+              Pending
+              {pendingTags.length > 0 && (
+                <span className="ml-2 bg-purple-600 text-white text-xs rounded-full px-2 py-0.5">
+                  {pendingTags.length}
+                </span>
+              )}
+            </TabsTrigger>
+          )}
         </TabsList>
         
         <TabsContent value="accepted">
@@ -140,68 +235,70 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
           )}
         </TabsContent>
         
-        <TabsContent value="pending">
-          {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(2)].map((_, i) => (
-                <div key={i} className="bg-white rounded-lg p-4 shadow-sm">
-                  <div className="flex items-center space-x-4">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="space-y-2 flex-1">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-full" />
+        {isOwnProfile && (
+          <TabsContent value="pending">
+            {isLoading ? (
+              <div className="space-y-4">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="flex items-center space-x-4">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-full" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : pendingTags.length > 0 ? (
-            <div className="space-y-4">
-              {pendingTags.map((thought, index) => (
-                <motion.div
-                  key={thought.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src={thought.author.avatar_url || "/placeholder.svg"} 
-                      alt={thought.author.username}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                    <div>
-                      <p className="font-medium">{thought.author.username}</p>
-                      <p className="text-sm text-gray-500 line-clamp-1">Tagged you in: "{thought.title}"</p>
+                ))}
+              </div>
+            ) : pendingTags.length > 0 ? (
+              <div className="space-y-4">
+                {pendingTags.map((thought, index) => (
+                  <motion.div
+                    key={thought.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={thought.author.avatar_url || "/placeholder.svg"} 
+                        alt={thought.author.username}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="font-medium">{thought.author.username}</p>
+                        <p className="text-sm text-gray-500 line-clamp-1">Tagged you in: "{thought.title}"</p>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleAcceptTag(thought.id)}
-                      className="p-2 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition-colors"
-                    >
-                      <Check className="h-4 w-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleRejectTag(thought.id)}
-                      className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
-              <Tag className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-              <h3 className="text-lg font-medium text-gray-600">No pending tags</h3>
-              <p className="text-gray-500 mt-2">When someone tags you in a post, it will appear here for your approval.</p>
-            </div>
-          )}
-        </TabsContent>
+                    
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleAcceptTag(thought.id)}
+                        className="p-2 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition-colors"
+                      >
+                        <Check className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleRejectTag(thought.id)}
+                        className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <Tag className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                <h3 className="text-lg font-medium text-gray-600">No pending tags</h3>
+                <p className="text-gray-500 mt-2">When someone tags you in a post, it will appear here for your approval.</p>
+              </div>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PoemContent } from "@/components/poem/PoemContent";
 import type { Thought } from "@/types";
 
 interface ProfilePoemsProps {
@@ -42,7 +43,12 @@ export const ProfilePoems = ({ poems, isOwnProfile, isAdmin, onDeletePoem }: Pro
                   </div>
                 )}
               </div>
-              <p className="text-gray-700 whitespace-pre-line mb-4">{poem.content}</p>
+              <div className="mb-4">
+                <PoemContent 
+                  content={poem.content} 
+                  acceptedTags={poem.accepted_tags || []}
+                />
+              </div>
               <div className="text-sm text-gray-500">
                 {new Date(poem.created_at).toLocaleDateString('en-US', {
                   year: 'numeric',
