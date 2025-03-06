@@ -964,7 +964,7 @@ const Freelancing = () => {
                       id="allow_whatsapp_apply" 
                       name="allow_whatsapp_apply" 
                       checked={allowWhatsappApply} 
-                      onCheckedChange={setAllowWhatsappApply}
+                      onCheckedChange={(checked) => setAllowWhatsappApply(checked === true)}
                     />
                     <Label htmlFor="allow_whatsapp_apply">Allow WhatsApp Apply</Label>
                   </div>
@@ -973,7 +973,7 @@ const Freelancing = () => {
                       id="allow_normal_apply" 
                       name="allow_normal_apply" 
                       checked={allowNormalApply} 
-                      onCheckedChange={setAllowNormalApply}
+                      onCheckedChange={(checked) => setAllowNormalApply(checked === true)}
                     />
                     <Label htmlFor="allow_normal_apply">Allow Normal Apply</Label>
                   </div>
