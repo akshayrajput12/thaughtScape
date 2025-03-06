@@ -917,4 +917,105 @@ const Freelancing = () => {
                       .map((skill) => skill.trim());
                     const budget = Number(formData.get("budget"));
                     const deadline = String(formData.get("deadline"));
-                    const whatsappNumber = String(formData
+                    const whatsappNumber = String(formData.get("whatsapp_number") || "");
+                    const allowWhatsapp = !!formData.get("allow_whatsapp_apply");
+                    const allowNormal = !!formData.get("allow_normal_apply");
+
+                    updateProjectMutation.mutate({
+                      id: selectedProject.id,
+                      title,
+                      description,
+                      required_skills: skills,
+                      budget,
+                      deadline: deadline || undefined,
+                      whatsapp_number: whatsappNumber,
+                      allow_whatsapp_apply: allowWhatsapp,
+                      allow_normal_apply: allowNormal
+                    });
+                  }}
+                  className="space-y-6 p-2"
+                >
+                  <div>
+                    <Label htmlFor="title">Title</Label>
+                    <Input id="title" name="title" defaultValue={selectedProject?.title} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea id="description" name="description" defaultValue={selectedProject?.description} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="skills">Required Skills</Label>
+                    <Input id="skills" name="skills" defaultValue={selectedProject?.required_skills?.join(",")} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="budget">Budget</Label>
+                    <Input id="budget" name="budget" type="number" defaultValue={selectedProject?.budget} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="deadline">Deadline</Label>
+                    <Input id="deadline" name="deadline" type="date" defaultValue={selectedProject?.deadline} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
+                    <Input id="whatsapp_number" name="whatsapp_number" defaultValue={selectedProject?.author?.whatsapp_number} />
+                  </div>
+                  <div>
+                    <Checkbox id="allow_whatsapp_apply" name="allow_whatsapp_apply" checked={allowWhatsappApply} onChange={(e) => setAllowWhatsappApply(e.target.checked)} />
+                    <Label htmlFor="allow_whatsapp_apply">Allow WhatsApp Apply</Label>
+                  </div>
+                  <div>
+                    <Checkbox id="allow_normal_apply" name="allow_normal_apply" checked={allowNormalApply} onChange={(e) => setAllowNormalApply(e.target.checked)} />
+                    <Label htmlFor="allow_normal_apply">Allow Normal Apply</Label>
+                  </div>
+                </form>
+              </ScrollArea>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this project?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  deleteProjectMutation.mutate(selectedProject?.id);
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <NewProjectDialog
+          isOpen={isNewProjectModalOpen}
+          onOpenChange={setIsNewProjectModalOpen}
+          onProjectCreated={handleProjectCreated}
+          onSubmit={handleCreateProject}
+          isSubmitting={createProjectMutation.isPending}
+        />
+
+        {selectedProject && (
+          <ApplicationDialog
+            isOpen={isApplicationDialogOpen}
+            onOpenChange={setIsApplicationDialogOpen}
+            project={selectedProject}
+            message={applicationMessage}
+            onMessageChange={setApplicationMessage}
+            onSubmit={handleApplyToProject}
+            isSubmitting={applyProjectMutation.isPending}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Freelancing;
