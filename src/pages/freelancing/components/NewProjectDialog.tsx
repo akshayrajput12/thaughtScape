@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ import type { Project } from "@/types";
 export interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProjectCreated: (project: Project) => void;
+  onProjectCreated?: (project: Project) => void;
   onSubmit?: (newProject: any) => void;
   isSubmitting?: boolean;
 }
@@ -21,7 +20,7 @@ export interface NewProjectDialogProps {
 export const NewProjectDialog = ({ 
   isOpen, 
   onOpenChange, 
-  onProjectCreated,
+  onProjectCreated = () => {}, // Default no-op function
   onSubmit,
   isSubmitting = false
 }: NewProjectDialogProps) => {

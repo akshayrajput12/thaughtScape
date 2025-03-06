@@ -1039,6 +1039,11 @@ const Freelancing = () => {
           onOpenChange={setIsNewProjectDialogOpen}
           onSubmit={handleCreateProject}
           isSubmitting={createProjectMutation.isPending}
+          onProjectCreated={(project) => {
+            queryClient.setQueryData(["projects"], (oldData: Project[] | undefined) => 
+              oldData ? [project, ...oldData] : [project]
+            );
+          }}
         />
 
         <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>

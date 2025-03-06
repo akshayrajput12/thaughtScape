@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Tag as TagIcon, Check, X, AlertTriangle } from "lucide-react";
+import { Tag as TagIcon, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PoemCard } from "@/components/PoemCard";
@@ -20,7 +19,6 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
   const [taggedPosts, setTaggedPosts] = useState<Thought[]>([]);
   const [pendingTags, setPendingTags] = useState<Thought[]>([]);
   const { toast } = useToast();
-  const navigate = useNavigate();
   
   useEffect(() => {
     fetchTaggedPosts();
@@ -37,17 +35,24 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
         
       if (tagsError) throw tagsError;
       
+      if (!tagsData || tagsData.length === 0) {
+        setTaggedPosts([]);
+        setPendingTags([]);
+        setIsLoading(false);
+        return;
+      }
+      
       // Ensure tags have the correct type
-      const tags = tagsData as Tag[] || [];
+      const tags = tagsData as Tag[];
       
       // Get all thoughts where this user is tagged
       const acceptedTagsIds = tags
         .filter(tag => tag.status === 'accepted')
-        .map(tag => tag.thought_id) || [];
+        .map(tag => tag.thought_id);
         
       const pendingTagsIds = tags
         .filter(tag => tag.status === 'pending')
-        .map(tag => tag.thought_id) || [];
+        .map(tag => tag.thought_id);
       
       // Fetch accepted thoughts
       if (acceptedTagsIds.length > 0) {
@@ -55,7 +60,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
           .from('thoughts')
           .select(`
             *,
-            author:profiles!thoughts_author_id_fkey(*)
+            author:profiles(*)
           `)
           .in('id', acceptedTagsIds);
           
@@ -71,7 +76,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
           .from('thoughts')
           .select(`
             *,
-            author:profiles!thoughts_author_id_fkey(*)
+            author:profiles(*)
           `)
           .in('id', pendingTagsIds);
           
@@ -97,7 +102,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
       // Update tag status to accepted
       const { error } = await supabase
         .from('tags')
-        .update({ status: 'accepted' as const })
+        .update({ status: 'accepted' })
         .eq('thought_id', thoughtId)
         .eq('user_id', userId);
         
@@ -144,7 +149,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
       // Update tag status to rejected
       const { error } = await supabase
         .from('tags')
-        .update({ status: 'rejected' as const })
+        .update({ status: 'rejected' })
         .eq('thought_id', thoughtId)
         .eq('user_id', userId);
         

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +29,7 @@ const FreelancingIndex = () => {
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
+  const [projects, setProjects] = useState<Project[]>([]);
 
   const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
     queryKey: ["projects"],
@@ -45,15 +45,14 @@ const FreelancingIndex = () => {
       
       if (error) throw error;
 
-      // Fix the type mismatch by ensuring all required properties are present
       return data.map(project => ({
         ...project,
         budget: project.min_budget,
         _count: {
           applications: project.applications?.[0]?.count || 0,
-          comments: 0 // Add the missing comments property with a default value
+          comments: 0
         }
-      })) as unknown as Project[]; // Use the unknown assertion to bypass type checking
+      })) as unknown as Project[];
     },
   });
 
@@ -81,6 +80,27 @@ const FreelancingIndex = () => {
   const handleApplyToProject = (project: Project) => {
     setSelectedProject(project);
     setIsApplicationDialogOpen(true);
+  };
+
+  const handleCreateProject = async (project: Project) => {
+    const { data, error } = await supabase
+      .from("projects")
+      .insert(project)
+      .select();
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create project",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Project created successfully!",
+      });
+      setIsNewProjectDialogOpen(false);
+      setProjects([data[0], ...projects]);
+    }
   };
 
   return (
@@ -159,15 +179,13 @@ const FreelancingIndex = () => {
         <NewProjectDialog 
           isOpen={isNewProjectDialogOpen}
           onOpenChange={setIsNewProjectDialogOpen}
-          onSubmit={(project) => {
-            // Handle project submission
-            toast({
-              title: "Success",
-              description: "Project created successfully!",
-            });
-            setIsNewProjectDialogOpen(false);
-          }}
+          onSubmit={handleCreateProject}
           isSubmitting={false}
+          onProjectCreated={(project) => {
+            if (projects) {
+              setProjects([project, ...projects]);
+            }
+          }}
         />
 
         <ApplicationDialog 
