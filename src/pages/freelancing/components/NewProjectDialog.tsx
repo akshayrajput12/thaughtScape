@@ -41,7 +41,6 @@ export const NewProjectDialog = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // If onSubmit prop is provided, use it instead of the default implementation
     if (onSubmit) {
       onSubmit({
         title,
@@ -110,7 +109,6 @@ export const NewProjectDialog = ({
         description: "Project created successfully",
       });
       
-      // Reset form fields
       setTitle("");
       setDescription("");
       setRequiredSkills("");
@@ -118,7 +116,6 @@ export const NewProjectDialog = ({
       setMaxBudget("");
       setWhatsappNumber("");
       
-      // Close dialog and notify parent
       onOpenChange(false);
       if (data) {
         onProjectCreated(data as Project);
