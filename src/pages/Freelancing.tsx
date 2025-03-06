@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -119,7 +120,7 @@ const Freelancing = () => {
         .select("project_id, status")
         .eq("applicant_id", user.id);
       if (error) throw error;
-      return data;
+      return data as { project_id: string; status: "pending" | "accepted" | "rejected" }[];
     },
     enabled: !!user?.id,
   });

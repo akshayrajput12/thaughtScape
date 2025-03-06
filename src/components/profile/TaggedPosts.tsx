@@ -45,8 +45,8 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
         return;
       }
       
-      // Convert the raw data to Tag type
-      const tags = tagsData as unknown as Tag[];
+      // Type assertion to match our Tag interface
+      const tags = tagsData as Tag[];
       
       // Get all thoughts where this user is tagged
       const acceptedTagsIds = tags
