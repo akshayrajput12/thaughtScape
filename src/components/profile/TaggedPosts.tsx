@@ -46,7 +46,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
       }
       
       // Type assertion to match our Tag interface
-      const tags = tagsData as Tag[];
+      const tags = tagsData as unknown as Tag[];
       
       // Get all thoughts where this user is tagged
       const acceptedTagsIds = tags
