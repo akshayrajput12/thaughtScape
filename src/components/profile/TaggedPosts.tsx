@@ -2,13 +2,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Tag, Check, X, AlertTriangle } from "lucide-react";
+import { Tag as TagIcon, Check, X, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PoemCard } from "@/components/PoemCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Thought, Tag as TagType } from "@/types";
+import type { Thought, Tag } from "@/types";
 
 interface TaggedPostsProps {
   userId: string;
@@ -30,7 +30,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
     setIsLoading(true);
     try {
       // Fetch tags for this user
-      const { data: tags, error: tagsError } = await supabase
+      const { data: tagsData, error: tagsError } = await supabase
         .from('tags')
         .select('*')
         .eq('user_id', userId);
@@ -38,11 +38,16 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
       if (tagsError) throw tagsError;
       
       // Ensure tags have the correct type
-      const typedTags = tags as TagType[] || [];
+      const tags = tagsData as Tag[] || [];
       
       // Get all thoughts where this user is tagged
-      const acceptedTagsIds = typedTags.filter(tag => tag.status === 'accepted').map(tag => tag.thought_id) || [];
-      const pendingTagsIds = typedTags.filter(tag => tag.status === 'pending').map(tag => tag.thought_id) || [];
+      const acceptedTagsIds = tags
+        .filter(tag => tag.status === 'accepted')
+        .map(tag => tag.thought_id) || [];
+        
+      const pendingTagsIds = tags
+        .filter(tag => tag.status === 'pending')
+        .map(tag => tag.thought_id) || [];
       
       // Fetch accepted thoughts
       if (acceptedTagsIds.length > 0) {
@@ -92,7 +97,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
       // Update tag status to accepted
       const { error } = await supabase
         .from('tags')
-        .update({ status: 'accepted' })
+        .update({ status: 'accepted' as const })
         .eq('thought_id', thoughtId)
         .eq('user_id', userId);
         
@@ -139,7 +144,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
       // Update tag status to rejected
       const { error } = await supabase
         .from('tags')
-        .update({ status: 'rejected' })
+        .update({ status: 'rejected' as const })
         .eq('thought_id', thoughtId)
         .eq('user_id', userId);
         
@@ -183,7 +188,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
   return (
     <div className="mt-10">
       <div className="flex items-center gap-2 mb-6">
-        <Tag className="h-5 w-5 text-purple-600" />
+        <TagIcon className="h-5 w-5 text-purple-600" />
         <h2 className="text-2xl font-serif font-bold text-black">Tagged Posts</h2>
       </div>
       
@@ -238,7 +243,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
             </div>
           ) : (
             <div className="text-center py-12 bg-gray-50 rounded-lg">
-              <Tag className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+              <TagIcon className="h-10 w-10 text-gray-400 mx-auto mb-3" />
               <h3 className="text-lg font-medium text-gray-600">No tagged posts yet</h3>
               <p className="text-gray-500 mt-2">When someone tags you in a post and you accept it, it will appear here.</p>
             </div>
@@ -302,7 +307,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
               </div>
             ) : (
               <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <Tag className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                <TagIcon className="h-10 w-10 text-gray-400 mx-auto mb-3" />
                 <h3 className="text-lg font-medium text-gray-600">No pending tags</h3>
                 <p className="text-gray-500 mt-2">When someone tags you in a post, it will appear here for your approval.</p>
               </div>

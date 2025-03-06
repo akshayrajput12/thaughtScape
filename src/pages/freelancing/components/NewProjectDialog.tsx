@@ -14,12 +14,16 @@ export interface NewProjectDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onProjectCreated: (project: Project) => void;
+  onSubmit?: (newProject: any) => void;
+  isSubmitting?: boolean;
 }
 
 export const NewProjectDialog = ({ 
   isOpen, 
   onOpenChange, 
-  onProjectCreated 
+  onProjectCreated,
+  onSubmit,
+  isSubmitting = false
 }: NewProjectDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -28,10 +32,30 @@ export const NewProjectDialog = ({
   const [requiredSkills, setRequiredSkills] = useState("");
   const [minBudget, setMinBudget] = useState("");
   const [maxBudget, setMaxBudget] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localIsSubmitting, setLocalIsSubmitting] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [allowWhatsappApply, setAllowWhatsappApply] = useState(true);
+  const [allowNormalApply, setAllowNormalApply] = useState(true);
+
+  const effectiveIsSubmitting = isSubmitting || localIsSubmitting;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If onSubmit prop is provided, use it instead of the default implementation
+    if (onSubmit) {
+      onSubmit({
+        title,
+        description,
+        required_skills: requiredSkills.split(',').map(skill => skill.trim()),
+        min_budget: parseFloat(minBudget),
+        max_budget: maxBudget ? parseFloat(maxBudget) : null,
+        whatsapp_number: whatsappNumber,
+        allow_whatsapp_apply: allowWhatsappApply,
+        allow_normal_apply: allowNormalApply
+      });
+      return;
+    }
     
     if (!user) {
       toast({
@@ -51,7 +75,7 @@ export const NewProjectDialog = ({
       return;
     }
     
-    setIsSubmitting(true);
+    setLocalIsSubmitting(true);
     
     try {
       const skillsArray = requiredSkills.split(',').map(skill => skill.trim());
@@ -65,7 +89,9 @@ export const NewProjectDialog = ({
           min_budget: parseFloat(minBudget),
           max_budget: maxBudget ? parseFloat(maxBudget) : null,
           author_id: user.id,
-          status: 'open'
+          status: 'open',
+          allow_whatsapp_apply: allowWhatsappApply,
+          allow_normal_apply: allowNormalApply
         })
         .select(`
           *,
@@ -91,6 +117,7 @@ export const NewProjectDialog = ({
       setRequiredSkills("");
       setMinBudget("");
       setMaxBudget("");
+      setWhatsappNumber("");
       
       // Close dialog and notify parent
       onOpenChange(false);
@@ -105,7 +132,7 @@ export const NewProjectDialog = ({
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setLocalIsSubmitting(false);
     }
   };
   
@@ -186,10 +213,10 @@ export const NewProjectDialog = ({
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={effectiveIsSubmitting}
               className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
             >
-              {isSubmitting ? "Creating..." : "Create Project"}
+              {effectiveIsSubmitting ? "Creating..." : "Create Project"}
             </Button>
           </div>
         </form>
