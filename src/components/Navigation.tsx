@@ -43,24 +43,39 @@ const Navigation = () => {
     if (!userId) return;
 
     const fetchUnreadCounts = async () => {
-      const { count: messagesCount } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('receiver_id', userId)
-        .eq('is_read', false);
+      try {
+        // Get unread messages count
+        const { count: messagesCount, error: messagesError } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('receiver_id', userId)
+          .eq('is_read', false);
 
-      const { count: notificationsCount } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('is_read', false);
+        if (messagesError) {
+          console.error("Error fetching unread messages:", messagesError);
+        }
 
-      setUnreadMessages(messagesCount || 0);
-      setUnreadNotifications(notificationsCount || 0);
+        // Get unread notifications count
+        const { count: notificationsCount, error: notificationsError } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('is_read', false);
+
+        if (notificationsError) {
+          console.error("Error fetching unread notifications:", notificationsError);
+        }
+
+        setUnreadMessages(messagesCount || 0);
+        setUnreadNotifications(notificationsCount || 0);
+      } catch (error) {
+        console.error("Error in fetchUnreadCounts:", error);
+      }
     };
 
     fetchUnreadCounts();
 
+    // Subscribe to real-time updates for messages
     const messagesChannel = supabase
       .channel('messages_changes')
       .on(
@@ -75,6 +90,7 @@ const Navigation = () => {
       )
       .subscribe();
 
+    // Subscribe to real-time updates for notifications
     const notificationsChannel = supabase
       .channel('notifications_changes')
       .on(

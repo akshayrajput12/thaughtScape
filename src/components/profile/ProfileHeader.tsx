@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { User, X, MessageSquare, UserPlus, UserMinus, ShieldAlert, Shield, AlertCircle } from "lucide-react";
@@ -219,7 +218,6 @@ export const ProfileHeader = ({
               </p>
             )}
 
-            {/* Profile action buttons for non-owners */}
             {!isOwnProfile && !isEditing && (
               <div className="flex flex-wrap gap-2 mt-4 w-full md:w-auto">
                 {isBlockedByUser ? (
@@ -340,7 +338,7 @@ export const ProfileHeader = ({
                         <CommandGroup>
                           {availableGenres && availableGenres.length > 0 ? (
                             availableGenres
-                              .filter(genre => !userGenres?.some(g => g.id === genre.id))
+                              .filter(genre => !userGenres.some(g => g.id === genre.id))
                               .map(genre => (
                                 <CommandItem
                                   key={genre.id}
@@ -350,7 +348,11 @@ export const ProfileHeader = ({
                                   {genre.name}
                                 </CommandItem>
                               ))
-                          ) : null}
+                          ) : (
+                            <CommandItem disabled>
+                              Loading interests...
+                            </CommandItem>
+                          )}
                         </CommandGroup>
                       </Command>
                     </PopoverContent>
@@ -358,23 +360,27 @@ export const ProfileHeader = ({
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
-                {userGenres.map((genre) => (
-                  <Badge 
-                    key={genre.id}
-                    variant="secondary" 
-                    className="bg-purple-50 text-purple-700 hover:bg-purple-100 pl-3 pr-2 py-1 flex items-center gap-1"
-                  >
-                    {genre.name}
-                    {isOwnProfile && (
-                      <button
-                        onClick={() => handleRemoveGenre(genre.id)}
-                        className="hover:bg-purple-200 rounded-full p-0.5 transition-colors"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </Badge>
-                ))}
+                {userGenres && userGenres.length > 0 ? (
+                  userGenres.map((genre) => (
+                    <Badge 
+                      key={genre.id}
+                      variant="secondary" 
+                      className="bg-purple-50 text-purple-700 hover:bg-purple-100 pl-3 pr-2 py-1 flex items-center gap-1 animate-in fade-in duration-300"
+                    >
+                      {genre.name}
+                      {isOwnProfile && (
+                        <button
+                          onClick={() => handleRemoveGenre(genre.id)}
+                          className="hover:bg-purple-200 rounded-full p-0.5 transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-sm text-gray-500 italic">No interests added yet</span>
+                )}
               </div>
             </div>
           </div>

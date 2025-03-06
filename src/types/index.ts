@@ -1,4 +1,3 @@
-
 export interface Profile {
   id: string;
   username: string;
@@ -142,8 +141,18 @@ export interface Tag {
   created_at: string;
 }
 
-// Define a new interface for the simplified user application data
 export interface UserApplication {
   project_id: string;
   status: 'pending' | 'accepted' | 'rejected';
+}
+
+export interface MessageNotification {
+  id: string;
+  user_id: string;
+  sender_id: string;
+  message_count: number;
+  last_message: string;
+  is_read: boolean;
+  created_at: string;
+  updated_at: string;
 }
