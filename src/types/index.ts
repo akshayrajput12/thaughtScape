@@ -135,8 +135,8 @@ export interface CallLog {
 
 export interface Tag {
   id: string;
-  user_id: string;
   thought_id: string;
+  user_id: string;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
 }

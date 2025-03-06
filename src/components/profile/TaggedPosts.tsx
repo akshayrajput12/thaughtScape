@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PoemCard } from "@/components/PoemCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Thought, Tag } from "@/types";
+import type { Thought } from "@/types";
 
 interface TaggedPostsProps {
   userId: string;
@@ -30,7 +30,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
       // Fetch tags for this user
       const { data: tagsData, error: tagsError } = await supabase
         .from('tags')
-        .select('id, user_id, thought_id, status, created_at')
+        .select('*')
         .eq('user_id', userId);
         
       if (tagsError) {
