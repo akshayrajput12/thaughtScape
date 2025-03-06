@@ -496,6 +496,14 @@ const Freelancing = () => {
     });
   };
 
+  const handleProjectCreated = (project: Project) => {
+    toast({
+      title: "Success",
+      description: "Project created successfully!",
+    });
+    queryClient.invalidateQueries({ queryKey: ["projects"] });
+  };
+
   useEffect(() => {
     if (!user?.id) return;
 
@@ -1039,7 +1047,7 @@ const Freelancing = () => {
           onOpenChange={setIsNewProjectModalOpen}
           onSubmit={handleCreateProject}
           isSubmitting={createProjectMutation.isPending}
-          onProjectCreated={() => {}}
+          onProjectCreated={handleProjectCreated}
         />
 
         <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>

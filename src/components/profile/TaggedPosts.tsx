@@ -33,7 +33,10 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
         .select('id, user_id, thought_id, status, created_at')
         .eq('user_id', userId);
         
-      if (tagsError) throw tagsError;
+      if (tagsError) {
+        console.error('Error fetching tags:', tagsError);
+        throw tagsError;
+      }
       
       if (!tagsData || tagsData.length === 0) {
         setTaggedPosts([]);
@@ -42,15 +45,12 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
         return;
       }
       
-      // Type assertion to ensure tagsData is of type Tag[]
-      const tags = tagsData as Tag[];
-      
       // Get all thoughts where this user is tagged
-      const acceptedTagsIds = tags
+      const acceptedTagsIds = tagsData
         .filter(tag => tag.status === 'accepted')
         .map(tag => tag.thought_id);
         
-      const pendingTagsIds = tags
+      const pendingTagsIds = tagsData
         .filter(tag => tag.status === 'pending')
         .map(tag => tag.thought_id);
       
@@ -71,8 +71,11 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
           `)
           .in('id', acceptedTagsIds);
           
-        if (acceptedError) throw acceptedError;
-        // Use type assertion to handle the Thought[] type
+        if (acceptedError) {
+          console.error('Error fetching accepted thoughts:', acceptedError);
+          throw acceptedError;
+        }
+        
         setTaggedPosts(acceptedThoughts as Thought[] || []);
       } else {
         setTaggedPosts([]);
@@ -95,8 +98,11 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
           `)
           .in('id', pendingTagsIds);
           
-        if (pendingError) throw pendingError;
-        // Use type assertion to handle the Thought[] type
+        if (pendingError) {
+          console.error('Error fetching pending thoughts:', pendingError);
+          throw pendingError;
+        }
+        
         setPendingTags(pendingThoughts as Thought[] || []);
       } else {
         setPendingTags([]);

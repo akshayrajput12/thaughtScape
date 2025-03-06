@@ -1,52 +1,46 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { ProjectsList } from "./components/ProjectsList";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { NewProjectDialog } from "./components/NewProjectDialog";
-import { ApplicationDialog } from "./components/ApplicationDialog";
 import { useToast } from "@/hooks/use-toast";
-import type { Project } from "@/types";
-import { Menu, ChevronRight } from "lucide-react";
-import { useMobile } from "@/hooks/use-mobile";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { ProjectCard } from "./components/ProjectCard";
+import { ProjectsList } from "./components/ProjectsList";
+import { NewProjectDialog } from "./components/NewProjectDialog";
+import { Button } from "@/components/ui/button";
+import type { Project } from "@/types";
+import { useAuth } from "@/components/auth/AuthProvider";
 
-const FreelancingIndex = () => {
+const FreelancingPage = () => {
+  const [searchParams] = useSearchParams();
+  const categoryParam = searchParams.get("category");
   const { user } = useAuth();
   const { toast } = useToast();
-  const isMobile = useMobile();
-  const [activeTab, setActiveTab] = useState("browse");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
-  const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [applicationMessage, setApplicationMessage] = useState("");
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isProjectDialogOpen, setProjectDialogOpen] = useState(false);
-  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
 
-  const searchParams = useSearchParams();
-  const projectIdFromUrl = searchParams.get('project');
-
-  const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
-    queryKey: ["projects"],
+  const { data: projects = [], isLoading } = useQuery({
+    queryKey: ["projects", categoryParam],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("projects")
         .select(`
           *,
           author:profiles(id, username, full_name, avatar_url, created_at, updated_at, whatsapp_number),
-          applications:project_applications(count)
+          applications:project_applications(count),
+          comments:project_applications(count)
         `)
         .order("created_at", { ascending: false });
+      
+      if (categoryParam) {
+        query = query.eq("category", categoryParam);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
 
@@ -54,78 +48,19 @@ const FreelancingIndex = () => {
         ...project,
         budget: project.min_budget,
         _count: {
-          applications: project.applications?.[0]?.count || 0,
-          comments: 0
-        }
-      })) as unknown as Project[];
+          comments: project.comments?.[0]?.count || 0,
+          applications: project.applications?.[0]?.count || 0
+        },
+        status: project.status as "open" | "closed" | "in_progress"
+      })) as Project[];
     },
   });
 
-  const { data: userApplications = [], isLoading: isLoadingUserApplications } = useQuery({
-    queryKey: ["userApplications", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from("project_applications")
-        .select("project_id")
-        .eq("applicant_id", user.id);
-      if (error) throw error;
-      return data.map(app => app.project_id);
-    },
-    enabled: !!user?.id,
-  });
-
-  useEffect(() => {
-    if (projectIdFromUrl) {
-      const { data, error } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("id", projectIdFromUrl);
-
-      if (error) throw error;
-
-      const project = {
-        ...data,
-        status: data.status as 'open' | 'closed' | 'in_progress'
-      };
-
-      setProjects([project]);
-    }
-  }, [projectIdFromUrl]);
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    if (isMobile) {
-      setIsMobileMenuOpen(false);
-    }
-  };
-
-  const handleApplyToProject = (project: Project) => {
-    setSelectedProject(project);
-    setIsApplicationDialogOpen(true);
-  };
-
-  const handleCreateProject = async (project: Project) => {
-    setIsCreatingProject(true);
-    const { data, error } = await supabase
-      .from("projects")
-      .insert(project)
-      .select();
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create project",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Project created successfully!",
-      });
-      setIsNewProjectDialogOpen(false);
-      setProjects([data[0], ...projects]);
-    }
-    setIsCreatingProject(false);
+  const handleProjectCreated = (project: Project) => {
+    toast({
+      title: "Success",
+      description: "Project created successfully",
+    });
   };
 
   return (
@@ -133,101 +68,48 @@ const FreelancingIndex = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Freelancing Hub</h1>
-          {isMobile && (
-            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left">
-                <SheetHeader>
-                  <SheetTitle>Navigation</SheetTitle>
-                </SheetHeader>
-                <div className="flex flex-col gap-4 py-6">
-                  <Button 
-                    variant={activeTab === "browse" ? "default" : "ghost"} 
-                    className="justify-start gap-2"
-                    onClick={() => handleTabChange("browse")}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                    Browse Projects
-                  </Button>
-                  <Button
-                    variant={activeTab === "applied" ? "default" : "ghost"}
-                    className="justify-start gap-2"
-                    onClick={() => handleTabChange("applied")}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                    Applied Projects
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}
         </div>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
-          {!isMobile && (
-            <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-2 gap-4">
-              <TabsTrigger value="browse" className="text-lg">Browse Projects</TabsTrigger>
-              <TabsTrigger value="applied" className="text-lg">Applied Projects</TabsTrigger>
-            </TabsList>
-          )}
+        <Tabs defaultValue="browse" className="space-y-8">
+          <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-3 gap-4">
+            <TabsTrigger value="browse" className="text-lg">Browse Projects</TabsTrigger>
+            <TabsTrigger value="applied" className="text-lg">Applied Projects</TabsTrigger>
+            <TabsTrigger value="received" className="text-lg">Received Applications</TabsTrigger>
+          </TabsList>
 
           <TabsContent value="browse" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-3xl font-serif font-bold text-gray-900">Available Projects</h2>
-              <Button onClick={() => setIsNewProjectDialogOpen(true)}>Post a Project</Button>
+              <Button onClick={() => setIsNewProjectModalOpen(true)}>Post a Project</Button>
             </div>
 
-            <ProjectsList 
-              projects={projects} 
-              isLoading={isLoadingProjects}
-              userApplications={userApplications}
-              onApply={handleApplyToProject}
-            />
+            <ProjectsList projects={projects} isLoading={isLoading} />
           </TabsContent>
 
           <TabsContent value="applied" className="space-y-6">
             <h2 className="text-2xl font-serif font-bold text-gray-900">Applied Projects</h2>
-            
-            <ProjectsList 
-              projects={projects.filter(project => userApplications.includes(project.id))} 
-              isLoading={isLoadingUserApplications}
-              userApplications={userApplications}
-              onApply={handleApplyToProject}
-            />
+            {/* Applied projects content */}
+          </TabsContent>
+
+          <TabsContent value="received" className="space-y-6">
+            <h2 className="text-2xl font-serif font-bold text-gray-900">Received Applications</h2>
+            {/* Received applications content */}
           </TabsContent>
         </Tabs>
 
         <NewProjectDialog 
-          isOpen={isNewProjectDialogOpen}
-          onOpenChange={setIsNewProjectDialogOpen}
-          onSubmit={handleCreateProject}
-          isSubmitting={isCreatingProject}
-          onProjectCreated={() => {}}
-        />
-
-        <ApplicationDialog 
-          isOpen={isApplicationDialogOpen}
-          onOpenChange={setIsApplicationDialogOpen}
-          project={selectedProject}
-          message={applicationMessage}
-          onMessageChange={setApplicationMessage}
-          onSubmit={() => {
-            toast({
-              title: "Success",
-              description: "Application submitted successfully!",
-            });
-            setIsApplicationDialogOpen(false);
-            setApplicationMessage("");
+          isOpen={isNewProjectModalOpen}
+          onOpenChange={setIsNewProjectModalOpen}
+          onSubmit={(project) => {
+            // Handle project submission
+            setIsNewProjectModalOpen(false);
           }}
           isSubmitting={false}
+          onProjectCreated={handleProjectCreated}
         />
       </div>
     </div>
   );
 };
 
-export default FreelancingIndex;
+export default FreelancingPage;

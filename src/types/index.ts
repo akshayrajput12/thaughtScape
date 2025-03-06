@@ -91,8 +91,8 @@ export interface Thought {
   comments?: { count: number }[];
   likes?: any[];
   bookmarks?: any[];
-  tagged_users?: string[]; // Add this new field
-  accepted_tags?: string[]; // Add this new field
+  tagged_users?: string[]; 
+  accepted_tags?: string[]; 
 }
 
 export interface Notification {
