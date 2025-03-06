@@ -30,7 +30,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
       // Fetch tags for this user
       const { data: tagsData, error: tagsError } = await supabase
         .from('tags')
-        .select('*')
+        .select('id, user_id, thought_id, status, created_at')
         .eq('user_id', userId);
         
       if (tagsError) throw tagsError;
@@ -42,7 +42,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
         return;
       }
       
-      // Ensure tags have the correct type
+      // Type assertion to ensure tagsData is of type Tag[]
       const tags = tagsData as Tag[];
       
       // Get all thoughts where this user is tagged
@@ -60,12 +60,20 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
           .from('thoughts')
           .select(`
             *,
-            author:profiles(*)
+            author:profiles!thoughts_author_id_fkey(
+              id,
+              username,
+              full_name,
+              avatar_url,
+              created_at,
+              updated_at
+            )
           `)
           .in('id', acceptedTagsIds);
           
         if (acceptedError) throw acceptedError;
-        setTaggedPosts(acceptedThoughts || []);
+        // Use type assertion to handle the Thought[] type
+        setTaggedPosts(acceptedThoughts as Thought[] || []);
       } else {
         setTaggedPosts([]);
       }
@@ -76,12 +84,20 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
           .from('thoughts')
           .select(`
             *,
-            author:profiles(*)
+            author:profiles!thoughts_author_id_fkey(
+              id,
+              username,
+              full_name,
+              avatar_url,
+              created_at,
+              updated_at
+            )
           `)
           .in('id', pendingTagsIds);
           
         if (pendingError) throw pendingError;
-        setPendingTags(pendingThoughts || []);
+        // Use type assertion to handle the Thought[] type
+        setPendingTags(pendingThoughts as Thought[] || []);
       } else {
         setPendingTags([]);
       }
@@ -283,12 +299,12 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
                   >
                     <div className="flex items-center gap-3">
                       <img 
-                        src={thought.author.avatar_url || "/placeholder.svg"} 
-                        alt={thought.author.username}
+                        src={thought.author?.avatar_url || "/placeholder.svg"} 
+                        alt={thought.author?.username || "Unknown"}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                       <div>
-                        <p className="font-medium">{thought.author.username}</p>
+                        <p className="font-medium">{thought.author?.username || "Unknown"}</p>
                         <p className="text-sm text-gray-500 line-clamp-1">Tagged you in: "{thought.title}"</p>
                       </div>
                     </div>

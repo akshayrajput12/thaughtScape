@@ -72,7 +72,7 @@ const Freelancing = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useMobile();
-  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isEditProjectDialogOpen, setIsEditProjectDialogOpen] = useState(false);
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -205,7 +205,7 @@ const Freelancing = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      setIsNewProjectDialogOpen(false);
+      setIsNewProjectModalOpen(false);
       toast({
         title: "Success",
         description: "Project created successfully!",
@@ -589,7 +589,7 @@ const Freelancing = () => {
               <h2 className="text-3xl font-serif font-bold text-gray-900">Available Projects</h2>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button onClick={() => setIsNewProjectDialogOpen(true)}>Post a Project</Button>
+                  <Button onClick={() => setIsNewProjectModalOpen(true)}>Post a Project</Button>
                 </DialogTrigger>
               </Dialog>
             </div>
@@ -1035,15 +1035,11 @@ const Freelancing = () => {
         </Dialog>
 
         <NewProjectDialog 
-          isOpen={isNewProjectDialogOpen}
-          onOpenChange={setIsNewProjectDialogOpen}
+          isOpen={isNewProjectModalOpen}
+          onOpenChange={setIsNewProjectModalOpen}
           onSubmit={handleCreateProject}
           isSubmitting={createProjectMutation.isPending}
-          onProjectCreated={(project) => {
-            queryClient.setQueryData(["projects"], (oldData: Project[] | undefined) => 
-              oldData ? [project, ...oldData] : [project]
-            );
-          }}
+          onProjectCreated={() => {}}
         />
 
         <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>

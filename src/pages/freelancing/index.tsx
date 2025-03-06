@@ -30,6 +30,11 @@ const FreelancingIndex = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isProjectDialogOpen, setProjectDialogOpen] = useState(false);
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+
+  const searchParams = useSearchParams();
+  const projectIdFromUrl = searchParams.get('project');
 
   const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
     queryKey: ["projects"],
@@ -70,6 +75,24 @@ const FreelancingIndex = () => {
     enabled: !!user?.id,
   });
 
+  useEffect(() => {
+    if (projectIdFromUrl) {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("id", projectIdFromUrl);
+
+      if (error) throw error;
+
+      const project = {
+        ...data,
+        status: data.status as 'open' | 'closed' | 'in_progress'
+      };
+
+      setProjects([project]);
+    }
+  }, [projectIdFromUrl]);
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     if (isMobile) {
@@ -83,6 +106,7 @@ const FreelancingIndex = () => {
   };
 
   const handleCreateProject = async (project: Project) => {
+    setIsCreatingProject(true);
     const { data, error } = await supabase
       .from("projects")
       .insert(project)
@@ -101,6 +125,7 @@ const FreelancingIndex = () => {
       setIsNewProjectDialogOpen(false);
       setProjects([data[0], ...projects]);
     }
+    setIsCreatingProject(false);
   };
 
   return (
@@ -180,12 +205,8 @@ const FreelancingIndex = () => {
           isOpen={isNewProjectDialogOpen}
           onOpenChange={setIsNewProjectDialogOpen}
           onSubmit={handleCreateProject}
-          isSubmitting={false}
-          onProjectCreated={(project) => {
-            if (projects) {
-              setProjects([project, ...projects]);
-            }
-          }}
+          isSubmitting={isCreatingProject}
+          onProjectCreated={() => {}}
         />
 
         <ApplicationDialog 
