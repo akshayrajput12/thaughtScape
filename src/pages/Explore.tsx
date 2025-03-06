@@ -93,12 +93,16 @@ const Explore = () => {
         const followingMap = new Set(followData?.map(item => item.following_id) || []);
         
         // Add is_following property to each profile
-        data.forEach(profile => {
-          profile.is_following = followingMap.has(profile.id);
-        });
+        const profilesWithFollowStatus = data.map(profile => ({
+          ...profile,
+          is_following: followingMap.has(profile.id)
+        }));
+        
+        setSearchResults(profilesWithFollowStatus);
+      } else {
+        setSearchResults(data || []);
       }
-
-      setSearchResults(data || []);
+      
       setShowSearchResults(true);
     } catch (error) {
       console.error('Error searching users:', error);
