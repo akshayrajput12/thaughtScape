@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -121,7 +120,12 @@ export const ProjectsList = () => {
         
       if (error) throw error;
       
-      setApplications(data || []);
+      const typedApplications: ProjectApplication[] = data?.map(app => ({
+        ...app,
+        status: app.status as 'pending' | 'accepted' | 'rejected',
+      })) || [];
+      
+      setApplications(typedApplications);
     } catch (error) {
       console.error('Error fetching applications:', error);
       toast({
@@ -146,7 +150,6 @@ export const ProjectsList = () => {
         
       if (error) throw error;
       
-      // Update the application in the state
       setApplications(apps => 
         apps.map(app => 
           app.id === applicationId ? { ...app, status } : app
@@ -287,7 +290,6 @@ export const ProjectsList = () => {
               </div>
               
               <div className="md:w-1/2">
-                {/* Project Timeline & Activity */}
                 <div className="bg-gray-50 p-4 rounded-lg mb-6">
                   <h3 className="text-md font-medium text-gray-900 flex items-center gap-2 mb-3">
                     <Calendar size={16} />
@@ -337,7 +339,6 @@ export const ProjectsList = () => {
                   </div>
                 </div>
                 
-                {/* Action buttons */}
                 <div className="space-y-3">
                   <Button 
                     className="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"
@@ -436,7 +437,7 @@ export const ProjectsList = () => {
       </div>
       
       <NewProjectDialog 
-        open={showNewProjectDialog}
+        isOpen={showNewProjectDialog}
         onOpenChange={setShowNewProjectDialog}
         onProjectCreated={handleProjectCreated}
       />

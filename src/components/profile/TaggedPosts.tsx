@@ -37,34 +37,44 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
         
       if (tagsError) throw tagsError;
       
+      // Ensure tags have the correct type
+      const typedTags = tags as TagType[] || [];
+      
       // Get all thoughts where this user is tagged
-      const acceptedTagsIds = tags?.filter(tag => tag.status === 'accepted').map(tag => tag.thought_id) || [];
-      const pendingTagsIds = tags?.filter(tag => tag.status === 'pending').map(tag => tag.thought_id) || [];
+      const acceptedTagsIds = typedTags.filter(tag => tag.status === 'accepted').map(tag => tag.thought_id) || [];
+      const pendingTagsIds = typedTags.filter(tag => tag.status === 'pending').map(tag => tag.thought_id) || [];
       
       // Fetch accepted thoughts
-      const { data: acceptedThoughts, error: acceptedError } = await supabase
-        .from('thoughts')
-        .select(`
-          *,
-          author:profiles!thoughts_author_id_fkey(*)
-        `)
-        .in('id', acceptedTagsIds.length > 0 ? acceptedTagsIds : ['none']);
-        
-      if (acceptedError) throw acceptedError;
+      if (acceptedTagsIds.length > 0) {
+        const { data: acceptedThoughts, error: acceptedError } = await supabase
+          .from('thoughts')
+          .select(`
+            *,
+            author:profiles!thoughts_author_id_fkey(*)
+          `)
+          .in('id', acceptedTagsIds);
+          
+        if (acceptedError) throw acceptedError;
+        setTaggedPosts(acceptedThoughts || []);
+      } else {
+        setTaggedPosts([]);
+      }
       
-      // Fetch pending thoughts
-      const { data: pendingThoughts, error: pendingError } = await supabase
-        .from('thoughts')
-        .select(`
-          *,
-          author:profiles!thoughts_author_id_fkey(*)
-        `)
-        .in('id', pendingTagsIds.length > 0 ? pendingTagsIds : ['none']);
-        
-      if (pendingError) throw pendingError;
-      
-      setTaggedPosts(acceptedThoughts || []);
-      setPendingTags(pendingThoughts || []);
+      // Fetch pending thoughts (only for the user viewing their own profile)
+      if (pendingTagsIds.length > 0 && userId === currentUserId) {
+        const { data: pendingThoughts, error: pendingError } = await supabase
+          .from('thoughts')
+          .select(`
+            *,
+            author:profiles!thoughts_author_id_fkey(*)
+          `)
+          .in('id', pendingTagsIds);
+          
+        if (pendingError) throw pendingError;
+        setPendingTags(pendingThoughts || []);
+      } else {
+        setPendingTags([]);
+      }
     } catch (error) {
       console.error('Error fetching tagged posts:', error);
       toast({
