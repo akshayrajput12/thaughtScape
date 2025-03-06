@@ -25,10 +25,12 @@ import {
   Phone,
   FileText,
   Briefcase,
-  User
+  User,
+  Mail
 } from "lucide-react";
 import { format } from "date-fns";
 import type { ProjectApplication } from "@/types";
+import { Badge } from "@/components/ui/badge";
 
 interface ProjectApplicationCardProps {
   application: ProjectApplication & { project?: any };
@@ -91,11 +93,12 @@ export const ProjectApplicationCard = ({
           </CardDescription>
         </div>
         <div className="ml-auto">
-          <span 
-            className={`inline-block px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusClass(application.status)}`}
+          <Badge 
+            variant="outline"
+            className={`px-2 py-1 capitalize ${getStatusClass(application.status)}`}
           >
             {application.status}
-          </span>
+          </Badge>
         </div>
       </CardHeader>
       
@@ -103,9 +106,23 @@ export const ProjectApplicationCard = ({
         <div className="space-y-2">
           <h4 className="font-medium text-sm">Project: {application.project?.title}</h4>
           
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Phone className="h-4 w-4" />
-            <span>{application.phone_number || "No phone provided"}</span>
+          <div className="flex flex-col space-y-1">
+            {application.phone_number && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Phone className="h-4 w-4 text-purple-500" />
+                <span className="font-medium">{application.phone_number}</span>
+              </div>
+            )}
+
+            {application.applicant?.whatsapp_number && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
+                  <path d="M12 2a10 10 0 0 1 7.1 17.9L12 22l-7.1-2.1A10 10 0 0 1 12 2Z"/>
+                  <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+                <span>WhatsApp: {application.applicant.whatsapp_number}</span>
+              </div>
+            )}
           </div>
           
           <Dialog open={isMessageOpen} onOpenChange={setIsMessageOpen}>
@@ -191,14 +208,26 @@ export const ProjectApplicationCard = ({
                     <Phone className="h-4 w-4 mr-2 text-red-500" />
                     Contact Information
                   </h4>
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <p className="text-sm flex items-center">
-                      <Phone className="h-3 w-3 mr-2 text-gray-500" />
-                      {application.phone_number || "Not provided"}
-                    </p>
+                  <div className="bg-gray-50 p-3 rounded-md space-y-2">
+                    {application.phone_number && (
+                      <p className="text-sm flex items-center">
+                        <Phone className="h-3 w-3 mr-2 text-gray-500" />
+                        {application.phone_number}
+                      </p>
+                    )}
                     {application.applicant?.whatsapp_number && (
-                      <p className="text-sm mt-1 flex items-center">
+                      <p className="text-sm flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-green-500">
+                          <path d="M12 2a10 10 0 0 1 7.1 17.9L12 22l-7.1-2.1A10 10 0 0 1 12 2Z"/>
+                          <path d="M16 10a4 4 0 0 1-8 0"/>
+                        </svg>
                         WhatsApp: {application.applicant.whatsapp_number}
+                      </p>
+                    )}
+                    {application.applicant?.email && (
+                      <p className="text-sm flex items-center">
+                        <Mail className="h-3 w-3 mr-2 text-gray-500" />
+                        {application.applicant.email}
                       </p>
                     )}
                   </div>

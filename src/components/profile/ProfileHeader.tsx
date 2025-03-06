@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { User, X, MessageSquare, UserPlus, UserMinus, ShieldAlert, Shield, AlertCircle } from "lucide-react";
+import { User, X, MessageSquare, UserPlus, UserMinus, ShieldAlert, Shield, AlertCircle, Search } from "lucide-react";
 import type { Profile } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
@@ -11,6 +11,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 import {
   Popover,
@@ -31,6 +32,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -69,6 +71,7 @@ export const ProfileHeader = ({
   const [userGenres, setUserGenres] = useState<Genre[]>([]);
   const [availableGenres, setAvailableGenres] = useState<Genre[]>([]);
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -112,7 +115,7 @@ export const ProfileHeader = ({
         console.error('Error fetching genres:', error);
         toast({
           title: "Error",
-          description: "Failed to load genres",
+          description: "Failed to load interests",
           variant: "destructive",
         });
       }
@@ -176,6 +179,12 @@ export const ProfileHeader = ({
       });
     }
   };
+
+  const filteredGenres = availableGenres
+    .filter(genre => !userGenres.some(g => g.id === genre.id))
+    .filter(genre => 
+      searchQuery ? genre.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
+    );
 
   return (
     <Card className="bg-white rounded-xl shadow-lg mb-8 border border-purple-100/50 backdrop-blur-sm w-full overflow-hidden">
@@ -331,29 +340,38 @@ export const ProfileHeader = ({
                         Add interests
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="p-0" side="right" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search interests..." />
-                        <CommandEmpty>No interests found.</CommandEmpty>
-                        <CommandGroup>
-                          {availableGenres && availableGenres.length > 0 ? (
-                            availableGenres
-                              .filter(genre => !userGenres.some(g => g.id === genre.id))
-                              .map(genre => (
+                    <PopoverContent className="p-0 w-64" side="top" align="end">
+                      <Command className="rounded-lg border shadow-md">
+                        <div className="flex items-center border-b px-3">
+                          <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                          <CommandInput 
+                            placeholder="Search interests..." 
+                            value={searchQuery}
+                            onValueChange={setSearchQuery}
+                            className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                          />
+                        </div>
+                        <CommandList>
+                          <CommandEmpty>No interests found.</CommandEmpty>
+                          <CommandGroup>
+                            {filteredGenres.length > 0 ? (
+                              filteredGenres.map(genre => (
                                 <CommandItem
                                   key={genre.id}
                                   value={genre.name}
                                   onSelect={() => handleAddGenre(genre.id)}
+                                  className="cursor-pointer"
                                 >
                                   {genre.name}
                                 </CommandItem>
                               ))
-                          ) : (
-                            <CommandItem disabled>
-                              Loading interests...
-                            </CommandItem>
-                          )}
-                        </CommandGroup>
+                            ) : (
+                              <CommandItem disabled>
+                                {searchQuery ? "No matching interests" : "Loading interests..."}
+                              </CommandItem>
+                            )}
+                          </CommandGroup>
+                        </CommandList>
                       </Command>
                     </PopoverContent>
                   </Popover>
