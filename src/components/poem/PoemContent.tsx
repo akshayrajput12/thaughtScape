@@ -5,9 +5,10 @@ import { Link } from "react-router-dom";
 
 interface PoemContentProps {
   content: string;
+  isLuxury?: boolean;
 }
 
-export const PoemContent = ({ content }: PoemContentProps) => {
+export const PoemContent = ({ content, isLuxury = false }: PoemContentProps) => {
   const [expanded, setExpanded] = useState(false);
   
   // Process content to highlight hashtags and mentions
@@ -48,7 +49,7 @@ export const PoemContent = ({ content }: PoemContentProps) => {
   const displayContent = expanded || !isLongContent ? content : `${content.substring(0, 300)}...`;
 
   return (
-    <div className="poem-content prose prose-lg max-w-none">
+    <div className={`poem-content prose prose-lg max-w-none ${isLuxury ? 'luxury-content' : ''}`}>
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

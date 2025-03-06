@@ -20,6 +20,7 @@ export interface Profile {
   registration_number?: string;
   is_following?: boolean;
   whatsapp_number?: string;
+  genres?: string[];
 }
 
 export interface Project {
