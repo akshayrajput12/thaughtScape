@@ -1,3 +1,4 @@
+
 export interface Profile {
   id: string;
   username: string;
@@ -91,18 +92,21 @@ export interface Thought {
   comments?: { count: number }[];
   likes?: any[];
   bookmarks?: any[];
+  tagged_users?: string[]; // Add this new field
+  accepted_tags?: string[]; // Add this new field
 }
 
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'follow' | 'like' | 'comment' | 'message';
+  type: 'follow' | 'like' | 'comment' | 'message' | 'tag'; // Added 'tag' type
   content: string;
   is_read: boolean;
   related_user_id?: string;
   related_thought_id?: string;
   created_at: string;
   related_user?: Profile;
+  tag_status?: 'pending' | 'accepted' | 'rejected'; // Added for tag notifications
 }
 
 export interface Message {
@@ -128,4 +132,12 @@ export interface CallLog {
   call_type: 'audio' | 'video';
   status: 'completed' | 'missed' | 'rejected';
   created_at?: string;
+}
+
+export interface Tag {
+  id: string;
+  user_id: string;
+  thought_id: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
 }

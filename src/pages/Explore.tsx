@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, UserPlus, UserMinus, Users } from "lucide-react";
+import { Search, UserPlus, UserMinus, Users, Tag, Badge } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PoemCard } from "@/components/PoemCard";
 import { Input } from "@/components/ui/input";
@@ -370,14 +370,16 @@ const Explore = () => {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] p-6 border-2 border-black"
+              className="bg-gradient-to-br from-white to-purple-50 rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] p-6 border-2 border-black overflow-hidden"
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-serif font-semibold text-black flex items-center gap-2">
-                  <Users size={20} className="text-black" />
-                  Suggested Connections
+                  <Users size={20} className="text-purple-600" />
+                  <span className="bg-gradient-to-r from-purple-600 to-purple-900 bg-clip-text text-transparent">
+                    Suggested Connections
+                  </span>
                 </h3>
-                <span className="text-xs font-medium bg-black text-white px-2 py-1 rounded-full">
+                <span className="text-xs font-medium bg-purple-900 text-white px-2 py-1 rounded-full">
                   {suggestedUsers.length}
                 </span>
               </div>
@@ -402,36 +404,45 @@ const Explore = () => {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="group flex items-center justify-between gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-300 border border-transparent hover:border-gray-200"
+                      className="group relative overflow-hidden flex items-center justify-between gap-4 p-4 rounded-xl hover:bg-white transition-all duration-300 border border-transparent hover:border-purple-200"
                     >
+                      {/* Background decoration */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-100/30 to-pink-100/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-100/50 rounded-full group-hover:scale-110 transition-transform duration-500"></div>
+                      
                       <div 
-                        className="flex items-center gap-3 cursor-pointer" 
+                        className="flex items-center gap-3 cursor-pointer relative z-10" 
                         onClick={() => navigate(`/profile/${user.id}`)}
                       >
                         <div className="relative overflow-hidden rounded-full">
-                          <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full opacity-0 group-hover:opacity-50 transition-opacity" />
+                          <div className="absolute inset-0 bg-gradient-to-br from-purple-300 to-pink-300 rounded-full opacity-0 group-hover:opacity-30 transition-opacity" />
                           <img
                             src={user.avatar_url || "/placeholder.svg"}
                             alt={user.username}
                             className="relative w-12 h-12 rounded-full object-cover border-2 border-white group-hover:scale-110 transition-all duration-300"
                           />
+                          {user.is_following && (
+                            <div className="absolute bottom-0 right-0 bg-purple-600 text-white p-0.5 rounded-full">
+                              <Badge size={10} />
+                            </div>
+                          )}
                         </div>
                         <div>
-                          <p className="font-medium text-black group-hover:text-gray-900 transition-colors">
+                          <p className="font-medium text-black group-hover:text-purple-900 transition-colors">
                             {user.username}
                           </p>
                           <div className="flex items-center text-sm text-gray-500">
-                            <span className="inline-block w-2 h-2 bg-black rounded-full mr-1"></span>
+                            <span className="inline-block w-2 h-2 bg-purple-600 rounded-full mr-1"></span>
                             <span>{user.followers_count} followers</span>
                           </div>
                         </div>
                       </div>
                       <button
                         onClick={() => handleFollow(user.id)}
-                        className={`px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-1 group-hover:scale-105 ${
+                        className={`relative z-10 px-4 py-2 text-sm font-medium rounded-full transition-all flex items-center gap-1 group-hover:scale-105 ${
                           user.is_following 
-                            ? "text-red-600 bg-red-50 hover:bg-red-100" 
-                            : "text-white bg-black hover:bg-gray-800"
+                            ? "text-white bg-red-500 hover:bg-red-600" 
+                            : "text-white bg-purple-600 hover:bg-purple-700"
                         }`}
                       >
                         {user.is_following ? (
@@ -452,9 +463,9 @@ const Explore = () => {
               )}
               
               {!suggestedUsersLoading && suggestedUsers.length > 0 && (
-                <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+                <div className="mt-6 pt-4 border-t border-purple-100 text-center">
                   <button 
-                    className="text-sm font-medium text-black underline hover:text-gray-600 transition-colors"
+                    className="text-sm font-medium text-purple-700 hover:text-purple-900 transition-colors"
                     onClick={() => navigate('/explore')}
                   >
                     View all suggested users

@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface PoemContentProps {
   content: string;
@@ -10,6 +10,7 @@ interface PoemContentProps {
 
 export const PoemContent = ({ content, isLuxury = false }: PoemContentProps) => {
   const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
   
   // Process content to highlight hashtags and mentions
   const processContent = (text: string) => {
@@ -30,19 +31,25 @@ export const PoemContent = ({ content, isLuxury = false }: PoemContentProps) => 
       else if (word.startsWith('@')) {
         const username = word.substring(1); // Remove the @ symbol
         return (
-          <Link 
+          <span 
             key={index} 
-            to={`/profile/${username}`} 
-            className="text-purple-500 hover:underline cursor-pointer"
+            onClick={() => handleProfileClick(username)}
+            className="text-purple-500 hover:underline cursor-pointer font-medium"
           >
             {word}
-          </Link>
+          </span>
         );
       }
       
       // Regular text
       return <span key={index}>{word}</span>;
     });
+  };
+
+  const handleProfileClick = (username: string) => {
+    // In a real implementation, you might need to first fetch the user ID by username
+    // For now, we'll just navigate to a search or profile page
+    navigate(`/explore?search=${username}`);
   };
 
   const isLongContent = content.length > 300;

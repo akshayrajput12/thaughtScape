@@ -7,9 +7,11 @@ import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfilePoems } from "@/components/profile/ProfilePoems";
 import { ProfileForm } from "@/components/profile/ProfileForm";
+import { TaggedPosts } from "@/components/profile/TaggedPosts";
 import type { Profile, Thought } from "@/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +19,7 @@ const Profile = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedByUser, setIsBlockedByUser] = useState(false);
+  const [activeTab, setActiveTab] = useState("posts");
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -384,12 +387,33 @@ const Profile = () => {
               followingCount={profileData.following_count || 0}
               userId={profileData.id}
             />
-            <ProfilePoems 
-              poems={thoughtsData || []} 
-              isOwnProfile={user?.id === profileData.id}
-              isAdmin={adminData?.is_admin || false}
-              onDeletePoem={handleDeleteThought}
-            />
+            
+            <Tabs defaultValue="posts" className="mt-10">
+              <TabsList className="mb-6">
+                <TabsTrigger value="posts" onClick={() => setActiveTab("posts")}>
+                  My Thoughts
+                </TabsTrigger>
+                <TabsTrigger value="tagged" onClick={() => setActiveTab("tagged")}>
+                  Tagged Posts
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="posts">
+                <ProfilePoems 
+                  poems={thoughtsData || []} 
+                  isOwnProfile={user?.id === profileData.id}
+                  isAdmin={adminData?.is_admin || false}
+                  onDeletePoem={handleDeleteThought}
+                />
+              </TabsContent>
+              
+              <TabsContent value="tagged">
+                <TaggedPosts 
+                  userId={profileData.id}
+                  currentUserId={user?.id || null}
+                />
+              </TabsContent>
+            </Tabs>
           </>
         )}
       </div>
