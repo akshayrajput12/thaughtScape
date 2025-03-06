@@ -104,7 +104,8 @@ const Freelancing = () => {
         _count: {
           comments: project.comments?.[0]?.count || 0,
           applications: project.applications?.[0]?.count || 0
-        }
+        },
+        status: project.status as "open" | "closed" | "in_progress"
       })) as Project[];
     },
   });
@@ -167,9 +168,11 @@ const Freelancing = () => {
       
       return data.map(app => ({
         ...app,
+        status: app.status as "pending" | "accepted" | "rejected",
         project: {
           ...app.project,
-          budget: app.project.min_budget
+          budget: app.project.min_budget,
+          status: app.project.status as "open" | "closed" | "in_progress"
         }
       })) as (ProjectApplication & { project: Project })[];
     },
