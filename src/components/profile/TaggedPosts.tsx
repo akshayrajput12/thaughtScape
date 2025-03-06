@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PoemCard } from "@/components/PoemCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Thought } from "@/types";
+import type { Thought, Tag } from "@/types";
 
 interface TaggedPostsProps {
   userId: string;
@@ -45,12 +45,15 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
         return;
       }
       
+      // Parse and type-check the tags
+      const tags = tagsData as Tag[];
+      
       // Get all thoughts where this user is tagged
-      const acceptedTagsIds = tagsData
+      const acceptedTagsIds = tags
         .filter(tag => tag.status === 'accepted')
         .map(tag => tag.thought_id);
         
-      const pendingTagsIds = tagsData
+      const pendingTagsIds = tags
         .filter(tag => tag.status === 'pending')
         .map(tag => tag.thought_id);
       
