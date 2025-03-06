@@ -598,11 +598,7 @@ const Freelancing = () => {
           <TabsContent value="browse" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-3xl font-serif font-bold text-gray-900">Available Projects</h2>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button onClick={() => setIsNewProjectModalOpen(true)}>Post a Project</Button>
-                </DialogTrigger>
-              </Dialog>
+              <Button onClick={() => setIsNewProjectModalOpen(true)}>Post a Project</Button>
             </div>
 
             {isLoadingProjects ? (
@@ -910,4 +906,103 @@ const Freelancing = () => {
                     const budget = Number(formData.get("budget"));
                     const deadline = String(formData.get("deadline"));
                     const whatsappNumber = String(formData.get("whatsapp_number") || "");
-                    const allowWhatsappApply = formData.
+                    const allowWhatsapp = !!formData.get("allow_whatsapp_apply");
+                    const allowNormal = !!formData.get("allow_normal_apply");
+
+                    updateProjectMutation.mutate({
+                      id: selectedProject.id,
+                      title,
+                      description,
+                      required_skills: skills,
+                      budget,
+                      deadline: deadline || undefined,
+                      whatsapp_number: whatsappNumber,
+                      allow_whatsapp_apply: allowWhatsapp,
+                      allow_normal_apply: allowNormal
+                    });
+                  }}
+                  className="space-y-6 p-2"
+                >
+                  <div>
+                    <Label htmlFor="title">Title</Label>
+                    <Input id="title" name="title" defaultValue={selectedProject?.title} />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea id="description" name="description" defaultValue={selectedProject?.description} />
+                  </div>
+                  <div>
+                    <Label htmlFor="skills">Required Skills</Label>
+                    <Input id="skills" name="skills" defaultValue={selectedProject?.required_skills?.join(",")} />
+                  </div>
+                  <div>
+                    <Label htmlFor="budget">Budget</Label>
+                    <Input id="budget" name="budget" type="number" defaultValue={selectedProject?.budget} />
+                  </div>
+                  <div>
+                    <Label htmlFor="deadline">Deadline</Label>
+                    <Input id="deadline" name="deadline" type="date" defaultValue={selectedProject?.deadline} />
+                  </div>
+                  <div>
+                    <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
+                    <Input id="whatsapp_number" name="whatsapp_number" defaultValue={selectedProject?.author?.whatsapp_number} />
+                  </div>
+                  <div>
+                    <Checkbox id="allow_whatsapp_apply" name="allow_whatsapp_apply" checked={selectedProject?.allow_whatsapp_apply} />
+                    <Label htmlFor="allow_whatsapp_apply">Allow WhatsApp Apply</Label>
+                  </div>
+                  <div>
+                    <Checkbox id="allow_normal_apply" name="allow_normal_apply" checked={selectedProject?.allow_normal_apply} />
+                    <Label htmlFor="allow_normal_apply">Allow Normal Apply</Label>
+                  </div>
+                </form>
+              </ScrollArea>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the project.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => selectedProject && deleteProjectMutation.mutate(selectedProject.id)}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <NewProjectDialog
+          isOpen={isNewProjectModalOpen}
+          onOpenChange={setIsNewProjectModalOpen}
+          onProjectCreated={handleProjectCreated}
+          onSubmit={handleCreateProject}
+          isSubmitting={createProjectMutation.isPending}
+        />
+
+        {selectedProject && (
+          <ApplicationDialog
+            isOpen={isApplicationDialogOpen}
+            onOpenChange={setIsApplicationDialogOpen}
+            project={selectedProject}
+            message={applicationMessage}
+            onMessageChange={setApplicationMessage}
+            onSubmit={handleApplyToProject}
+            isSubmitting={applyProjectMutation.isPending}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Freelancing;
