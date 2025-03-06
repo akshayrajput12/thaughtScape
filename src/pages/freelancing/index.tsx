@@ -960,11 +960,21 @@ const Freelancing = () => {
                     <Input id="whatsapp_number" name="whatsapp_number" defaultValue={selectedProject?.author?.whatsapp_number} />
                   </div>
                   <div>
-                    <Checkbox id="allow_whatsapp_apply" name="allow_whatsapp_apply" checked={allowWhatsappApply} onChange={(e) => setAllowWhatsappApply(e.target.checked)} />
+                    <Checkbox 
+                      id="allow_whatsapp_apply" 
+                      name="allow_whatsapp_apply" 
+                      checked={allowWhatsappApply} 
+                      onCheckedChange={setAllowWhatsappApply}
+                    />
                     <Label htmlFor="allow_whatsapp_apply">Allow WhatsApp Apply</Label>
                   </div>
                   <div>
-                    <Checkbox id="allow_normal_apply" name="allow_normal_apply" checked={allowNormalApply} onChange={(e) => setAllowNormalApply(e.target.checked)} />
+                    <Checkbox 
+                      id="allow_normal_apply" 
+                      name="allow_normal_apply" 
+                      checked={allowNormalApply} 
+                      onCheckedChange={setAllowNormalApply}
+                    />
                     <Label htmlFor="allow_normal_apply">Allow Normal Apply</Label>
                   </div>
                 </form>
