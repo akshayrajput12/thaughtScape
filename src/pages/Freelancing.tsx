@@ -78,6 +78,9 @@ const Freelancing = () => {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [experience, setExperience] = useState("");
+  const [portfolio, setPortfolio] = useState("");
   const [activeTab, setActiveTab] = useState("browse");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [allowWhatsappApply, setAllowWhatsappApply] = useState(true);
@@ -493,9 +496,9 @@ const Freelancing = () => {
     applyProjectMutation.mutate({
       projectId: selectedProject.id,
       message: applicationMessage,
-      phoneNumber: "",
-      experience: "",
-      portfolio: "",
+      phoneNumber: phoneNumber,
+      experience: experience,
+      portfolio: portfolio,
     });
   };
 

@@ -1,13 +1,17 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import type { Project } from "@/types";
+import { Form, FormField, FormItem, FormControl, FormLabel, FormDescription } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
 
 export interface NewProjectDialogProps {
   isOpen: boolean;
@@ -20,7 +24,7 @@ export interface NewProjectDialogProps {
 export const NewProjectDialog = ({ 
   isOpen, 
   onOpenChange, 
-  onProjectCreated = () => {}, // Default no-op function
+  onProjectCreated = () => {}, 
   onSubmit,
   isSubmitting = false
 }: NewProjectDialogProps) => {
@@ -31,6 +35,7 @@ export const NewProjectDialog = ({
   const [requiredSkills, setRequiredSkills] = useState("");
   const [minBudget, setMinBudget] = useState("");
   const [maxBudget, setMaxBudget] = useState("");
+  const [deadline, setDeadline] = useState("");
   const [localIsSubmitting, setLocalIsSubmitting] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [allowWhatsappApply, setAllowWhatsappApply] = useState(true);
@@ -50,7 +55,8 @@ export const NewProjectDialog = ({
         max_budget: maxBudget ? parseFloat(maxBudget) : null,
         whatsapp_number: whatsappNumber,
         allow_whatsapp_apply: allowWhatsappApply,
-        allow_normal_apply: allowNormalApply
+        allow_normal_apply: allowNormalApply,
+        deadline: deadline || undefined
       });
       return;
     }
@@ -78,6 +84,14 @@ export const NewProjectDialog = ({
     try {
       const skillsArray = requiredSkills.split(',').map(skill => skill.trim());
       
+      // If whatsapp number is provided, update the user's profile
+      if (whatsappNumber && whatsappNumber.trim() !== '') {
+        await supabase
+          .from('profiles')
+          .update({ whatsapp_number: whatsappNumber.trim() })
+          .eq('id', user.id);
+      }
+      
       const { data, error } = await supabase
         .from('projects')
         .insert({
@@ -89,7 +103,8 @@ export const NewProjectDialog = ({
           author_id: user.id,
           status: 'open',
           allow_whatsapp_apply: allowWhatsappApply,
-          allow_normal_apply: allowNormalApply
+          allow_normal_apply: allowNormalApply,
+          deadline: deadline || null
         })
         .select(`
           *,
@@ -97,7 +112,8 @@ export const NewProjectDialog = ({
             id,
             username,
             full_name,
-            avatar_url
+            avatar_url,
+            whatsapp_number
           )
         `)
         .single();
@@ -115,6 +131,7 @@ export const NewProjectDialog = ({
       setMinBudget("");
       setMaxBudget("");
       setWhatsappNumber("");
+      setDeadline("");
       
       onOpenChange(false);
       if (data) {
@@ -131,6 +148,25 @@ export const NewProjectDialog = ({
       setLocalIsSubmitting(false);
     }
   };
+  
+  // Fetch user's whatsapp number if available
+  React.useEffect(() => {
+    if (user && isOpen) {
+      const fetchUserProfile = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('whatsapp_number')
+          .eq('id', user.id)
+          .single();
+          
+        if (!error && data && data.whatsapp_number) {
+          setWhatsappNumber(data.whatsapp_number);
+        }
+      };
+      
+      fetchUserProfile();
+    }
+  }, [user, isOpen]);
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -196,6 +232,49 @@ export const NewProjectDialog = ({
                 onChange={(e) => setMaxBudget(e.target.value)} 
                 placeholder="e.g. 10000"
               />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="deadline">Project Deadline</Label>
+            <Input 
+              id="deadline" 
+              type="date" 
+              value={deadline} 
+              onChange={(e) => setDeadline(e.target.value)}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="whatsapp_number">WhatsApp Number (for direct contact)</Label>
+            <Input 
+              id="whatsapp_number" 
+              value={whatsappNumber} 
+              onChange={(e) => setWhatsappNumber(e.target.value)} 
+              placeholder="e.g. +919876543210 (with country code)"
+            />
+            <p className="text-xs text-muted-foreground">This will be saved to your profile for future projects</p>
+          </div>
+          
+          <div className="space-y-4">
+            <Label>Application Options</Label>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="allow_normal_apply" 
+                checked={allowNormalApply}
+                onCheckedChange={(checked) => setAllowNormalApply(checked as boolean)}
+              />
+              <Label htmlFor="allow_normal_apply" className="cursor-pointer">Allow normal application through platform</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="allow_whatsapp_apply" 
+                checked={allowWhatsappApply}
+                onCheckedChange={(checked) => setAllowWhatsappApply(checked as boolean)}
+              />
+              <Label htmlFor="allow_whatsapp_apply" className="cursor-pointer">Allow direct WhatsApp application</Label>
             </div>
           </div>
           

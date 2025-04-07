@@ -16,6 +16,19 @@ export interface ProjectCardProps {
 export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) => {
   const { user } = useAuth();
   
+  const handleWhatsAppApply = () => {
+    if (!project.author?.whatsapp_number) return;
+    
+    const message = encodeURIComponent(
+      `Hi, I'm interested in your project "${project.title}". I found it on the freelancing platform.`
+    );
+    
+    window.open(
+      `https://wa.me/${project.author.whatsapp_number}?text=${message}`,
+      '_blank'
+    );
+  };
+  
   return (
     <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100">
       <div className="space-y-2">
@@ -71,27 +84,21 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
           
           {project.status === "open" && project.author_id !== user?.id && !hasApplied ? (
             <div className="flex flex-wrap gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => onApply(project)}
-              >
-                Apply Now
-              </Button>
+              {project.allow_normal_apply !== false && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onApply(project)}
+                >
+                  Apply Now
+                </Button>
+              )}
               
-              {project.author?.whatsapp_number && (
+              {project.author?.whatsapp_number && project.allow_whatsapp_apply !== false && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    const message = encodeURIComponent(
-                      `Hi, I'm interested in your project "${project.title}". I found it on the freelancing platform.`
-                    );
-                    window.open(
-                      `https://wa.me/${project.author.whatsapp_number}?text=${message}`,
-                      '_blank'
-                    );
-                  }}
+                  onClick={handleWhatsAppApply}
                 >
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Apply via WhatsApp

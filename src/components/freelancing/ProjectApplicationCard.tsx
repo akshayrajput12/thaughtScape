@@ -110,7 +110,7 @@ export const ProjectApplicationCard = ({
             {application.phone_number && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Phone className="h-4 w-4 text-purple-500" />
-                <span className="font-medium">{application.phone_number}</span>
+                <span>{application.phone_number}</span>
               </div>
             )}
 
@@ -121,6 +121,20 @@ export const ProjectApplicationCard = ({
                   <path d="M16 10a4 4 0 0 1-8 0"/>
                 </svg>
                 <span>WhatsApp: {application.applicant.whatsapp_number}</span>
+              </div>
+            )}
+            
+            {application.experience && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Briefcase className="h-4 w-4 text-indigo-500" />
+                <span className="line-clamp-1">Experience: {application.experience.substring(0, 30)}...</span>
+              </div>
+            )}
+            
+            {application.portfolio && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <ExternalLink className="h-4 w-4 text-blue-500" />
+                <span className="line-clamp-1">Portfolio: {application.portfolio}</span>
               </div>
             )}
           </div>
@@ -224,11 +238,9 @@ export const ProjectApplicationCard = ({
                         WhatsApp: {application.applicant.whatsapp_number}
                       </p>
                     )}
-                    {/* Use optional chaining for the email property since it doesn't exist in the Profile type */}
-                    {application.applicant && 'email' in application.applicant && application.applicant.email && (
+                    {application.applicant && typeof application.applicant === 'object' && 'email' in application.applicant && (
                       <p className="text-sm flex items-center">
                         <Mail className="h-3 w-3 mr-2 text-gray-500" />
-                        {/* Safe access with optional chaining and type checking */}
                         {(application.applicant as any).email}
                       </p>
                     )}
