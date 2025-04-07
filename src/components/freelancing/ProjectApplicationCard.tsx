@@ -224,10 +224,12 @@ export const ProjectApplicationCard = ({
                         WhatsApp: {application.applicant.whatsapp_number}
                       </p>
                     )}
-                    {application.applicant?.email && (
+                    {/* Use optional chaining for the email property since it doesn't exist in the Profile type */}
+                    {application.applicant && 'email' in application.applicant && application.applicant.email && (
                       <p className="text-sm flex items-center">
                         <Mail className="h-3 w-3 mr-2 text-gray-500" />
-                        {application.applicant.email}
+                        {/* Safe access with optional chaining and type checking */}
+                        {(application.applicant as any).email}
                       </p>
                     )}
                   </div>
