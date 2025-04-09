@@ -454,12 +454,12 @@ const Freelancing = () => {
     setIsDeleteAlertOpen(true);
   };
 
-  const handleUpdateStatus = async (applicationId: string, status: string): Promise<void> => {
+  const handleUpdateStatus = (applicationId: string, status: "accepted" | "rejected") => {
     const application = receivedApplications.find(app => app.id === applicationId);
     if (application) {
-      await updateApplicationStatusMutation.mutateAsync({
+      updateApplicationStatusMutation.mutate({
         applicationId,
-        status: status as "accepted" | "rejected",
+        status,
         projectId: application.project?.id
       });
     }
@@ -878,7 +878,6 @@ const Freelancing = () => {
                         key={application.id}
                         application={application}
                         onUpdateStatus={handleUpdateStatus}
-                        isAuthor={true}
                       />
                     ))}
                   </div>

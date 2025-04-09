@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -142,7 +141,7 @@ export const ProjectsList = () => {
     fetchApplications(project.id);
   };
   
-  const handleUpdateApplicationStatus = async (applicationId: string, status: string) => {
+  const handleUpdateApplicationStatus = async (applicationId: string, status: "accepted" | "rejected") => {
     try {
       const { error } = await supabase
         .from('project_applications')
@@ -153,7 +152,7 @@ export const ProjectsList = () => {
       
       setApplications(apps => 
         apps.map(app => 
-          app.id === applicationId ? { ...app, status: status as 'pending' | 'accepted' | 'rejected' } : app
+          app.id === applicationId ? { ...app, status } : app
         )
       );
       
@@ -223,7 +222,7 @@ export const ProjectsList = () => {
                   <div className="mt-4">
                     <div className="text-sm font-medium text-gray-700">Required Skills:</div>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {selectedProject.required_skills && selectedProject.required_skills.map((skill, i) => (
+                      {selectedProject.required_skills.map((skill, i) => (
                         <Badge key={i} variant="secondary" className="bg-indigo-50 text-indigo-700">
                           {skill}
                         </Badge>
@@ -279,7 +278,6 @@ export const ProjectsList = () => {
                           key={application.id}
                           application={application}
                           onUpdateStatus={handleUpdateApplicationStatus}
-                          isAuthor={true}
                         />
                       ))}
                     </div>
@@ -391,8 +389,8 @@ export const ProjectsList = () => {
                 <div className="text-sm">
                   <span className="text-gray-500">Skills: </span>
                   <span className="text-gray-700">
-                    {project.required_skills && project.required_skills.slice(0, 3).join(', ')}
-                    {project.required_skills && project.required_skills.length > 3 && '...'}
+                    {project.required_skills.slice(0, 3).join(', ')}
+                    {project.required_skills.length > 3 && '...'}
                   </span>
                 </div>
                 
