@@ -1,111 +1,63 @@
+
 export interface Profile {
   id: string;
   username: string;
-  full_name?: string;
-  age?: number;
-  phone?: string;
-  country?: string;
-  state?: string;
-  city?: string;
-  bio?: string;
   avatar_url?: string;
+  full_name?: string;
+  bio?: string;
+  website?: string;
+  email?: string;
   is_admin?: boolean;
-  created_at: string;
-  updated_at: string;
-  is_profile_completed?: boolean;
   followers_count?: number;
   following_count?: number;
   posts_count?: number;
-  college?: string;
-  registration_number?: string;
   is_following?: boolean;
-  whatsapp_number?: string;
+  created_at?: string;
+  updated_at?: string;
+  city?: string;
+  state?: string;
+  country?: string;
   genres?: string[];
-}
-
-export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  required_skills: string[];
-  min_budget?: number;
-  max_budget?: number;
-  budget?: number; // Keep for backward compatibility
-  deadline: string;
-  attachment_url?: string;
-  status: 'open' | 'closed' | 'in_progress';
-  author_id: string;
-  notifications_count?: number;
-  created_at: string;
-  updated_at: string;
-  author?: Profile;
-  client_id?: string;
-  freelancer_id?: string;
-  client?: Profile;
-  freelancer?: Profile;
-  _count?: {
-    comments: number;
-    applications: number;
-  };
-  applications_count?: number | { count: number }[];
-  milestones_count?: number | { count: number }[];
-  allow_whatsapp_apply?: boolean;
-  allow_normal_apply?: boolean;
-}
-
-export interface ProjectApplication {
-  id: string;
-  project_id: string;
-  applicant_id: string;
-  message: string;
-  phone_number?: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  viewed_at?: string;
-  created_at: string;
-  applicant?: Profile;
-  experience?: string;
-  portfolio?: string;
+  is_profile_completed?: boolean;
+  whatsapp_number?: string;
 }
 
 export interface Thought {
   id: string;
   title: string;
   content: string;
-  author_id: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  author_id: string;
+  author?: Profile;
   image_url?: string;
-  author: {
-    id: string;
-    username: string;
-    full_name?: string;
-    avatar_url?: string;
-    created_at: string;
-    updated_at: string;
-  };
-  _count?: {
-    likes: number;
-    bookmarks: number;
-    comments?: number;
-  };
-  comments?: { count: number }[];
-  likes?: any[];
-  bookmarks?: any[];
-  tagged_users?: string[]; 
-  accepted_tags?: string[]; 
+  comments_count?: number;
+  likes_count?: number;
+  is_liked?: boolean;
+  is_bookmarked?: boolean;
+}
+
+export interface Comment {
+  id: string;
+  content: string;
+  created_at: string;
+  updated_at?: string;
+  user_id: string;
+  thought_id: string;
+  user?: Profile;
 }
 
 export interface Notification {
   id: string;
-  user_id: string;
-  type: 'follow' | 'like' | 'comment' | 'message' | 'tag'; // Added 'tag' type
+  type: 'like' | 'comment' | 'follow' | 'mention';
   content: string;
-  is_read: boolean;
-  related_user_id?: string;
-  related_thought_id?: string;
   created_at: string;
+  user_id: string;
+  related_thought_id?: string;
+  related_user_id?: string;
+  is_read?: boolean;
   related_user?: Profile;
-  tag_status?: 'pending' | 'accepted' | 'rejected'; // Added for tag notifications
+  related_thought?: Thought;
 }
 
 export interface Message {
@@ -113,12 +65,47 @@ export interface Message {
   sender_id: string;
   receiver_id: string;
   content: string;
-  is_read: boolean;
-  is_request: boolean;
-  request_status: 'pending' | 'accepted' | 'declined' | null;
   created_at: string;
+  is_read?: boolean;
   sender?: Profile;
   receiver?: Profile;
+  is_request?: boolean;
+  request_status?: 'pending' | 'accepted' | 'rejected';
+}
+
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  budget?: number;
+  min_budget?: number;
+  max_budget?: number;
+  deadline?: string;
+  created_at: string;
+  updated_at?: string;
+  author_id: string;
+  author?: Profile;
+  status?: 'open' | 'in_progress' | 'closed';
+  required_skills?: string[];
+  notifications_count?: number;
+  attachment_url?: string;
+  allow_normal_apply?: boolean;
+  allow_whatsapp_apply?: boolean;
+}
+
+export interface ProjectApplication {
+  id: string;
+  project_id: string;
+  applicant_id: string;
+  message: string;
+  created_at: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  viewed_at?: string;
+  project?: Project;
+  applicant?: Profile;
+  phone_number?: string;
+  experience?: string;
+  portfolio?: string;
 }
 
 export interface CallLog {
@@ -128,31 +115,8 @@ export interface CallLog {
   start_time: string;
   end_time?: string;
   duration?: number;
+  status: 'missed' | 'answered' | 'rejected' | 'ongoing';
   call_type: 'audio' | 'video';
-  status: 'completed' | 'missed' | 'rejected';
-  created_at?: string;
-}
-
-export interface Tag {
-  id: string;
-  thought_id: string;
-  user_id: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  created_at: string;
-}
-
-export interface UserApplication {
-  project_id: string;
-  status: 'pending' | 'accepted' | 'rejected';
-}
-
-export interface MessageNotification {
-  id: string;
-  user_id: string;
-  sender_id: string;
-  message_count: number;
-  last_message: string;
-  is_read: boolean;
-  created_at: string;
-  updated_at: string;
+  caller?: Profile;
+  recipient?: Profile;
 }

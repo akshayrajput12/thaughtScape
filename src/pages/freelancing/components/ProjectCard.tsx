@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import clsx from "clsx";
 import type { Project } from '@/types';
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useToast } from '@/hooks/use-toast';
 
 export interface ProjectCardProps {
   project: Project;
@@ -15,16 +16,27 @@ export interface ProjectCardProps {
 
 export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   
   const handleWhatsAppApply = () => {
-    if (!project.author?.whatsapp_number) return;
+    if (!project.author?.whatsapp_number) {
+      toast({
+        title: "Cannot apply via WhatsApp",
+        description: "The project owner didn't provide a WhatsApp number.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Format WhatsApp number - remove spaces, dashes, etc.
+    const formattedNumber = project.author.whatsapp_number.replace(/[^0-9+]/g, '');
     
     const message = encodeURIComponent(
       `Hi, I'm interested in your project "${project.title}". I found it on the freelancing platform.`
     );
     
     window.open(
-      `https://wa.me/${project.author.whatsapp_number}?text=${message}`,
+      `https://wa.me/${formattedNumber}?text=${message}`,
       '_blank'
     );
   };
@@ -50,7 +62,12 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
         
         <div className="flex items-center gap-2 text-gray-600">
           <IndianRupee className="w-4 h-4" />
-          <span className="text-sm">Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
+          <span className="text-sm">
+            Budget: ₹{project.budget?.toLocaleString('en-IN') || 
+            (project.min_budget && project.max_budget ? 
+              `${project.min_budget.toLocaleString('en-IN')} - ${project.max_budget.toLocaleString('en-IN')}` : 
+              'Not specified')}
+          </span>
         </div>
 
         <div className="flex items-center gap-2 text-gray-600">
