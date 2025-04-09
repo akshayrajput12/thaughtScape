@@ -20,6 +20,11 @@ export interface Profile {
   genres?: string[];
   is_profile_completed?: boolean;
   whatsapp_number?: string;
+  // Adding missing properties
+  age?: number;
+  phone?: string;
+  college?: string;
+  registration_number?: string;
 }
 
 export interface Thought {
@@ -35,6 +40,11 @@ export interface Thought {
   likes_count?: number;
   is_liked?: boolean;
   is_bookmarked?: boolean;
+  // Adding properties needed for PoemsList
+  likes?: { count: number }[];
+  bookmarks?: { count: number }[];
+  comments?: { count: number }[];
+  accepted_tags?: string[];
 }
 
 export interface Comment {
@@ -91,6 +101,8 @@ export interface Project {
   attachment_url?: string;
   allow_normal_apply?: boolean;
   allow_whatsapp_apply?: boolean;
+  // Adding missing property
+  applications_count?: number | { count: number }[];
 }
 
 export interface ProjectApplication {
@@ -99,7 +111,8 @@ export interface ProjectApplication {
   applicant_id: string;
   message: string;
   created_at: string;
-  status?: 'pending' | 'approved' | 'rejected';
+  // Changing 'approved' to 'accepted' to match the code
+  status?: 'pending' | 'accepted' | 'rejected';
   viewed_at?: string;
   project?: Project;
   applicant?: Profile;
@@ -119,4 +132,20 @@ export interface CallLog {
   call_type: 'audio' | 'video';
   caller?: Profile;
   recipient?: Profile;
+}
+
+// Adding missing Tag type
+export interface Tag {
+  id: string;
+  name: string;
+  created_at?: string;
+  user_id?: string;
+  thought_id?: string;
+  status?: string;
+}
+
+// Adding UserApplication type
+export interface UserApplication {
+  project_id: string;
+  status: 'pending' | 'accepted' | 'rejected';
 }

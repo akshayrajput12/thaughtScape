@@ -454,12 +454,12 @@ const Freelancing = () => {
     setIsDeleteAlertOpen(true);
   };
 
-  const handleUpdateStatus = (applicationId: string, status: "accepted" | "rejected") => {
+  const handleUpdateStatus = async (applicationId: string, status: string): Promise<void> => {
     const application = receivedApplications.find(app => app.id === applicationId);
     if (application) {
-      updateApplicationStatusMutation.mutate({
+      await updateApplicationStatusMutation.mutateAsync({
         applicationId,
-        status,
+        status: status as "accepted" | "rejected",
         projectId: application.project?.id
       });
     }

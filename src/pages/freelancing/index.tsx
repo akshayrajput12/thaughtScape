@@ -119,7 +119,7 @@ const Freelancing = () => {
         .select("project_id, status")
         .eq("applicant_id", user.id);
       if (error) throw error;
-      return data as UserApplication[];
+      return data as { project_id: string; status: "pending" | "accepted" | "rejected" }[];
     },
     enabled: !!user?.id,
   });
@@ -463,12 +463,12 @@ const Freelancing = () => {
     setIsDeleteAlertOpen(true);
   };
 
-  const handleUpdateStatus = (applicationId: string, status: "accepted" | "rejected") => {
+  const handleUpdateStatus = async (applicationId: string, status: string): Promise<void> => {
     const application = receivedApplications.find(app => app.id === applicationId);
     if (application) {
-      updateApplicationStatusMutation.mutate({
+      await updateApplicationStatusMutation.mutateAsync({
         applicationId,
-        status,
+        status: status as "accepted" | "rejected",
         projectId: application.project?.id
       });
     }

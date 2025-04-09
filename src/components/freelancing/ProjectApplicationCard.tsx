@@ -20,6 +20,7 @@ export const ProjectApplicationCard: React.FC<ProjectApplicationCardProps> = ({
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'accepted':
       case 'approved':
         return "bg-green-100 text-green-800";
       case 'rejected':
@@ -113,7 +114,7 @@ export const ProjectApplicationCard: React.FC<ProjectApplicationCardProps> = ({
               variant="default"
               size="sm"
               className="bg-green-600 hover:bg-green-700"
-              onClick={() => onUpdateStatus(application.id, 'approved')}
+              onClick={() => onUpdateStatus(application.id, 'accepted')}
             >
               Approve
             </Button>
