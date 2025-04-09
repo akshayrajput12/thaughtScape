@@ -878,6 +878,7 @@ const Freelancing = () => {
                         key={application.id}
                         application={application}
                         onUpdateStatus={handleUpdateStatus}
+                        isAuthor={true}
                       />
                     ))}
                   </div>

@@ -1,34 +1,43 @@
+
 import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
-import { ProfileTabs } from "@/components/profile/ProfileTabs";
-import { FollowButton } from "@/components/profile/FollowButton";
-import { MessageButton } from "@/components/profile/MessageButton";
-import { InterestsSelector } from "@/components/profile/InterestsSelector";
-import { ProfileForm } from "@/components/profile/ProfileForm";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import { InterestsSelector } from '@/components/profile/InterestsSelector';
+import { ProfileForm } from "@/components/profile/ProfileForm";
 import type { Profile, Thought } from "@/types";
-import { PoemsList } from "@/components/profile/ProfilePoems";
-import { BookmarkedPosts } from "@/components/profile/BookmarkedPosts";
-import { TaggedPosts } from "@/components/profile/TaggedPosts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Create components needed by Profile page
+const PoemsList = ({ profileId }: { profileId: string }) => {
+  return <div>User poems will be listed here</div>;
+};
+
+const BookmarkedPosts = ({ profileId }: { profileId: string }) => {
+  return <div>Bookmarked posts will be listed here</div>;
+};
+
+const TaggedPosts = ({ profileId }: { profileId: string }) => {
+  return <div>Tagged posts will be listed here</div>;
+};
 
 const ProfilePage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
-  const { username } = router.query;
+  const navigate = useNavigate();
+  const { username } = useParams();
+  const location = useLocation();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
@@ -40,10 +49,11 @@ const ProfilePage = () => {
   const [followingCount, setFollowingCount] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [thoughts, setThoughts] = useState<Thought[]>([]);
+  const [activeTab, setActiveTab] = useState("posts");
 
   useEffect(() => {
     if (username) {
-      fetchProfile(username as string);
+      fetchProfile(username);
     }
   }, [username, user]);
 
@@ -69,7 +79,7 @@ const ProfilePage = () => {
           description: "Profile not found",
           variant: "destructive",
         });
-        router.push('/home');
+        navigate('/home');
       }
     } catch (error: any) {
       console.error("Error fetching profile:", error);
@@ -198,7 +208,7 @@ const ProfilePage = () => {
   };
 
   const handleMessageClick = (profile: Profile) => {
-    router.push(`/messages/${profile.id}`);
+    navigate(`/messages/${profile.id}`);
   };
 
   if (isLoading) {
@@ -231,31 +241,34 @@ const ProfilePage = () => {
         <ProfileHeader
           profile={profile}
           isFollowing={isFollowing}
-          onFollow={handleFollow}
-          onUnfollow={handleUnfollow}
-          isSendingFollowRequest={isSendingFollowRequest}
-          postsCount={postsCount}
+          onFollowToggle={isFollowing ? handleUnfollow : handleFollow}
           followersCount={followersCount}
           followingCount={followingCount}
-          isOwnProfile={isOwnProfile}  // Add this prop
-          onMessage={() => handleMessageClick(profile)}
+          postsCount={postsCount}
         />
 
-        <ProfileTabs>
-          <div label="Posts">
-            <PoemsList profileId={profile.id} />
-          </div>
+        <Tabs defaultValue="posts" className="p-6">
+          <TabsList className="mb-4">
+            <TabsTrigger value="posts">Posts</TabsTrigger>
+            <TabsTrigger value="bookmarked">Bookmarked</TabsTrigger>
+            <TabsTrigger value="tagged">Tagged</TabsTrigger>
+            {isOwnProfile && <TabsTrigger value="edit">Edit Profile</TabsTrigger>}
+          </TabsList>
           
-          <div label="Bookmarked">
+          <TabsContent value="posts">
+            <PoemsList profileId={profile.id} />
+          </TabsContent>
+          
+          <TabsContent value="bookmarked">
             <BookmarkedPosts profileId={profile.id} />
-          </div>
+          </TabsContent>
 
-          <div label="Tagged">
+          <TabsContent value="tagged">
             <TaggedPosts profileId={profile.id} />
-          </div>
+          </TabsContent>
 
           {isOwnProfile && (
-            <div label="Edit Profile">
+            <TabsContent value="edit">
               <div className="p-4">
                 <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
               </div>
@@ -270,9 +283,9 @@ const ProfilePage = () => {
                   <ProfileForm profile={profile} onSubmitSuccess={handleUpdateProfile} />
                 </DialogContent>
               </Dialog>
-            </div>
+            </TabsContent>
           )}
-        </ProfileTabs>
+        </Tabs>
       </div>
     </div>
   );
