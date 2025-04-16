@@ -1,4 +1,4 @@
-# ThaughtScape
+ # ThaughtScape
 
 A modern social platform for sharing thoughts and connecting with creative minds, built with React, TypeScript, and Supabase.
 
