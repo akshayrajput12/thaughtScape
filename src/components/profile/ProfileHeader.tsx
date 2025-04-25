@@ -12,6 +12,13 @@ interface ProfileHeaderProps {
   postsCount: number;
   followersCount: number;
   followingCount: number;
+  isEditing?: boolean;
+  onEditClick?: () => void;
+  isBlocked?: boolean;
+  isBlockedByUser?: boolean;
+  onBlock?: () => void;
+  onUnblock?: () => void;
+  onMessage?: () => void;
 }
 
 export function ProfileHeader({
@@ -21,7 +28,14 @@ export function ProfileHeader({
   isOwnProfile,
   postsCount,
   followersCount,
-  followingCount
+  followingCount,
+  isEditing,
+  onEditClick,
+  isBlocked,
+  isBlockedByUser,
+  onBlock,
+  onUnblock,
+  onMessage
 }: ProfileHeaderProps) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -38,14 +52,41 @@ export function ProfileHeader({
               <p className="text-gray-600">@{profile.username}</p>
             </div>
             
-            {!isOwnProfile && (
-              <Button
-                onClick={onFollowToggle}
-                variant={isFollowing ? "outline" : "default"}
-              >
-                {isFollowing ? "Unfollow" : "Follow"}
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {isOwnProfile ? (
+                <Button 
+                  onClick={onEditClick}
+                  variant={isEditing ? "outline" : "default"}
+                >
+                  {isEditing ? "Cancel" : "Edit Profile"}
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={onFollowToggle}
+                    variant={isFollowing ? "outline" : "default"}
+                  >
+                    {isFollowing ? "Unfollow" : "Follow"}
+                  </Button>
+                  
+                  {onMessage && !isBlocked && !isBlockedByUser && (
+                    <Button onClick={onMessage} variant="outline">
+                      Message
+                    </Button>
+                  )}
+                  
+                  {!isBlockedByUser && (
+                    <Button 
+                      onClick={isBlocked ? onUnblock : onBlock} 
+                      variant="outline"
+                      className={isBlocked ? "text-green-600" : "text-red-600"}
+                    >
+                      {isBlocked ? "Unblock" : "Block"}
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           
           <div className="mt-4 flex gap-6">

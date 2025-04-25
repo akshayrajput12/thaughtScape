@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { CallLog } from "@/types";
 
@@ -151,22 +152,11 @@ export class WebRTCConnection {
     if (!this.callId || !this.callStartTime) return;
     
     try {
-      const endTime = new Date();
-      const durationInSeconds = Math.floor((endTime.getTime() - this.callStartTime.getTime()) / 1000);
-      
-      const callerId = this.callId.split('-')[0];
-      const receiverId = this.callId.split('-')[1];
-      
-      await supabase
-        .from('call_logs')
-        .update({
-          end_time: endTime.toISOString(),
-          duration: durationInSeconds
-        })
-        .eq('caller_id', callerId)
-        .eq('recipient_id', receiverId)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      // Call logging functionality removed as call_logs table doesn't exist
+      console.log('Call ended:', {
+        callId: this.callId,
+        duration: Math.floor((new Date().getTime() - this.callStartTime.getTime()) / 1000)
+      });
     } catch (error) {
       console.error('Error logging call end:', error);
     }
@@ -213,12 +203,13 @@ export class WebRTCConnection {
     });
 
     try {
-      await supabase.from('call_logs').insert({
-        caller_id: callerId,
-        recipient_id: receiverId,
-        call_type: isVideo ? 'video' as const : 'audio' as const,
-        status: 'completed' as const,
-        start_time: this.callStartTime.toISOString()
+      // Call logging functionality removed as call_logs table doesn't exist
+      console.log('Call initiated:', {
+        callId: callId,
+        callerId: callerId,
+        receiverId: receiverId,
+        isVideo: isVideo,
+        startTime: this.callStartTime.toISOString()
       });
     } catch (error) {
       console.error('Error logging call start:', error);
@@ -235,16 +226,13 @@ export class WebRTCConnection {
           this.closeConnection();
           
           try {
-            await supabase
-              .from('call_logs')
-              .update({
-                status: 'rejected',
-                end_time: new Date().toISOString()
-              })
-              .eq('caller_id', callerId)
-              .eq('recipient_id', receiverId)
-              .order('created_at', { ascending: false })
-              .limit(1);
+            // Call rejection logging removed as call_logs table doesn't exist
+            console.log('Call rejected:', {
+              callId: callId,
+              callerId: callerId,
+              receiverId: receiverId,
+              endTime: new Date().toISOString()
+            });
           } catch (error) {
             console.error('Error updating call log for rejected call:', error);
           }
@@ -302,15 +290,12 @@ export class WebRTCConnection {
     await channel.subscribe();
     
     try {
-      await supabase
-        .from('call_logs')
-        .update({
-          status: 'completed'
-        })
-        .eq('caller_id', callerId)
-        .eq('recipient_id', receiverId)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      // Call acceptance logging removed as call_logs table doesn't exist
+      console.log('Call accepted:', {
+        callId: callId,
+        callerId: callerId,
+        receiverId: receiverId
+      });
     } catch (error) {
       console.error('Error updating call log for accepted call:', error);
     }
@@ -334,16 +319,13 @@ export class WebRTCConnection {
       const callerId = callId.split('-')[0];
       const receiverId = callId.split('-')[1];
       
-      await supabase
-        .from('call_logs')
-        .update({
-          status: 'rejected',
-          end_time: new Date().toISOString()
-        })
-        .eq('caller_id', callerId)
-        .eq('recipient_id', receiverId)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      // Call rejection logging removed as call_logs table doesn't exist
+      console.log('Call rejected:', {
+        callId: callId,
+        callerId: callerId,
+        receiverId: receiverId,
+        endTime: new Date().toISOString()
+      });
     } catch (error) {
       console.error('Error updating call log for rejected call:', error);
     }

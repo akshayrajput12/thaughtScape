@@ -1,3 +1,4 @@
+
 export interface Profile {
   id: string;
   username: string;
@@ -133,6 +134,7 @@ export interface UserApplication {
   status: 'pending' | 'accepted' | 'rejected';
 }
 
+// Define Message interface for use in messages-related components
 export interface Message {
   id: string;
   content: string;
@@ -146,6 +148,7 @@ export interface Message {
   receiver?: Profile;
 }
 
+// Define CallLog interface for use in call-related components
 export interface CallLog {
   id: string;
   call_type: 'audio' | 'video';
