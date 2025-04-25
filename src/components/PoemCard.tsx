@@ -127,12 +127,15 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
     }
 
     try {
+      // Use notifications instead of messages for sharing
       const { error } = await supabase
-        .from('messages')
+        .from('notifications')
         .insert({
-          sender_id: currentUserId,
-          receiver_id: recipientId,
-          content: `Shared thought: "${poem.title}" - ${window.location.origin}/thought/${poem.id}`
+          user_id: recipientId,
+          type: 'share',
+          content: `Shared thought: "${poem.title}"`,
+          related_user_id: currentUserId,
+          related_thought_id: poem.id
         });
 
       if (error) throw error;

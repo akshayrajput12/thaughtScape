@@ -1,3 +1,4 @@
+
 export interface Profile {
   id: string;
   username: string;
@@ -58,6 +59,8 @@ export interface Project {
   job_type?: string;
   experience_level?: string;
   application_deadline?: string;
+  allow_normal_apply?: boolean;
+  allow_whatsapp_apply?: boolean;
 }
 
 export interface ProjectApplication {
@@ -108,7 +111,7 @@ export interface Thought {
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'follow' | 'like' | 'comment' | 'message' | 'tag';
+  type: 'follow' | 'like' | 'comment' | 'message' | 'tag' | 'share';
   content: string;
   is_read: boolean;
   related_user_id?: string;
@@ -116,31 +119,6 @@ export interface Notification {
   created_at: string;
   related_user?: Profile;
   tag_status?: 'pending' | 'accepted' | 'rejected';
-}
-
-export interface Message {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  is_read: boolean;
-  is_request: boolean;
-  request_status: 'pending' | 'accepted' | 'declined' | null;
-  created_at: string;
-  sender?: Profile;
-  receiver?: Profile;
-}
-
-export interface CallLog {
-  id: string;
-  caller_id: string;
-  recipient_id: string;
-  start_time: string;
-  end_time?: string;
-  duration?: number;
-  call_type: 'audio' | 'video';
-  status: 'completed' | 'missed' | 'rejected';
-  created_at?: string;
 }
 
 export interface Tag {
@@ -154,15 +132,4 @@ export interface Tag {
 export interface UserApplication {
   project_id: string;
   status: 'pending' | 'accepted' | 'rejected';
-}
-
-export interface MessageNotification {
-  id: string;
-  user_id: string;
-  sender_id: string;
-  message_count: number;
-  last_message: string;
-  is_read: boolean;
-  created_at: string;
-  updated_at: string;
 }
