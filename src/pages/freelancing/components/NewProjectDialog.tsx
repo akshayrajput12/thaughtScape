@@ -20,10 +20,10 @@ export interface NewProjectDialogProps {
   isSubmitting?: boolean;
 }
 
-export const NewProjectDialog = ({ 
-  isOpen, 
-  onOpenChange, 
-  onProjectCreated = () => {}, 
+export const NewProjectDialog = ({
+  isOpen,
+  onOpenChange,
+  onProjectCreated = () => {},
   onSubmit,
   isSubmitting = false
 }: NewProjectDialogProps) => {
@@ -43,13 +43,15 @@ export const NewProjectDialog = ({
   const [location, setLocation] = useState("");
   const [jobType, setJobType] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("");
+  const [applicationLink, setApplicationLink] = useState("");
+  const [isFeatured, setIsFeatured] = useState(false);
   const isMobile = useMobile();
 
   const effectiveIsSubmitting = isSubmitting || localIsSubmitting;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (onSubmit) {
       onSubmit({
         title,
@@ -64,11 +66,13 @@ export const NewProjectDialog = ({
         location,
         job_type: jobType,
         experience_level: experienceLevel,
-        deadline: deadline || undefined
+        deadline: deadline || undefined,
+        application_link: applicationLink,
+        is_featured: isFeatured
       });
       return;
     }
-    
+
     if (!user) {
       toast({
         title: "Error",
@@ -77,7 +81,7 @@ export const NewProjectDialog = ({
       });
       return;
     }
-    
+
     if (!title || !description || !requiredSkills || !minBudget) {
       toast({
         title: "Missing fields",
@@ -86,12 +90,12 @@ export const NewProjectDialog = ({
       });
       return;
     }
-    
+
     setLocalIsSubmitting(true);
-    
+
     try {
       const skillsArray = requiredSkills.split(',').map(skill => skill.trim());
-      
+
       // If whatsapp number is provided, update the user's profile
       if (whatsappNumber && whatsappNumber.trim() !== '') {
         await supabase
@@ -99,7 +103,7 @@ export const NewProjectDialog = ({
           .update({ whatsapp_number: whatsappNumber.trim() })
           .eq('id', user.id);
       }
-      
+
       const { data, error } = await supabase
         .from('projects')
         .insert({
@@ -116,7 +120,9 @@ export const NewProjectDialog = ({
           location,
           job_type: jobType,
           experience_level: experienceLevel,
-          deadline: deadline || null
+          deadline: deadline || null,
+          application_link: applicationLink,
+          is_featured: isFeatured
         })
         .select(`
           *,
@@ -129,14 +135,14 @@ export const NewProjectDialog = ({
           )
         `)
         .single();
-        
+
       if (error) throw error;
-      
+
       toast({
         title: "Success",
         description: "Project created successfully",
       });
-      
+
       setTitle("");
       setDescription("");
       setRequiredSkills("");
@@ -148,7 +154,9 @@ export const NewProjectDialog = ({
       setLocation("");
       setJobType("");
       setExperienceLevel("");
-      
+      setApplicationLink("");
+      setIsFeatured(false);
+
       onOpenChange(false);
       if (data) {
         onProjectCreated(data as Project);
@@ -164,7 +172,7 @@ export const NewProjectDialog = ({
       setLocalIsSubmitting(false);
     }
   };
-  
+
   // Fetch user's whatsapp number if available
   React.useEffect(() => {
     if (user && isOpen) {
@@ -174,12 +182,12 @@ export const NewProjectDialog = ({
           .select('whatsapp_number')
           .eq('id', user.id)
           .single();
-          
+
         if (!error && data && data.whatsapp_number) {
           setWhatsappNumber(data.whatsapp_number);
         }
       };
-      
+
       fetchUserProfile();
     }
   }, [user, isOpen]);
@@ -191,7 +199,7 @@ export const NewProjectDialog = ({
     "Freelance",
     "Internship"
   ];
-  
+
   const experienceLevels = [
     "Entry Level",
     "Junior",
@@ -201,95 +209,95 @@ export const NewProjectDialog = ({
     "Manager",
     "Executive"
   ];
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className={`${isMobile ? 'max-w-[95%]' : 'sm:max-w-[550px]'} max-h-[85vh] overflow-y-auto`}>
         <DialogHeader>
-          <DialogTitle className="text-xl">Create New Project</DialogTitle>
+          <DialogTitle className="text-xl">Post a New Job</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Project Title *</Label>
-            <Input 
-              id="title" 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
-              placeholder="e.g. Website Development"
+            <Label htmlFor="title">Job Title *</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Frontend Developer"
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="companyName">Company Name</Label>
-            <Input 
-              id="companyName" 
-              value={companyName} 
-              onChange={(e) => setCompanyName(e.target.value)} 
+            <Input
+              id="companyName"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
               placeholder="e.g. Tech Solutions Inc."
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="description">Description *</Label>
-            <Textarea 
-              id="description" 
-              value={description} 
-              onChange={(e) => setDescription(e.target.value)} 
-              placeholder="Describe your project requirements in detail"
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe the job requirements, responsibilities, and qualifications in detail"
               rows={5}
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="skills">Required Skills *</Label>
-            <Input 
-              id="skills" 
-              value={requiredSkills} 
-              onChange={(e) => setRequiredSkills(e.target.value)} 
+            <Input
+              id="skills"
+              value={requiredSkills}
+              onChange={(e) => setRequiredSkills(e.target.value)}
               placeholder="e.g. React, Node.js, UI/UX (comma separated)"
               required
             />
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="minBudget">Minimum Budget (₹) *</Label>
-              <Input 
-                id="minBudget" 
-                type="number" 
-                value={minBudget} 
-                onChange={(e) => setMinBudget(e.target.value)} 
+              <Input
+                id="minBudget"
+                type="number"
+                value={minBudget}
+                onChange={(e) => setMinBudget(e.target.value)}
                 placeholder="e.g. 5000"
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="maxBudget">Maximum Budget (₹)</Label>
-              <Input 
-                id="maxBudget" 
-                type="number" 
-                value={maxBudget} 
-                onChange={(e) => setMaxBudget(e.target.value)} 
+              <Input
+                id="maxBudget"
+                type="number"
+                value={maxBudget}
+                onChange={(e) => setMaxBudget(e.target.value)}
                 placeholder="e.g. 10000"
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
-              <Input 
-                id="location" 
-                value={location} 
-                onChange={(e) => setLocation(e.target.value)} 
+              <Input
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
                 placeholder="e.g. Remote, Delhi, etc."
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="jobType">Job Type</Label>
               <select
@@ -305,7 +313,7 @@ export const NewProjectDialog = ({
               </select>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="experienceLevel">Experience Level</Label>
@@ -321,65 +329,85 @@ export const NewProjectDialog = ({
                 ))}
               </select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="deadline">Project Deadline</Label>
-              <Input 
-                id="deadline" 
-                type="date" 
-                value={deadline} 
+              <Input
+                id="deadline"
+                type="date"
+                value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="whatsapp_number">WhatsApp Number (for direct contact)</Label>
-            <Input 
-              id="whatsapp_number" 
-              value={whatsappNumber} 
-              onChange={(e) => setWhatsappNumber(e.target.value)} 
+            <Input
+              id="whatsapp_number"
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value)}
               placeholder="e.g. +919876543210 (with country code)"
             />
             <p className="text-xs text-muted-foreground">This will be saved to your profile for future projects</p>
           </div>
-          
+
+          <div className="space-y-2">
+            <Label htmlFor="application_link">External Application Link</Label>
+            <Input
+              id="application_link"
+              value={applicationLink}
+              onChange={(e) => setApplicationLink(e.target.value)}
+              placeholder="e.g. https://example.com/apply"
+            />
+            <p className="text-xs text-muted-foreground">Optional link to an external application form or website</p>
+          </div>
+
           <div className="space-y-4">
             <Label>Application Options</Label>
-            
+
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="allow_normal_apply" 
+              <Checkbox
+                id="allow_normal_apply"
                 checked={allowNormalApply}
                 onCheckedChange={(checked) => setAllowNormalApply(checked as boolean)}
               />
               <Label htmlFor="allow_normal_apply" className="cursor-pointer">Allow normal application through platform</Label>
             </div>
-            
+
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="allow_whatsapp_apply" 
+              <Checkbox
+                id="allow_whatsapp_apply"
                 checked={allowWhatsappApply}
                 onCheckedChange={(checked) => setAllowWhatsappApply(checked as boolean)}
               />
               <Label htmlFor="allow_whatsapp_apply" className="cursor-pointer">Allow direct WhatsApp application</Label>
             </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="is_featured"
+                checked={isFeatured}
+                onCheckedChange={(checked) => setIsFeatured(checked as boolean)}
+              />
+              <Label htmlFor="is_featured" className="cursor-pointer">Mark as featured job</Label>
+            </div>
           </div>
-          
+
           <div className="flex justify-end space-x-3 pt-4 pb-6 md:pb-0">
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={effectiveIsSubmitting}
               className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
             >
-              {effectiveIsSubmitting ? "Creating..." : "Create Project"}
+              {effectiveIsSubmitting ? "Posting..." : "Post Job"}
             </Button>
           </div>
         </form>

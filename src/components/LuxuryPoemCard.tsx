@@ -162,6 +162,7 @@ export const LuxuryPoemCard = ({ poem, currentUserId, isAdmin, onDelete }: Luxur
           isBookmarked={isBookmarked}
           onLike={handleLike}
           onBookmark={handleBookmark}
+          thoughtId={poem.id}
           showAnimation={true}
         />
         <span className="text-sm text-gray-400">

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Profile } from "@/types";
 
 interface PoemHeaderProps {
@@ -33,59 +34,66 @@ export const PoemHeader = ({
   onDelete
 }: PoemHeaderProps) => {
   return (
-    <motion.div 
+    <motion.div
       className="flex justify-between items-start mb-6"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
     >
       <div className="flex items-center gap-4">
-        <motion.img
-          whileHover={{ scale: 1.1 }}
-          src={author.avatar_url || '/placeholder.svg'}
-          alt={author.username}
-          className="w-12 h-12 rounded-full border-2 border-purple-200"
-        />
+        <Link to={`/profile/${author.id}`}>
+          <motion.div
+            whileHover={{ scale: 1.1 }}
+            className="cursor-pointer"
+          >
+            <Avatar className="w-12 h-12 border-2 border-primary/20">
+              <AvatarImage src={author.avatar_url || ''} alt={author.username} />
+              <AvatarFallback>{author.username?.[0]?.toUpperCase()}</AvatarFallback>
+            </Avatar>
+          </motion.div>
+        </Link>
         <div>
-          <h3 className="font-serif text-lg font-medium text-gray-800">{author.username}</h3>
-          <p className="text-sm text-gray-500">{title}</p>
+          <Link to={`/profile/${author.id}`}>
+            <h3 className="font-serif text-lg font-medium text-foreground hover:text-primary transition-colors cursor-pointer">{author.username}</h3>
+          </Link>
+          <p className="text-sm text-muted-foreground">{title}</p>
         </div>
       </div>
       <div className="flex items-center gap-2">
         {currentUserId && currentUserId !== author.id && (
           <Button
-            variant="ghost"
+            variant={isFollowing ? "destructive" : "default"}
             size="sm"
             onClick={onFollowToggle}
-            className="flex items-center gap-1 hover:bg-purple-50 transition-colors"
+            className="flex items-center gap-1 transition-all duration-300"
           >
             {isFollowing ? (
               <>
-                <UserMinus className="w-4 h-4 text-purple-500" />
-                <span className="text-purple-700">Unfollow</span>
+                <UserMinus className="w-4 h-4 mr-1" />
+                <span>Unfollow</span>
               </>
             ) : (
               <>
-                <UserPlus className="w-4 h-4 text-purple-500" />
-                <span className="text-purple-700">Follow</span>
+                <UserPlus className="w-4 h-4 mr-1" />
+                <span>Follow</span>
               </>
             )}
           </Button>
         )}
         <DropdownMenu>
-          <DropdownMenuTrigger className="p-2 rounded-full hover:bg-purple-50 transition-colors">
-            <MoreVertical className="h-5 w-5 text-gray-500" />
+          <DropdownMenuTrigger className="p-2 rounded-full hover:bg-muted transition-colors">
+            <MoreVertical className="h-5 w-5 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => window.location.href = `/profile/${author.id}`}>
-              View Profile
+            <DropdownMenuItem asChild>
+              <Link to={`/profile/${author.id}`}>View Profile</Link>
             </DropdownMenuItem>
             {(currentUserId === author.id || isAdmin) && (
               <>
                 <DropdownMenuItem onClick={onEdit}>
                   Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={onDelete} className="text-red-500">
+                <DropdownMenuItem onClick={onDelete} className="text-destructive">
                   Delete
                 </DropdownMenuItem>
               </>

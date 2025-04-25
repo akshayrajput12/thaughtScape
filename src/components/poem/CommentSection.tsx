@@ -55,7 +55,11 @@ export const CommentSection = ({ thoughtId, currentUserId, thoughtAuthorId }: Co
 
   const handleSubmitComment = async () => {
     if (!currentUserId) {
-      navigate('/auth');
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to comment on this thought",
+      });
+      navigate('/auth', { state: { from: `/thought/${thoughtId}` } });
       return;
     }
 
@@ -136,15 +140,27 @@ export const CommentSection = ({ thoughtId, currentUserId, thoughtAuthorId }: Co
 
       {showComments && (
         <div className="mt-4 space-y-4">
-          <div className="flex gap-2">
-            <Textarea
-              placeholder="Write a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="resize-none"
-            />
-            <Button onClick={handleSubmitComment}>Post</Button>
-          </div>
+          {currentUserId ? (
+            <div className="flex gap-2">
+              <Textarea
+                placeholder="Write a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="resize-none"
+              />
+              <Button onClick={handleSubmitComment}>Post</Button>
+            </div>
+          ) : (
+            <div className="bg-gray-50 p-4 rounded-lg text-center">
+              <p className="text-gray-600 mb-2">Sign in to leave a comment</p>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/auth', { state: { from: `/thought/${thoughtId}` } })}
+              >
+                Sign In
+              </Button>
+            </div>
+          )}
 
           <div className="space-y-4">
             {comments.map((comment) => (

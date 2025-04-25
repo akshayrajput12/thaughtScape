@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Home, Search, PenSquare, Briefcase, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/types";
 import { useMobile } from "@/hooks/use-mobile";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Navigation = () => {
   const { isAuthenticated } = useAuth();
@@ -27,19 +28,19 @@ const Navigation = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!isAuthenticated) return;
-      
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      
+
       const { data } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
         .single();
-      
+
       setUserProfile(data);
     };
-    
+
     fetchUserProfile();
   }, [isAuthenticated]);
 
@@ -86,7 +87,9 @@ const Navigation = () => {
     );
   };
 
-  if (!isAuthenticated && location.pathname === '/') {
+  // Always show navigation for authenticated users
+  // For non-authenticated users, show on landing page and auth page
+  if (!isAuthenticated && location.pathname !== '/' && location.pathname !== '/auth') {
     return null;
   }
 
@@ -100,20 +103,20 @@ const Navigation = () => {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="border-b bg-white hidden md:block">
+      <nav className="border-b border-border bg-background hidden md:block">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-8">
-              <Link to="/" className="text-xl font-bold">
-                ThoughtScape
+              <Link to="/" className="text-xl font-bold text-foreground">
+                CampusCash
               </Link>
               {isAuthenticated && (
                 <div className="flex items-center gap-6">
                   {navItems.map(item => (
-                    <Link 
-                      key={item.path} 
-                      to={item.path} 
-                      className={`flex items-center gap-2 text-gray-600 hover:text-gray-900 ${location.pathname === item.path ? 'text-gray-900 font-medium' : ''}`}
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`flex items-center gap-2 text-muted-foreground hover:text-foreground ${location.pathname === item.path ? 'text-foreground font-medium' : ''}`}
                     >
                       {item.icon}
                       {item.label}
@@ -123,6 +126,7 @@ const Navigation = () => {
               )}
             </div>
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               {isAuthenticated ? (
                 <UserNav />
               ) : (
@@ -134,24 +138,24 @@ const Navigation = () => {
           </div>
         </div>
       </nav>
-      
+
       {/* Mobile Bottom Navigation */}
       {isAuthenticated && isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t md:hidden z-10">
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border md:hidden z-10">
           <div className="flex justify-around py-2">
             {navItems.map(item => (
-              <Link 
-                key={item.path} 
-                to={item.path} 
-                className={`flex flex-col items-center p-2 ${location.pathname === item.path ? 'text-primary-foreground font-medium' : 'text-gray-500'}`}
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex flex-col items-center p-2 ${location.pathname === item.path ? 'text-primary font-medium' : 'text-muted-foreground'}`}
               >
                 {item.icon}
                 <span className="text-xs mt-1">{item.label}</span>
               </Link>
             ))}
-            <Link 
-              to={`/profile/${userProfile?.id}`} 
-              className={`flex flex-col items-center p-2 ${location.pathname.includes('/profile/') ? 'text-primary-foreground font-medium' : 'text-gray-500'}`}
+            <Link
+              to={`/profile/${userProfile?.id}`}
+              className={`flex flex-col items-center p-2 ${location.pathname.includes('/profile/') ? 'text-primary font-medium' : 'text-muted-foreground'}`}
             >
               <User className="h-5 w-5" />
               <span className="text-xs mt-1">Profile</span>

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { motion } from "framer-motion";
 import { Profile } from "@/types";
 import { Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
+import { ProfileImageUpload } from "./ProfileImageUpload";
 
 const colleges = [
   "Lovely Professional University",
@@ -44,6 +45,7 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
   const [twitterUrl, setTwitterUrl] = useState(profile.twitter_url || "");
   const [snapchatUrl, setSnapchatUrl] = useState(profile.snapchat_url || "");
   const [youtubeUrl, setYoutubeUrl] = useState(profile.youtube_url || "");
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -68,7 +70,7 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
         newErrors.age = "Age must be between 13 and 100";
       }
     }
-    
+
     // Validate social media URLs if provided
     if (instagramUrl && !urlRegex.test(instagramUrl)) {
       newErrors.instagramUrl = "Please enter a valid URL";
@@ -92,11 +94,11 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const updatedProfile: Partial<Profile> = {
         full_name: fullName,
@@ -112,25 +114,26 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
         twitter_url: twitterUrl,
         snapchat_url: snapchatUrl,
         youtube_url: youtubeUrl,
+        avatar_url: avatarUrl,
         is_profile_completed: true
       };
-      
+
       if (age) updatedProfile.age = parseInt(age);
-      
+
       const { data, error } = await supabase
         .from('profiles')
         .update(updatedProfile)
         .eq('id', profile.id)
         .select()
         .single();
-      
+
       if (error) throw error;
-      
+
       toast({
         title: "Success",
         description: "Profile updated successfully",
       });
-      
+
       if (data) {
         onSubmitSuccess(data as Profile);
       }
@@ -146,20 +149,24 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
     }
   };
 
+  const handleImageUploaded = (url: string) => {
+    setAvatarUrl(url);
+  };
+
   const isLPU = college === "Lovely Professional University";
-  
-  const SocialMediaInput = ({ 
-    id, 
-    icon, 
-    value, 
-    onChange, 
-    placeholder, 
-    error 
-  }: { 
-    id: string; 
-    icon: React.ReactNode; 
-    value: string; 
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; 
+
+  const SocialMediaInput = ({
+    id,
+    icon,
+    value,
+    onChange,
+    placeholder,
+    error
+  }: {
+    id: string;
+    icon: React.ReactNode;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     placeholder: string;
     error?: string;
   }) => (
@@ -184,7 +191,13 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <motion.div 
+      {!isFirstTimeSetup && (
+        <div className="flex justify-center mb-8">
+          <ProfileImageUpload profile={profile} onImageUploaded={handleImageUploaded} />
+        </div>
+      )}
+
+      <motion.div
         className="grid grid-cols-1 md:grid-cols-2 gap-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -224,8 +237,8 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
           <Label htmlFor="college" className="text-sm font-medium text-gray-700">
             College {isFirstTimeSetup && <span className="text-red-500">*</span>}
           </Label>
-          <Select 
-            value={college} 
+          <Select
+            value={college}
             onValueChange={setCollege}
           >
             <SelectTrigger className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${errors.college ? 'border-red-500' : ''}`}>
@@ -324,41 +337,41 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
                 className="border-gray-300 focus:ring-purple-500 focus:border-purple-500 min-h-[100px]"
               />
             </div>
-            
+
             <div className="md:col-span-2">
               <h3 className="font-medium text-gray-700 mb-4">Social Media Links</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SocialMediaInput 
-                  id="instagramUrl" 
+                <SocialMediaInput
+                  id="instagramUrl"
                   icon={<Instagram className="h-4 w-4 text-pink-600" />}
-                  value={instagramUrl} 
+                  value={instagramUrl}
                   onChange={(e) => setInstagramUrl(e.target.value)}
                   placeholder="https://instagram.com/username"
                   error={errors.instagramUrl}
                 />
-                
-                <SocialMediaInput 
-                  id="linkedinUrl" 
+
+                <SocialMediaInput
+                  id="linkedinUrl"
                   icon={<Linkedin className="h-4 w-4 text-blue-600" />}
-                  value={linkedinUrl} 
+                  value={linkedinUrl}
                   onChange={(e) => setLinkedinUrl(e.target.value)}
                   placeholder="https://linkedin.com/in/username"
                   error={errors.linkedinUrl}
                 />
-                
-                <SocialMediaInput 
-                  id="twitterUrl" 
+
+                <SocialMediaInput
+                  id="twitterUrl"
                   icon={<Twitter className="h-4 w-4 text-sky-500" />}
-                  value={twitterUrl} 
+                  value={twitterUrl}
                   onChange={(e) => setTwitterUrl(e.target.value)}
                   placeholder="https://twitter.com/username"
                   error={errors.twitterUrl}
                 />
-                
-                <SocialMediaInput 
-                  id="youtubeUrl" 
+
+                <SocialMediaInput
+                  id="youtubeUrl"
                   icon={<Youtube className="h-4 w-4 text-red-600" />}
-                  value={youtubeUrl || ''} 
+                  value={youtubeUrl || ''}
                   onChange={(e) => setYoutubeUrl(e.target.value)}
                   placeholder="https://youtube.com/channel/username"
                   error={errors.youtubeUrl}
@@ -370,8 +383,8 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
       </motion.div>
 
       <div className="flex justify-end pt-6 pb-12 md:pb-0">
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           disabled={isSubmitting}
           className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-2 rounded-md shadow-md transition-all duration-300 hover:shadow-lg"
         >

@@ -22,7 +22,7 @@ export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
               </h1>
               <div className="h-24 md:h-32 flex items-center justify-center">
                 <GooeyText
-                  texts={["Thoughtscape", "Creativity", "Expression", "Connection"]}
+                  texts={["CampusCash", "Learning", "Earning", "Connecting"]}
                   morphTime={1.5}
                   cooldownTime={1}
                   className="font-serif w-full"
@@ -31,8 +31,8 @@ export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
               </div>
             </div>
             <p className="text-lg md:text-xl mt-8 text-slate-600 dark:text-slate-300 mb-8 md:mb-12 max-w-2xl mx-auto leading-relaxed relative z-10 text-center px-4">
-              A serene space for sharing your thoughts, ideas, and reflections. 
-              Connect with minds that inspire and stories that resonate.
+              Learn, Earn, and Connect on Campus. Your one-stop platform for campus opportunities,
+              knowledge sharing, and building valuable connections.
             </p>
             <div className="flex justify-center">
               <Button

@@ -2,6 +2,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AppProviders } from "@/components/AppProviders";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AdminRoute } from "@/components/auth/AdminRoute";
 import { useAuth } from "@/components/auth/AuthProvider";
 import Navigation from "@/components/Navigation";
 import Landing from "./pages/Landing";
@@ -12,6 +13,9 @@ import Admin from "./pages/Admin";
 import Write from "./pages/Write";
 import Explore from "./pages/Explore";
 import Freelancing from "./pages/Freelancing";
+import SingleThought from "./pages/SingleThought";
+import SingleProject from "./pages/SingleProject";
+import EditThought from "./pages/EditThought";
 
 const App = () => {
   const { isAuthenticated } = useAuth();
@@ -21,12 +25,12 @@ const App = () => {
       <Navigation />
       <Routes>
         <Route path="/" element={isAuthenticated ? <Navigate to="/home" replace /> : <Landing />} />
+        <Route path="/auth" element={isAuthenticated ? <Navigate to="/home" replace /> : <Auth />} />
         <Route path="/home" element={
           <ProtectedRoute>
             <Home />
           </ProtectedRoute>
         } />
-        <Route path="/auth" element={<Auth />} />
         <Route path="/explore" element={
           <ProtectedRoute>
             <Explore />
@@ -39,7 +43,9 @@ const App = () => {
         } />
         <Route path="/admin" element={
           <ProtectedRoute>
-            <Admin />
+            <AdminRoute>
+              <Admin />
+            </AdminRoute>
           </ProtectedRoute>
         } />
         <Route path="/write" element={
@@ -50,6 +56,13 @@ const App = () => {
         <Route path="/freelancing" element={
           <ProtectedRoute>
             <Freelancing />
+          </ProtectedRoute>
+        } />
+        <Route path="/thought/:id" element={<SingleThought />} />
+        <Route path="/project/:id" element={<SingleProject />} />
+        <Route path="/thought/:id/edit" element={
+          <ProtectedRoute>
+            <EditThought />
           </ProtectedRoute>
         } />
       </Routes>

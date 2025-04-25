@@ -40,14 +40,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  IndianRupee, 
-  User, 
-  CheckCircle2, 
-  Calendar, 
-  Menu, 
-  ChevronRight, 
-  Pencil, 
+import {
+  IndianRupee,
+  User,
+  CheckCircle2,
+  Calendar,
+  Menu,
+  ChevronRight,
+  Pencil,
   Trash,
   AlertCircle,
   MessageSquare,
@@ -55,7 +55,11 @@ import {
   Briefcase,
   CheckCircle,
   Clock,
-  Flag
+  Flag,
+  PlusCircle,
+  Search,
+  Filter,
+  ExternalLink
 } from "lucide-react";
 import clsx from "clsx";
 import type { Project, ProjectApplication, UserApplication } from "@/types";
@@ -66,6 +70,11 @@ import { useMobile } from "@/hooks/use-mobile";
 import { Checkbox } from "@/components/ui/checkbox";
 import { NewProjectDialog } from "@/pages/freelancing/components/NewProjectDialog";
 import { ApplicationDialog } from "@/pages/freelancing/components/ApplicationDialog";
+import { EnhancedProjectCard } from "@/pages/freelancing/components/EnhancedProjectCard";
+import { EnhancedProjectsList } from "@/pages/freelancing/components/EnhancedProjectsList";
+import { EnhancedApplicationDialog } from "@/pages/freelancing/components/EnhancedApplicationDialog";
+import { FreelanceHeader } from "@/pages/freelancing/components/FreelanceHeader";
+import { motion } from "framer-motion";
 
 const Freelancing = () => {
   const { user } = useAuth();
@@ -82,6 +91,10 @@ const Freelancing = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [allowWhatsappApply, setAllowWhatsappApply] = useState(true);
   const [allowNormalApply, setAllowNormalApply] = useState(true);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [experience, setExperience] = useState("");
+  const [portfolio, setPortfolio] = useState("");
+  const [expectedSalary, setExpectedSalary] = useState("");
 
   const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
     queryKey: ["projects"],
@@ -95,7 +108,7 @@ const Freelancing = () => {
           comments:project_applications(count)
         `)
         .order("created_at", { ascending: false });
-      
+
       if (error) throw error;
 
       return data.map(project => ({
@@ -128,16 +141,16 @@ const Freelancing = () => {
     queryKey: ["receivedApplications", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      
+
       const { data: userProjects } = await supabase
         .from("projects")
         .select("id")
         .eq("author_id", user.id);
-      
+
       if (!userProjects || userProjects.length === 0) return [];
-      
+
       const projectIds = userProjects.map(project => project.id);
-      
+
       const { data, error } = await supabase
         .from("project_applications")
         .select(`
@@ -155,7 +168,7 @@ const Freelancing = () => {
           )
         `)
         .in("project_id", projectIds);
-      
+
       if (data?.length) {
         await supabase
           .from("project_applications")
@@ -165,7 +178,7 @@ const Freelancing = () => {
       }
 
       if (error) throw error;
-      
+
       return data.map(app => ({
         ...app,
         status: app.status as "pending" | "accepted" | "rejected",
@@ -180,10 +193,10 @@ const Freelancing = () => {
   });
 
   const createProjectMutation = useMutation({
-    mutationFn: async (newProject: Omit<Project, "id" | "created_at" | "updated_at" | "author_id" | "status"> & { 
-      allow_whatsapp_apply?: boolean, 
-      allow_normal_apply?: boolean, 
-      whatsapp_number?: string 
+    mutationFn: async (newProject: Omit<Project, "id" | "created_at" | "updated_at" | "author_id" | "status"> & {
+      allow_whatsapp_apply?: boolean,
+      allow_normal_apply?: boolean,
+      whatsapp_number?: string
     }) => {
       if (newProject.whatsapp_number && user?.id) {
         await supabase
@@ -191,7 +204,7 @@ const Freelancing = () => {
           .update({ whatsapp_number: newProject.whatsapp_number })
           .eq("id", user.id);
       }
-      
+
       const { data, error } = await supabase
         .from("projects")
         .insert([{
@@ -238,14 +251,14 @@ const Freelancing = () => {
   const updateProjectMutation = useMutation({
     mutationFn: async (updatedProject: Partial<Project> & { id: string, allow_whatsapp_apply?: boolean, allow_normal_apply?: boolean, whatsapp_number?: string }) => {
       const { id, budget, whatsapp_number, ...projectData } = updatedProject;
-      
+
       if (whatsapp_number && user?.id) {
         await supabase
           .from("profiles")
           .update({ whatsapp_number: whatsapp_number })
           .eq("id", user.id);
       }
-      
+
       const { data, error } = await supabase
         .from("projects")
         .update({
@@ -303,18 +316,18 @@ const Freelancing = () => {
   });
 
   const applyProjectMutation = useMutation({
-    mutationFn: async ({ 
-      projectId, 
-      message, 
-      phoneNumber, 
-      experience, 
-      portfolio 
-    }: { 
-      projectId: string; 
-      message: string; 
+    mutationFn: async ({
+      projectId,
+      message,
+      phoneNumber,
+      experience,
+      portfolio
+    }: {
+      projectId: string;
+      message: string;
       phoneNumber?: string;
       experience?: string;
-      portfolio?: string; 
+      portfolio?: string;
     }) => {
       const { data, error } = await supabase
         .from("project_applications")
@@ -359,18 +372,18 @@ const Freelancing = () => {
         .eq("id", applicationId)
         .select()
         .single();
-      
+
       if (error) throw error;
-      
+
       if (status === "accepted" && projectId) {
         const { error: projectError } = await supabase
           .from("projects")
           .update({ status: "in_progress" })
           .eq("id", projectId);
-        
+
         if (projectError) throw projectError;
       }
-      
+
       return data;
     },
     onSuccess: () => {
@@ -396,9 +409,9 @@ const Freelancing = () => {
         .from("project_applications")
         .update({ status: "accepted" })
         .eq("id", applicationId);
-      
+
       if (error) throw error;
-      
+
       return { success: true, message: "Application accepted successfully" };
     },
     onSuccess: () => {
@@ -424,9 +437,9 @@ const Freelancing = () => {
         .from("project_applications")
         .update({ status: "rejected" })
         .eq("id", applicationId);
-      
+
       if (error) throw error;
-      
+
       return { success: true, message: "Application rejected successfully" };
     },
     onSuccess: () => {
@@ -501,14 +514,20 @@ const Freelancing = () => {
 
   const handleApplyToProject = () => {
     if (!selectedProject) return;
-    
+
     applyProjectMutation.mutate({
       projectId: selectedProject.id,
       message: applicationMessage,
-      phoneNumber: "",
-      experience: "",
-      portfolio: "",
+      phoneNumber,
+      experience,
+      portfolio,
+      expectedSalary: expectedSalary ? parseFloat(expectedSalary) : undefined,
     });
+  };
+
+  const handleExternalApply = () => {
+    if (!selectedProject || !selectedProject.application_link) return;
+    window.open(selectedProject.application_link, '_blank');
   };
 
   const handleProjectCreated = (project: Project) => {
@@ -530,7 +549,7 @@ const Freelancing = () => {
 
       if (userProjects && userProjects.length > 0) {
         const projectIds = userProjects.map(p => p.id);
-        
+
         await supabase
           .from("project_applications")
           .update({ viewed_at: new Date().toISOString() })
@@ -538,7 +557,7 @@ const Freelancing = () => {
           .in("project_id", projectIds);
       }
     };
-    
+
     markApplicationsAsViewed();
   }, [user?.id]);
 
@@ -552,10 +571,10 @@ const Freelancing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90 py-12 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Freelancing Hub</h1>
+          <h1 className="text-3xl font-bold text-foreground">CampusCash Jobs</h1>
           {isMobile && (
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -568,8 +587,8 @@ const Freelancing = () => {
                   <SheetTitle>Navigation</SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col gap-4 py-6">
-                  <Button 
-                    variant={activeTab === "browse" ? "default" : "ghost"} 
+                  <Button
+                    variant={activeTab === "browse" ? "default" : "ghost"}
                     className="justify-start gap-2"
                     onClick={() => handleTabChange("browse")}
                   >
@@ -608,15 +627,15 @@ const Freelancing = () => {
           )}
 
           <TabsContent value="browse" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-3xl font-serif font-bold text-gray-900">Available Projects</h2>
-              <Button onClick={() => setIsNewProjectModalOpen(true)}>Post a Project</Button>
-            </div>
+            <FreelanceHeader
+              onPostJob={() => setIsNewProjectModalOpen(true)}
+              jobCount={projects.filter(p => p.status === "open").length}
+            />
 
             {isLoadingProjects ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="p-6 bg-white rounded-xl shadow-sm animate-pulse">
+                  <div key={i} className="p-6 bg-card rounded-xl shadow-sm animate-pulse">
                     <Skeleton className="h-6 w-2/3 mb-4" />
                     <Skeleton className="h-4 w-full mb-2" />
                     <Skeleton className="h-4 w-5/6" />
@@ -624,158 +643,37 @@ const Freelancing = () => {
                 ))}
               </div>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {projects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
-                          {project.title}
-                        </h3>
-                        {user?.id === project.author_id && (
-                          <div className="flex gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8"
-                              onClick={() => handleEditProject(project)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-red-500"
-                              onClick={() => handleDeleteProject(project)}
-                            >
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 line-clamp-3">
-                        {project.description}
-                      </p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Calendar className="w-4 h-4" />
-                        <span className="text-sm">
-                          Deadline: {project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <IndianRupee className="w-4 h-4" />
-                        <span className="text-sm">Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <User className="w-4 h-4" />
-                        <span className="text-sm">{project.author?.full_name || project.author?.username}</span>
-                      </div>
-                      
-                      {project.required_skills && project.required_skills.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-2">
-                          {project.required_skills.map((skill, index) => (
-                            <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="pt-4 flex flex-wrap gap-2 border-t border-gray-100">
-                      <div className="w-full flex flex-wrap justify-between items-center">
-                        <span className={clsx(
-                          "px-3 py-1 rounded-full text-xs font-medium",
-                          {
-                            "bg-green-100 text-green-800": project.status === "open",
-                            "bg-yellow-100 text-yellow-800": project.status === "in_progress",
-                            "bg-gray-100 text-gray-800": project.status === "closed"
-                          }
-                        )}>
-                          {project.status?.toUpperCase()}
-                        </span>
-                        
-                        {project.status === "in_progress" && hasApplied(project.id) && getApplicationStatus(project.id) === "accepted" ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-green-600 border-green-600"
-                          >
-                            <CheckCircle2 className="w-4 h-4 mr-1" />
-                            Awarded
-                          </Button>
-                        ) : (
-                          project.status === "open" && project.author_id !== user?.id && !hasApplied(project.id) ? (
-                            <div className="flex flex-wrap gap-2">
-                              {project.allow_normal_apply !== false && (
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedProject(project);
-                                    setIsApplicationDialogOpen(true);
-                                  }}
-                                >
-                                  Apply Now
-                                </Button>
-                              )}
-                              
-                              {project.author?.whatsapp_number && project.allow_whatsapp_apply !== false && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const message = encodeURIComponent(
-                                      `Hi, I'm interested in your project "${project.title}". I found it on the freelancing platform.`
-                                    );
-                                    window.open(
-                                      `https://wa.me/${project.author.whatsapp_number}?text=${message}`,
-                                      '_blank'
-                                    );
-                                  }}
-                                >
-                                  <MessageSquare className="w-4 h-4 mr-2" />
-                                  Apply via WhatsApp
-                                </Button>
-                              )}
-                            </div>
-                          ) : (
-                            hasApplied(project.id) && (
-                              <span className={clsx(
-                                "px-3 py-1 rounded-full text-xs capitalize font-medium",
-                                {
-                                  "bg-blue-100 text-blue-800": getApplicationStatus(project.id) === "pending",
-                                  "bg-green-100 text-green-800": getApplicationStatus(project.id) === "accepted",
-                                  "bg-red-100 text-red-800": getApplicationStatus(project.id) === "rejected"
-                                }
-                              )}>
-                                {getApplicationStatus(project.id) || "Applied"}
-                              </span>
-                            )
-                          )
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <EnhancedProjectsList
+                projects={projects}
+                userApplications={userApplications.map(app => app.project_id)}
+                onApply={(project) => {
+                  setSelectedProject(project);
+                  setApplicationMessage("");
+                  setPhoneNumber("");
+                  setExperience("");
+                  setPortfolio("");
+                  setExpectedSalary("");
+                  setIsApplicationDialogOpen(true);
+                }}
+                isLoading={isLoadingProjects}
+              />
             )}
           </TabsContent>
 
           <TabsContent value="applied" className="space-y-6">
-            <h2 className="text-2xl font-serif font-bold text-gray-900">Applied Projects</h2>
+            <motion.h2
+              className="text-3xl font-bold text-foreground"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              Your Applications
+            </motion.h2>
+
             {isLoadingUserApplications ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="p-6 bg-white rounded-xl shadow-sm animate-pulse">
+                  <div key={i} className="p-6 bg-card rounded-xl shadow-sm animate-pulse">
                     <Skeleton className="h-6 w-2/3 mb-4" />
                     <Skeleton className="h-4 w-full mb-2" />
                     <Skeleton className="h-4 w-5/6" />
@@ -787,72 +685,53 @@ const Freelancing = () => {
                 {projects
                   .filter((project) => hasApplied(project.id))
                   .length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-                    <p className="text-gray-500">You haven't applied to any projects yet.</p>
-                  </div>
+                  <motion.div
+                    className="text-center py-16 rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className="relative mb-6">
+                        <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-lg opacity-50"></div>
+                        <div className="relative h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Briefcase className="h-8 w-8 text-primary/70" />
+                        </div>
+                      </div>
+
+                      <h3 className="text-xl font-medium text-foreground mb-2">No Applications Yet</h3>
+                      <p className="text-muted-foreground max-w-md mb-6">
+                        You haven't applied to any jobs yet. Browse available jobs and submit your first application.
+                      </p>
+
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={() => setActiveTab("browse")}
+                        className="gap-2 bg-gradient-to-r from-background to-background/80 hover:from-background/80 hover:to-background border-primary/20"
+                      >
+                        <Search className="h-4 w-4" />
+                        Browse Jobs
+                      </Button>
+                    </div>
+                  </motion.div>
                 ) : (
                   <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {projects
                       .filter((project) => hasApplied(project.id))
-                      .map((project) => (
-                        <div
+                      .map((project, index) => (
+                        <motion.div
                           key={project.id}
-                          className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
                         >
-                          <div className="space-y-2">
-                            <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
-                              {project.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 line-clamp-3">
-                              {project.description}
-                            </p>
-                          </div>
-
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Calendar className="w-4 h-4" />
-                              <span className="text-sm">
-                                Deadline: {project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <IndianRupee className="w-4 h-4" />
-                              <span className="text-sm">Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
-                            </div>
-
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <User className="w-4 h-4" />
-                              <span className="text-sm">{project.author?.full_name || project.author?.username}</span>
-                            </div>
-                          </div>
-
-                          <div className="pt-4 flex justify-between items-center border-t border-gray-100">
-                            <span
-                              className={clsx(
-                                "px-3 py-1 rounded-full text-xs capitalize font-medium",
-                                {
-                                  "bg-blue-100 text-blue-800": getApplicationStatus(project.id) === "pending",
-                                  "bg-green-100 text-green-800": getApplicationStatus(project.id) === "accepted",
-                                  "bg-red-100 text-red-800": getApplicationStatus(project.id) === "rejected"
-                                }
-                              )}
-                            >
-                              {getApplicationStatus(project.id) || "Applied"}
-                            </span>
-
-                            <span className={clsx(
-                              "px-3 py-1 rounded-full text-xs font-medium",
-                              {
-                                "bg-green-100 text-green-800": project.status === "open",
-                                "bg-yellow-100 text-yellow-800": project.status === "in_progress",
-                                "bg-gray-100 text-gray-800": project.status === "closed"
-                              }
-                            )}>
-                              {project.status?.toUpperCase()}
-                            </span>
-                          </div>
-                        </div>
+                          <EnhancedProjectCard
+                            project={project}
+                            hasApplied={true}
+                            onApply={() => {}}
+                          />
+                        </motion.div>
                       ))}
                   </div>
                 )}
@@ -861,12 +740,19 @@ const Freelancing = () => {
           </TabsContent>
 
           <TabsContent value="received" className="space-y-6">
-            <h2 className="text-2xl font-serif font-bold text-gray-900">Received Applications</h2>
-            
+            <motion.h2
+              className="text-3xl font-bold text-foreground"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              Received Applications
+            </motion.h2>
+
             {isLoadingReceivedApplications ? (
               <div className="grid gap-6 md:grid-cols-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="p-6 bg-white rounded-xl shadow-sm animate-pulse">
+                  <div key={i} className="p-6 bg-card rounded-xl shadow-sm animate-pulse">
                     <Skeleton className="h-10 w-10 rounded-full mb-4" />
                     <Skeleton className="h-6 w-2/3 mb-4" />
                     <Skeleton className="h-4 w-full mb-2" />
@@ -877,17 +763,49 @@ const Freelancing = () => {
             ) : (
               <>
                 {receivedApplications.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-                    <p className="text-gray-500">You haven't received any applications yet.</p>
-                  </div>
+                  <motion.div
+                    className="text-center py-16 rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className="relative mb-6">
+                        <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-lg opacity-50"></div>
+                        <div className="relative h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="h-8 w-8 text-primary/70" />
+                        </div>
+                      </div>
+
+                      <h3 className="text-xl font-medium text-foreground mb-2">No Applications Yet</h3>
+                      <p className="text-muted-foreground max-w-md mb-6">
+                        You haven't received any applications for your jobs yet. Post a new job to attract applicants.
+                      </p>
+
+                      <Button
+                        onClick={() => setIsNewProjectModalOpen(true)}
+                        size="lg"
+                        className="gap-2 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 shadow-sm"
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        Post a New Job
+                      </Button>
+                    </div>
+                  </motion.div>
                 ) : (
                   <div className="grid gap-6 md:grid-cols-2">
-                    {receivedApplications.map((application) => (
-                      <ProjectApplicationCard
+                    {receivedApplications.map((application, index) => (
+                      <motion.div
                         key={application.id}
-                        application={application}
-                        onUpdateStatus={handleUpdateStatus}
-                      />
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                      >
+                        <ProjectApplicationCard
+                          application={application}
+                          onUpdateStatus={handleUpdateStatus}
+                        />
+                      </motion.div>
                     ))}
                   </div>
                 )}
@@ -960,19 +878,19 @@ const Freelancing = () => {
                     <Input id="whatsapp_number" name="whatsapp_number" defaultValue={selectedProject?.author?.whatsapp_number} />
                   </div>
                   <div>
-                    <Checkbox 
-                      id="allow_whatsapp_apply" 
-                      name="allow_whatsapp_apply" 
-                      checked={allowWhatsappApply} 
+                    <Checkbox
+                      id="allow_whatsapp_apply"
+                      name="allow_whatsapp_apply"
+                      checked={allowWhatsappApply}
                       onCheckedChange={(checked) => setAllowWhatsappApply(checked === true)}
                     />
                     <Label htmlFor="allow_whatsapp_apply">Allow WhatsApp Apply</Label>
                   </div>
                   <div>
-                    <Checkbox 
-                      id="allow_normal_apply" 
-                      name="allow_normal_apply" 
-                      checked={allowNormalApply} 
+                    <Checkbox
+                      id="allow_normal_apply"
+                      name="allow_normal_apply"
+                      checked={allowNormalApply}
                       onCheckedChange={(checked) => setAllowNormalApply(checked === true)}
                     />
                     <Label htmlFor="allow_normal_apply">Allow Normal Apply</Label>
@@ -1013,7 +931,7 @@ const Freelancing = () => {
         />
 
         {selectedProject && (
-          <ApplicationDialog
+          <EnhancedApplicationDialog
             isOpen={isApplicationDialogOpen}
             onOpenChange={setIsApplicationDialogOpen}
             project={selectedProject}
@@ -1021,6 +939,7 @@ const Freelancing = () => {
             onMessageChange={setApplicationMessage}
             onSubmit={handleApplyToProject}
             isSubmitting={applyProjectMutation.isPending}
+            onExternalApply={handleExternalApply}
           />
         )}
       </div>

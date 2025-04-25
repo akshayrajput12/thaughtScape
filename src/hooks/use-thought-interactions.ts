@@ -9,6 +9,7 @@ export const useThoughtInteractions = (thoughtId: string, currentUserId?: string
   const [bookmarksCount, setBookmarksCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -53,7 +54,11 @@ export const useThoughtInteractions = (thoughtId: string, currentUserId?: string
 
   const handleLike = async () => {
     if (!currentUserId) {
-      navigate('/auth');
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to like this thought",
+      });
+      navigate('/auth', { state: { from: `/thought/${thoughtId}` } });
       return;
     }
 
@@ -101,7 +106,11 @@ export const useThoughtInteractions = (thoughtId: string, currentUserId?: string
 
   const handleBookmark = async () => {
     if (!currentUserId) {
-      navigate('/auth');
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to bookmark this thought",
+      });
+      navigate('/auth', { state: { from: `/thought/${thoughtId}` } });
       return;
     }
 
@@ -152,6 +161,8 @@ export const useThoughtInteractions = (thoughtId: string, currentUserId?: string
     bookmarksCount,
     isLiked,
     isBookmarked,
+    showAuthPrompt,
+    setShowAuthPrompt,
     handleLike,
     handleBookmark
   };

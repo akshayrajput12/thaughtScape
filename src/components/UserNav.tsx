@@ -12,10 +12,30 @@ import {
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 export function UserNav() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkIsAdmin = async () => {
+      if (!user?.id) return;
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single();
+
+      setIsAdmin(!!data?.is_admin);
+    };
+
+    if (user?.id) {
+      checkIsAdmin();
+    }
+  }, [user?.id]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -55,9 +75,11 @@ export function UserNav() {
         <DropdownMenuItem onClick={navigateToProfile}>
           Profile
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={navigateToAdmin}>
-          Dashboard
-        </DropdownMenuItem>
+        {isAdmin && (
+          <DropdownMenuItem onClick={navigateToAdmin}>
+            Admin Dashboard
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           Log out

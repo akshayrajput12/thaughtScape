@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Project } from "@/types";
-import { Briefcase, FileText, Link, Phone } from "lucide-react";
+import { Briefcase, FileText, Link, Phone, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { IndianRupee } from "lucide-react";
 
@@ -18,6 +18,7 @@ export interface ApplicationDialogProps {
   onMessageChange: (message: string) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
+  onExternalApply?: () => void;
 }
 
 export const ApplicationDialog = ({
@@ -27,7 +28,8 @@ export const ApplicationDialog = ({
   message,
   onMessageChange,
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  onExternalApply
 }: ApplicationDialogProps) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [experience, setExperience] = useState("");
@@ -36,6 +38,14 @@ export const ApplicationDialog = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit();
+  };
+
+  const handleExternalApply = () => {
+    if (onExternalApply) {
+      onExternalApply();
+    } else if (project.application_link) {
+      window.open(project.application_link, '_blank');
+    }
   };
 
   return (
@@ -49,7 +59,7 @@ export const ApplicationDialog = ({
           <h3 className="font-semibold text-lg">{project.title}</h3>
           <div className="mt-2 space-y-2 text-sm">
             <p className="line-clamp-2 text-gray-600">{project.description}</p>
-            
+
             <div className="flex items-center gap-2 text-gray-600">
               <IndianRupee className="w-4 h-4" />
               <span>Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
@@ -79,7 +89,7 @@ export const ApplicationDialog = ({
               className="resize-none"
             />
           </div>
-          
+
           <div className="space-y-2">
             <div className="flex items-center">
               <Briefcase className="h-4 w-4 mr-2 text-purple-500" />
@@ -121,21 +131,35 @@ export const ApplicationDialog = ({
             />
           </div>
 
-          <div className="flex justify-end space-x-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={!message || isSubmitting}
-              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
-            >
-              {isSubmitting ? "Submitting..." : "Submit Application"}
-            </Button>
+          <div className="flex justify-between space-x-2 pt-2">
+            {project.application_link && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleExternalApply}
+                className="gap-1.5"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Apply Externally
+              </Button>
+            )}
+
+            <div className="flex space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!message || isSubmitting}
+                className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Application"}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

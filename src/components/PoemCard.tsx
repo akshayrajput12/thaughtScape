@@ -74,10 +74,10 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
         if (error) throw error;
 
         setIsFollowing(false);
-        
+
         // Invalidate related queries
         queryClient.invalidateQueries({ queryKey: ['profile', poem.author.id] });
-        
+
         toast({
           title: "Success",
           description: "Unfollowed successfully",
@@ -102,10 +102,10 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
           });
 
         setIsFollowing(true);
-        
+
         // Invalidate related queries
         queryClient.invalidateQueries({ queryKey: ['profile', poem.author.id] });
-        
+
         toast({
           title: "Success",
           description: "Followed successfully",
@@ -155,7 +155,7 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
   };
 
   const handleEdit = () => {
-    navigate(`/edit-thought/${poem.id}`);
+    navigate(`/thought/${poem.id}/edit`);
   };
 
   const handleDelete = async () => {
@@ -189,11 +189,9 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="group relative max-w-2xl mx-auto bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-purple-100/50"
+      className="group relative max-w-2xl mx-auto bg-card rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-border"
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 via-transparent to-pink-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      
-      <div className="relative p-6 sm:p-8">
+      <div className="relative p-5 sm:p-6">
         <PoemHeader
           author={poem.author}
           title={poem.title}
@@ -204,8 +202,8 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
           onEdit={handleEdit}
           onDelete={handleDelete}
         />
-        
-        <motion.div 
+
+        <motion.div
           className="my-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -213,14 +211,14 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
         >
           <PoemContent content={poem.content} />
         </motion.div>
-        
-        <motion.div 
-          className="mt-6 pt-4 border-t border-purple-100"
+
+        <motion.div
+          className="mt-6 pt-4 border-t border-border"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="flex items-center justify-between text-sm text-gray-500">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div>
               <PoemInteractionButtons
                 likesCount={likesCount}
@@ -230,10 +228,11 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
                 onLike={handleLike}
                 onBookmark={handleBookmark}
                 onShare={() => setShowShareDialog(true)}
+                thoughtId={poem.id}
                 showAnimation={true}
               />
             </div>
-            <span className="text-sm text-gray-400 font-medium">
+            <span className="text-xs text-muted-foreground font-medium">
               {new Date(poem.created_at).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
@@ -241,7 +240,7 @@ export const PoemCard = ({ poem, currentUserId, isAdmin, onDelete }: PoemCardPro
               })}
             </span>
           </div>
-          
+
           <CommentSection
             thoughtId={poem.id}
             currentUserId={currentUserId}

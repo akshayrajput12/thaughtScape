@@ -9,9 +9,9 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* About Section */}
           <div className="space-y-4">
-            <h3 className="text-xl font-serif font-semibold text-gray-800">Thoughtscape</h3>
+            <h3 className="text-xl font-serif font-semibold text-gray-800">CampusCash</h3>
             <p className="text-gray-600">
-              A creative space for Thaughts,Ideas,Enegener and writers to share their thoughts and connect with like-minded individuals.
+              Learn, Earn, and Connect on Campus. Your platform for campus opportunities, knowledge sharing, and building valuable connections.
             </p>
           </div>
 
@@ -71,7 +71,7 @@ export const Footer = () => {
           {/* Newsletter */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-800">Newsletter</h3>
-            <p className="text-gray-600">Stay updated with our latest Thaughts and features.</p>
+            <p className="text-gray-600">Stay updated with the latest campus opportunities and features.</p>
             <div className="flex gap-2">
               <Input
                 type="email"
@@ -90,7 +90,7 @@ export const Footer = () => {
         <div className="mt-12 pt-8 border-t border-purple-100/20">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-600 text-sm">
-              © {new Date().getFullYear()} Thoughtscape. All rights reserved.
+              © {new Date().getFullYear()} CampusCash. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="/privacy" className="text-gray-600 hover:text-purple-600 text-sm transition-colors">

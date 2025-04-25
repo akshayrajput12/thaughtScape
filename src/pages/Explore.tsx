@@ -11,6 +11,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { Profile, Thought } from "@/types";
 import { useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -89,20 +91,20 @@ const Explore = () => {
           .select('following_id')
           .eq('follower_id', user.id)
           .in('following_id', userIds);
-        
+
         const followingMap = new Set(followData?.map(item => item.following_id) || []);
-        
+
         // Add is_following property to each profile
         const profilesWithFollowStatus = data.map(profile => ({
           ...profile,
           is_following: followingMap.has(profile.id)
         }));
-        
+
         setSearchResults(profilesWithFollowStatus);
       } else {
         setSearchResults(data || []);
       }
-      
+
       setShowSearchResults(true);
     } catch (error) {
       console.error('Error searching users:', error);
@@ -137,11 +139,11 @@ const Explore = () => {
       navigate('/auth');
       return;
     }
-    
+
     try {
-      const isFollowing = suggestedUsers.find(u => u.id === userId)?.is_following || 
+      const isFollowing = suggestedUsers.find(u => u.id === userId)?.is_following ||
                          searchResults.find(u => u.id === userId)?.is_following;
-      
+
       if (isFollowing) {
         // Unfollow
         const { error } = await supabase
@@ -151,22 +153,22 @@ const Explore = () => {
           .eq('following_id', userId);
 
         if (error) throw error;
-        
+
         // Update local state
         if (showSearchResults) {
-          setSearchResults(prevResults => 
-            prevResults.map(profile => 
-              profile.id === userId 
+          setSearchResults(prevResults =>
+            prevResults.map(profile =>
+              profile.id === userId
                 ? { ...profile, is_following: false }
                 : profile
             )
           );
         }
-        
+
         // Invalidate queries to refetch data
         queryClient.invalidateQueries({ queryKey: ['suggestedUsers'] });
         queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-        
+
         toast({
           title: "Success",
           description: "You have unfollowed this user",
@@ -181,7 +183,7 @@ const Explore = () => {
           });
 
         if (error) throw error;
-        
+
         // Update notification for the followed user
         await supabase
           .from('notifications')
@@ -191,22 +193,22 @@ const Explore = () => {
             content: 'Someone started following you',
             related_user_id: user.id
           });
-        
+
         // Update local state
         if (showSearchResults) {
-          setSearchResults(prevResults => 
-            prevResults.map(profile => 
-              profile.id === userId 
+          setSearchResults(prevResults =>
+            prevResults.map(profile =>
+              profile.id === userId
                 ? { ...profile, is_following: true }
                 : profile
             )
           );
         }
-        
+
         // Invalidate queries to refetch data
         queryClient.invalidateQueries({ queryKey: ['suggestedUsers'] });
         queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-        
+
         toast({
           title: "Success",
           description: "You are now following this user",
@@ -223,94 +225,102 @@ const Explore = () => {
   };
 
   const isUserFollowing = (userId: string) => {
-    return suggestedUsers.find(u => u.id === userId)?.is_following || 
-           searchResults.find(u => u.id === userId)?.is_following || 
+    return suggestedUsers.find(u => u.id === userId)?.is_following ||
+           searchResults.find(u => u.id === userId)?.is_following ||
            false;
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background">
+      <div className="container max-w-7xl mx-auto px-4 py-6 md:py-12">
         {/* Search Section */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-12 relative"
+          className="mb-8 md:mb-16 relative"
         >
-          <div className="max-w-2xl mx-auto text-center space-y-4">
-            <h1 className="text-3xl md:text-4xl font-serif font-bold text-black mb-4">
-              Discover Amazing Thoughts
+          <div className="max-w-3xl mx-auto text-center space-y-4 md:space-y-6">
+            <div className="inline-block mb-2">
+              <span className="bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
+                Explore
+              </span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-foreground px-2">
+              Discover Campus Opportunities
             </h1>
-            <p className="text-gray-600 mb-8 max-w-lg mx-auto">
-              Explore a world of creativity and connect with inspiring minds
+            <p className="text-muted-foreground mb-6 md:mb-8 max-w-xl mx-auto text-base md:text-lg px-4">
+              Learn, earn, and connect with fellow students on your campus
             </p>
-            <div className="relative max-w-xl mx-auto">
-              <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200 blur-xl opacity-50 -z-10 rounded-full" />
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <div className="relative max-w-2xl mx-auto px-2">
+              {/* Decorative elements - hidden on small screens */}
+              <div className="absolute -top-10 -left-10 w-20 h-20 bg-primary/20 rounded-full blur-xl opacity-60 hidden md:block dark:bg-primary/10" />
+              <div className="absolute -bottom-10 -right-10 w-20 h-20 bg-primary/20 rounded-full blur-xl opacity-60 hidden md:block dark:bg-primary/10" />
+
+              <div className="relative bg-card/80 backdrop-blur-md rounded-xl md:rounded-2xl p-2 shadow-lg md:shadow-xl border border-border">
+                <Search className="absolute left-4 md:left-6 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 md:h-5 w-4 md:w-5" />
                 <Input
                   type="text"
-                  placeholder="Search users..."
+                  placeholder="Search users or thoughts..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-12 h-14 bg-white/80 backdrop-blur-sm border-gray-300 focus:border-black rounded-full shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
+                  className="pl-10 md:pl-12 h-12 md:h-14 bg-transparent border-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg md:rounded-xl text-base md:text-lg"
                 />
               </div>
             </div>
           </div>
-          
+
           {/* Search Results Dropdown */}
           {showSearchResults && searchResults.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute mt-2 w-full max-w-xl mx-auto inset-x-0 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 p-2"
+              className="absolute mt-2 md:mt-4 w-full max-w-2xl mx-auto inset-x-0 bg-card/90 backdrop-blur-md border border-border rounded-xl md:rounded-2xl shadow-xl md:shadow-2xl z-50 p-3 md:p-4"
             >
-              <div className="p-2">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Search Results</h3>
-                <div className="divide-y divide-gray-100">
+              <div className="p-1 md:p-2">
+                <h3 className="text-xs md:text-sm font-medium text-primary mb-2 md:mb-4 flex items-center">
+                  <Users size={14} className="mr-1 md:mr-2" />
+                  Search Results
+                </h3>
+                <div className="divide-y divide-border">
                   {searchResults.map((profile) => (
                     <motion.div
                       key={profile.id}
                       whileHover={{ x: 5 }}
-                      className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between p-2 md:p-4 hover:bg-muted/50 rounded-lg md:rounded-xl transition-all duration-300"
                     >
-                      <div 
-                        className="flex items-center gap-3 cursor-pointer" 
+                      <div
+                        className="flex items-center gap-2 md:gap-4 cursor-pointer flex-1 min-w-0"
                         onClick={() => navigate(`/profile/${profile.id}`)}
                       >
-                        <div className="relative">
-                          <img
-                            src={profile.avatar_url || "/placeholder.svg"}
-                            alt={profile.username}
-                            className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                          />
+                        <div className="relative flex-shrink-0">
+                          <Avatar className="w-10 h-10 md:w-12 md:h-12 border-2 border-background">
+                            <AvatarImage src={profile.avatar_url || ""} alt={profile.username} />
+                            <AvatarFallback>{profile.username?.[0]?.toUpperCase()}</AvatarFallback>
+                          </Avatar>
                         </div>
-                        <div>
-                          <p className="font-medium text-black">{profile.username}</p>
-                          <p className="text-sm text-gray-500">{profile.full_name}</p>
+                        <div className="truncate">
+                          <p className="font-medium text-foreground text-sm md:text-base truncate">{profile.username}</p>
+                          <p className="text-xs md:text-sm text-muted-foreground truncate">{profile.full_name}</p>
                         </div>
                       </div>
-                      <button
+                      <Button
                         onClick={() => handleFollow(profile.id)}
-                        className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-                          profile.is_following 
-                            ? "text-red-600 bg-red-50 hover:bg-red-100" 
-                            : "text-white bg-black hover:bg-gray-800"
-                        }`}
+                        variant={profile.is_following ? "destructive" : "default"}
+                        size="sm"
+                        className="ml-2 flex-shrink-0"
                       >
                         {profile.is_following ? (
                           <>
-                            <UserMinus size={12} />
+                            <UserMinus size={12} className="mr-1 hidden sm:inline" />
                             <span>Unfollow</span>
                           </>
                         ) : (
                           <>
-                            <UserPlus size={12} />
+                            <UserPlus size={12} className="mr-1 hidden sm:inline" />
                             <span>Follow</span>
                           </>
                         )}
-                      </button>
+                      </Button>
                     </motion.div>
                   ))}
                 </div>
@@ -319,39 +329,59 @@ const Explore = () => {
           )}
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
           {/* Main Content - Thoughts */}
-          <div className="lg:col-span-2 space-y-6">
-            <motion.h2 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-2xl font-serif font-bold text-black mb-6 border-b border-gray-200 pb-4"
-            >
-              Latest Thoughts
-            </motion.h2>
+          <div className="lg:col-span-2 space-y-6 md:space-y-8 order-2 lg:order-1">
+            <div className="flex items-center justify-between">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center"
+              >
+                <div className="w-1 md:w-1.5 h-6 md:h-8 bg-primary rounded-full mr-2 md:mr-3"></div>
+                <h2 className="text-xl md:text-2xl font-serif font-bold text-foreground">
+                  Campus Buzz
+                </h2>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-muted-foreground"
+              >
+                <Tag size={14} className="md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Popular now</span>
+                <span className="sm:hidden">Popular</span>
+              </motion.div>
+            </div>
+
             {thoughtsLoading ? (
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-8">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-lg p-6 shadow-md">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <Skeleton className="h-12 w-12 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-24" />
+                  <div key={i} className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg border border-border">
+                    <div className="flex items-center space-x-3 md:space-x-4 mb-3 md:mb-4">
+                      <Skeleton className="h-10 w-10 md:h-12 md:w-12 rounded-full" />
+                      <div className="space-y-1 md:space-y-2">
+                        <Skeleton className="h-3 md:h-4 w-24 md:w-32" />
+                        <Skeleton className="h-2 md:h-3 w-16 md:w-24" />
                       </div>
                     </div>
-                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-16 md:h-24 w-full" />
+                    <div className="flex justify-between mt-3 md:mt-4">
+                      <Skeleton className="h-6 md:h-8 w-16 md:w-20 rounded-full" />
+                      <Skeleton className="h-6 md:h-8 w-16 md:w-20 rounded-full" />
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="grid gap-6">
+              <div className="space-y-6">
                 {thoughts.map((thought, index) => (
                   <motion.div
                     key={thought.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ delay: index * 0.05 }}
                     className="transform hover:-translate-y-1 transition-all duration-300"
                   >
                     <PoemCard
@@ -366,113 +396,246 @@ const Explore = () => {
           </div>
 
           {/* Sidebar - Suggested Users */}
-          <div className="space-y-6 lg:sticky lg:top-24">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-gradient-to-br from-white to-purple-50 rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] p-6 border-2 border-black overflow-hidden"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-serif font-semibold text-black flex items-center gap-2">
-                  <Users size={20} className="text-purple-600" />
-                  <span className="bg-gradient-to-r from-purple-600 to-purple-900 bg-clip-text text-transparent">
-                    Suggested Connections
-                  </span>
-                </h3>
-                <span className="text-xs font-medium bg-purple-900 text-white px-2 py-1 rounded-full">
+          <div className="space-y-6 md:space-y-8 order-1 lg:order-2">
+            {/* Mobile horizontal scrolling users for small screens */}
+            <div className="lg:hidden">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-1">
+                  <Users size={16} className="text-primary" />
+                  <h3 className="text-base font-serif font-semibold text-foreground">
+                    People to Follow
+                  </h3>
+                </div>
+                <span className="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
                   {suggestedUsers.length}
                 </span>
               </div>
-              
+
               {suggestedUsersLoading ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex items-center space-x-4">
-                      <Skeleton className="h-12 w-12 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-3 w-16" />
+                <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-hide">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex-shrink-0 w-40 bg-card rounded-xl p-4 shadow-md border border-border">
+                      <div className="flex flex-col items-center text-center space-y-3">
+                        <Skeleton className="h-16 w-16 rounded-full" />
+                        <div className="space-y-1 w-full">
+                          <Skeleton className="h-3 w-20 mx-auto" />
+                          <Skeleton className="h-2 w-16 mx-auto" />
+                        </div>
+                        <Skeleton className="h-8 w-full rounded-full" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-hide">
                   {suggestedUsers.map((user: Profile, index) => (
                     <motion.div
                       key={user.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="group relative overflow-hidden flex items-center justify-between gap-4 p-4 rounded-xl hover:bg-white transition-all duration-300 border border-transparent hover:border-purple-200"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="flex-shrink-0 w-40 bg-card rounded-xl p-4 shadow-md border border-border hover:shadow-lg transition-all duration-300"
                     >
-                      {/* Background decoration */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-purple-100/30 to-pink-100/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-100/50 rounded-full group-hover:scale-110 transition-transform duration-500"></div>
-                      
-                      <div 
-                        className="flex items-center gap-3 cursor-pointer relative z-10" 
-                        onClick={() => navigate(`/profile/${user.id}`)}
-                      >
-                        <div className="relative overflow-hidden rounded-full">
-                          <div className="absolute inset-0 bg-gradient-to-br from-purple-300 to-pink-300 rounded-full opacity-0 group-hover:opacity-30 transition-opacity" />
-                          <img
-                            src={user.avatar_url || "/placeholder.svg"}
-                            alt={user.username}
-                            className="relative w-12 h-12 rounded-full object-cover border-2 border-white group-hover:scale-110 transition-all duration-300"
-                          />
-                          {user.is_following && (
-                            <div className="absolute bottom-0 right-0 bg-purple-600 text-white p-0.5 rounded-full">
-                              <Badge size={10} />
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-black group-hover:text-purple-900 transition-colors">
-                            {user.username}
-                          </p>
-                          <div className="flex items-center text-sm text-gray-500">
-                            <span className="inline-block w-2 h-2 bg-purple-600 rounded-full mr-1"></span>
-                            <span>{user.followers_count} followers</span>
+                      <div className="flex flex-col items-center text-center space-y-3">
+                        <div
+                          className="cursor-pointer"
+                          onClick={() => navigate(`/profile/${user.id}`)}
+                        >
+                          <div className="relative">
+                            <Avatar className="w-16 h-16">
+                              <AvatarImage src={user.avatar_url || ""} alt={user.username} />
+                              <AvatarFallback>{user.username?.[0]?.toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            {user.is_following && (
+                              <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-1 rounded-full shadow-sm">
+                                <Badge size={8} />
+                              </div>
+                            )}
                           </div>
                         </div>
+                        <div className="w-full">
+                          <p className="font-medium text-foreground truncate text-sm">
+                            {user.username}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {user.followers_count || 0} followers
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => handleFollow(user.id)}
+                          variant={user.is_following ? "destructive" : "default"}
+                          size="sm"
+                          className="w-full"
+                        >
+                          {user.is_following ? "Unfollow" : "Follow"}
+                        </Button>
                       </div>
-                      <button
-                        onClick={() => handleFollow(user.id)}
-                        className={`relative z-10 px-4 py-2 text-sm font-medium rounded-full transition-all flex items-center gap-1 group-hover:scale-105 ${
-                          user.is_following 
-                            ? "text-white bg-red-500 hover:bg-red-600" 
-                            : "text-white bg-purple-600 hover:bg-purple-700"
-                        }`}
-                      >
-                        {user.is_following ? (
-                          <>
-                            <UserMinus size={14} />
-                            <span>Unfollow</span>
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus size={14} />
-                            <span>Follow</span>
-                          </>
-                        )}
-                      </button>
                     </motion.div>
                   ))}
                 </div>
               )}
-              
-              {!suggestedUsersLoading && suggestedUsers.length > 0 && (
-                <div className="mt-6 pt-4 border-t border-purple-100 text-center">
-                  <button 
-                    className="text-sm font-medium text-purple-700 hover:text-purple-900 transition-colors"
-                    onClick={() => navigate('/explore')}
-                  >
-                    View all suggested users
-                  </button>
+            </div>
+
+            {/* Desktop sidebar - only visible on large screens */}
+            <div className="hidden lg:block lg:sticky lg:top-24">
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-card rounded-2xl shadow-xl p-6 border border-border overflow-hidden"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Users size={18} className="text-primary" />
+                      <h3 className="text-lg font-serif font-semibold text-foreground">
+                        People to Follow
+                      </h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Discover creative minds</p>
+                  </div>
+                  <span className="text-xs font-medium bg-primary text-primary-foreground px-3 py-1 rounded-full">
+                    {suggestedUsers.length}
+                  </span>
                 </div>
-              )}
-            </motion.div>
+
+                {suggestedUsersLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="flex items-center space-x-4 p-2">
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-3 w-24" />
+                          <Skeleton className="h-2 w-16" />
+                        </div>
+                        <Skeleton className="h-8 w-20 rounded-full" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {suggestedUsers.map((user: Profile, index) => (
+                      <motion.div
+                        key={user.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="group relative overflow-hidden flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-muted/50 transition-all duration-300"
+                      >
+                        {/* Decorative elements */}
+                        <div className="absolute -right-6 -bottom-6 w-12 h-12 bg-primary/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 dark:bg-primary/5"></div>
+                        <div className="absolute -left-6 -top-6 w-12 h-12 bg-primary/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 dark:bg-primary/5"></div>
+
+                        <div
+                          className="flex items-center gap-3 cursor-pointer relative z-10 min-w-0 flex-1"
+                          onClick={() => navigate(`/profile/${user.id}`)}
+                        >
+                          <div className="relative overflow-hidden rounded-full flex-shrink-0">
+                            <Avatar className="w-12 h-12">
+                              <AvatarImage src={user.avatar_url || ""} alt={user.username} />
+                              <AvatarFallback>{user.username?.[0]?.toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            {user.is_following && (
+                              <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-1 rounded-full shadow-sm">
+                                <Badge size={8} />
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                              {user.username}
+                            </p>
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <span className="inline-block w-1.5 h-1.5 bg-primary rounded-full mr-1"></span>
+                              <span className="truncate">{user.followers_count || 0} followers</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => handleFollow(user.id)}
+                          variant={user.is_following ? "destructive" : "default"}
+                          size="sm"
+                          className="relative z-10"
+                        >
+                          {user.is_following ? (
+                            <>
+                              <UserMinus size={12} className="mr-1" />
+                              <span>Unfollow</span>
+                            </>
+                          ) : (
+                            <>
+                              <UserPlus size={12} className="mr-1" />
+                              <span>Follow</span>
+                            </>
+                          )}
+                        </Button>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+
+                {!suggestedUsersLoading && suggestedUsers.length > 0 && (
+                  <div className="mt-6 pt-4 border-t border-border text-center">
+                    <Button variant="link" className="text-primary">
+                      <span>Discover more people</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Button>
+                  </div>
+                )}
+              </motion.div>
+
+              {/* Additional sidebar content - Topics */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-card rounded-2xl shadow-xl p-6 border border-border mt-6"
+              >
+                <h3 className="text-lg font-serif font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Tag size={18} className="text-primary" />
+                  Popular Topics
+                </h3>
+
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {['Poetry', 'Fiction', 'Philosophy', 'Science', 'Art', 'Music', 'Technology'].map((topic, index) => (
+                    <motion.span
+                      key={topic}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="px-3 py-1.5 bg-muted text-foreground text-sm font-medium rounded-full cursor-pointer hover:bg-primary/10 transition-colors"
+                    >
+                      {topic}
+                    </motion.span>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Mobile Topics - Horizontal scrolling for small screens */}
+            <div className="lg:hidden">
+              <div className="flex items-center gap-1 mb-3">
+                <Tag size={16} className="text-primary" />
+                <h3 className="text-base font-serif font-semibold text-foreground">
+                  Popular Topics
+                </h3>
+              </div>
+
+              <div className="flex overflow-x-auto pb-2 space-x-2 scrollbar-hide">
+                {['Poetry', 'Fiction', 'Philosophy', 'Science', 'Art', 'Music', 'Technology'].map((topic, index) => (
+                  <motion.span
+                    key={topic}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="flex-shrink-0 px-3 py-1.5 bg-muted text-foreground text-sm font-medium rounded-full cursor-pointer hover:bg-primary/10 transition-colors whitespace-nowrap"
+                  >
+                    {topic}
+                  </motion.span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -61,6 +61,8 @@ export interface Project {
   application_deadline?: string;
   allow_normal_apply?: boolean;
   allow_whatsapp_apply?: boolean;
+  application_link?: string;
+  is_featured?: boolean;
 }
 
 export interface ProjectApplication {
@@ -104,8 +106,8 @@ export interface Thought {
   comments?: { count: number }[];
   likes?: any[];
   bookmarks?: any[];
-  tagged_users?: string[]; 
-  accepted_tags?: string[]; 
+  tagged_users?: string[];
+  accepted_tags?: string[];
 }
 
 export interface Notification {
