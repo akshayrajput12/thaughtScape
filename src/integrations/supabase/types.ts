@@ -286,6 +286,7 @@ export type Database = {
           updated_at: string
           username: string
           whatsapp_number: string | null
+          youtube_url: string | null
         }
         Insert: {
           age?: number | null
@@ -313,6 +314,7 @@ export type Database = {
           updated_at?: string
           username: string
           whatsapp_number?: string | null
+          youtube_url?: string | null
         }
         Update: {
           age?: number | null
@@ -340,6 +342,7 @@ export type Database = {
           updated_at?: string
           username?: string
           whatsapp_number?: string | null
+          youtube_url?: string | null
         }
         Relationships: []
       }

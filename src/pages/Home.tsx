@@ -5,8 +5,13 @@ import { Thought } from "@/types";
 import { Loader2 } from "lucide-react";
 import { ThoughtCard } from "@/components/thoughts/ThoughtCard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from "@/components/auth/AuthProvider";
 
 const Home = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
   const { data: thoughts, isLoading } = useQuery({
     queryKey: ['thoughts'],
     queryFn: async () => {
@@ -28,6 +33,12 @@ const Home = () => {
     }
   });
 
+  // Redirect to home if not authenticated
+  if (!isAuthenticated) {
+    navigate('/');
+    return null;
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -38,9 +49,9 @@ const Home = () => {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 responsive-grid">
         <h1 className="text-3xl font-bold mb-8">Your Feed</h1>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {thoughts?.map((thought) => (
             <ThoughtCard key={thought.id} thought={thought} />
           ))}
