@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { Profile } from "@/types";
-import { Instagram, Linkedin, Twitter, Snapchat } from "lucide-react";
+import { Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
 
 const colleges = [
   "Lovely Professional University",
@@ -43,6 +42,7 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
   const [linkedinUrl, setLinkedinUrl] = useState(profile.linkedin_url || "");
   const [twitterUrl, setTwitterUrl] = useState(profile.twitter_url || "");
   const [snapchatUrl, setSnapchatUrl] = useState(profile.snapchat_url || "");
+  const [youtubeUrl, setYoutubeUrl] = useState(profile.youtube_url || "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -81,6 +81,9 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
     if (snapchatUrl && !urlRegex.test(snapchatUrl)) {
       newErrors.snapchatUrl = "Please enter a valid URL";
     }
+    if (youtubeUrl && !urlRegex.test(youtubeUrl)) {
+      newErrors.youtubeUrl = "Please enter a valid URL";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -107,6 +110,7 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
         linkedin_url: linkedinUrl,
         twitter_url: twitterUrl,
         snapchat_url: snapchatUrl,
+        youtube_url: youtubeUrl,
         is_profile_completed: true
       };
       
@@ -143,7 +147,6 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
 
   const isLPU = college === "Lovely Professional University";
   
-  // Social media input component for consistent styling
   const SocialMediaInput = ({ 
     id, 
     icon, 
@@ -352,12 +355,12 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
                 />
                 
                 <SocialMediaInput 
-                  id="snapchatUrl" 
-                  icon={<Snapchat className="h-4 w-4 text-yellow-400" />}
-                  value={snapchatUrl} 
-                  onChange={(e) => setSnapchatUrl(e.target.value)}
-                  placeholder="https://snapchat.com/add/username"
-                  error={errors.snapchatUrl}
+                  id="youtubeUrl" 
+                  icon={<Youtube className="h-4 w-4 text-red-600" />}
+                  value={youtubeUrl || ''} 
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  placeholder="https://youtube.com/channel/username"
+                  error={errors.youtubeUrl}
                 />
               </div>
             </div>
@@ -377,3 +380,5 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
     </form>
   );
 };
+
+export { ProfileForm };
