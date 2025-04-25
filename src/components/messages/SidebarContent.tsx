@@ -31,13 +31,10 @@ export function SidebarContent({
   activeTab,
   searchQuery,
   setSearchQuery,
-  conversations,
-  messageRequests,
-  searchResults,
+  conversations = [],
   selectedUser,
   onSelectUser,
-  onAcceptRequest,
-  onDeclineRequest
+  searchResults = []
 }: SidebarContentProps) {
   return (
     <>
@@ -63,13 +60,7 @@ export function SidebarContent({
       </TabsContent>
 
       <TabsContent value="requests" className="m-0">
-        <MessageRequests
-          requests={messageRequests}
-          onSelectRequest={onSelectUser}
-          onAcceptRequest={onAcceptRequest}
-          onDeclineRequest={onDeclineRequest}
-          selectedSenderId={selectedUser?.id}
-        />
+        <MessageRequests />
       </TabsContent>
 
       <TabsContent value="users" className="m-0">

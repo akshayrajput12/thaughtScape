@@ -14,7 +14,7 @@ const Home = () => {
         .from('thoughts')
         .select(`
           *,
-          author:profiles(id, username, full_name, avatar_url),
+          author:profiles(id, username, full_name, avatar_url, created_at, updated_at),
           _count(
             likes(count),
             bookmarks(count),
@@ -24,7 +24,7 @@ const Home = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Thought[];
+      return data as unknown as Thought[];
     }
   });
 

@@ -133,3 +133,17 @@ export interface UserApplication {
   project_id: string;
   status: 'pending' | 'accepted' | 'rejected';
 }
+
+// Deprecated interfaces kept for backward compatibility
+// These will be used only in component props, not for actual data
+export interface Message {
+  id: string;
+  content: string;
+  sender_id: string;
+  receiver_id: string;
+  created_at: string;
+  is_read: boolean;
+  request_status?: 'pending' | 'accepted' | 'declined';
+  sender?: Profile;
+  receiver?: Profile;
+}
