@@ -114,15 +114,15 @@ const Landing = () => {
       <Hero onActionClick={handleCallToAction} isLoggedIn={isAuthenticated} />
 
       {/* Top Posts Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="mb-10 flex justify-between items-center">
+      <section className="py-8 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="mb-6 sm:mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center"
           >
             <div className="w-1.5 h-8 bg-gradient-to-b from-pink-600 to-red-600 rounded-full mr-3"></div>
-            <h2 className="text-2xl md:text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-pink-900 bg-clip-text text-transparent">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-pink-900 bg-clip-text text-transparent">
               Top Campus Content
             </h2>
           </motion.div>
@@ -130,7 +130,7 @@ const Landing = () => {
           <Button
             variant="ghost"
             onClick={() => navigate('/explore')}
-            className="text-pink-600 hover:text-pink-700 hover:bg-pink-50 flex items-center gap-1"
+            className="text-pink-600 hover:text-pink-700 hover:bg-pink-50 flex items-center gap-1 text-sm sm:text-base"
           >
             <span>View All</span>
             <ArrowRight size={16} />
@@ -138,26 +138,26 @@ const Landing = () => {
         </div>
 
         {loadingPosts ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 shadow-lg border border-pink-50">
+              <div key={i} className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-pink-50">
                 <div className="flex items-center space-x-4 mb-4">
-                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <Skeleton className="h-10 sm:h-12 w-10 sm:w-12 rounded-full" />
                   <div className="space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-3 sm:h-4 w-24 sm:w-32" />
+                    <Skeleton className="h-2 sm:h-3 w-20 sm:w-24" />
                   </div>
                 </div>
-                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-20 sm:h-24 w-full" />
                 <div className="flex justify-between mt-4">
-                  <Skeleton className="h-8 w-20 rounded-full" />
-                  <Skeleton className="h-8 w-20 rounded-full" />
+                  <Skeleton className="h-6 sm:h-8 w-16 sm:w-20 rounded-full" />
+                  <Skeleton className="h-6 sm:h-8 w-16 sm:w-20 rounded-full" />
                 </div>
               </div>
             ))}
           </div>
         ) : topPosts.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {topPosts.map((thought, index) => (
               <motion.div
                 key={thought.id}
@@ -174,22 +174,22 @@ const Landing = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-xl shadow-sm">
+          <div className="text-center py-8 sm:py-12 bg-white rounded-xl shadow-sm">
             <p className="text-gray-500">No posts found.</p>
           </div>
         )}
       </section>
 
       {/* Recent Projects Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-gradient-to-b from-white to-blue-50/30">
-        <div className="mb-10 flex justify-between items-center">
+      <section className="py-8 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-gradient-to-b from-white to-blue-50/30">
+        <div className="mb-6 sm:mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center"
           >
             <div className="w-1.5 h-8 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full mr-3"></div>
-            <h2 className="text-2xl md:text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent">
               Earn on Campus
             </h2>
           </motion.div>
@@ -197,7 +197,7 @@ const Landing = () => {
           <Button
             variant="ghost"
             onClick={() => navigate('/freelancing')}
-            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1 text-sm sm:text-base"
           >
             <span>View All</span>
             <ArrowRight size={16} />
@@ -205,17 +205,17 @@ const Landing = () => {
         </div>
 
         {loadingProjects ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="p-6 bg-white rounded-xl shadow-sm animate-pulse">
-                <Skeleton className="h-6 w-2/3 mb-4" />
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-5/6" />
+              <div key={i} className="p-4 sm:p-6 bg-white rounded-xl shadow-sm animate-pulse">
+                <Skeleton className="h-5 sm:h-6 w-2/3 mb-3 sm:mb-4" />
+                <Skeleton className="h-3 sm:h-4 w-full mb-2" />
+                <Skeleton className="h-3 sm:h-4 w-5/6" />
               </div>
             ))}
           </div>
         ) : recentProjects.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {recentProjects.map((project, index) => (
               <motion.div
                 key={project.id}
@@ -232,7 +232,7 @@ const Landing = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-xl shadow-sm">
+          <div className="text-center py-8 sm:py-12 bg-white rounded-xl shadow-sm">
             <p className="text-gray-500">No projects found.</p>
           </div>
         )}
