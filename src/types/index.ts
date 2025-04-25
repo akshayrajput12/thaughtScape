@@ -21,6 +21,10 @@ export interface Profile {
   is_following?: boolean;
   whatsapp_number?: string;
   genres?: string[];
+  instagram_url?: string;
+  linkedin_url?: string;
+  twitter_url?: string;
+  snapchat_url?: string;
 }
 
 export interface Project {
@@ -30,7 +34,7 @@ export interface Project {
   required_skills: string[];
   min_budget?: number;
   max_budget?: number;
-  budget?: number; // Keep for backward compatibility
+  budget?: number;
   deadline: string;
   attachment_url?: string;
   status: 'open' | 'closed' | 'in_progress';
@@ -49,8 +53,11 @@ export interface Project {
   };
   applications_count?: number | { count: number }[];
   milestones_count?: number | { count: number }[];
-  allow_whatsapp_apply?: boolean;
-  allow_normal_apply?: boolean;
+  company_name?: string;
+  location?: string;
+  job_type?: string;
+  experience_level?: string;
+  application_deadline?: string;
 }
 
 export interface ProjectApplication {
@@ -65,6 +72,9 @@ export interface ProjectApplication {
   applicant?: Profile;
   experience?: string;
   portfolio?: string;
+  education?: string;
+  skills?: string[];
+  expected_salary?: number;
 }
 
 export interface Thought {
@@ -98,14 +108,14 @@ export interface Thought {
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'follow' | 'like' | 'comment' | 'message' | 'tag'; // Added 'tag' type
+  type: 'follow' | 'like' | 'comment' | 'message' | 'tag';
   content: string;
   is_read: boolean;
   related_user_id?: string;
   related_thought_id?: string;
   created_at: string;
   related_user?: Profile;
-  tag_status?: 'pending' | 'accepted' | 'rejected'; // Added for tag notifications
+  tag_status?: 'pending' | 'accepted' | 'rejected';
 }
 
 export interface Message {

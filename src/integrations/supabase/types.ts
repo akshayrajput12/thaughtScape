@@ -78,57 +78,6 @@ export type Database = {
           },
         ]
       }
-      call_logs: {
-        Row: {
-          call_type: string
-          caller_id: string
-          created_at: string
-          duration: number | null
-          end_time: string | null
-          id: string
-          recipient_id: string
-          start_time: string
-          status: string
-        }
-        Insert: {
-          call_type: string
-          caller_id: string
-          created_at?: string
-          duration?: number | null
-          end_time?: string | null
-          id?: string
-          recipient_id: string
-          start_time?: string
-          status: string
-        }
-        Update: {
-          call_type?: string
-          caller_id?: string
-          created_at?: string
-          duration?: number | null
-          end_time?: string | null
-          id?: string
-          recipient_id?: string
-          start_time?: string
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "call_logs_caller_id_fkey"
-            columns: ["caller_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "call_logs_recipient_id_fkey"
-            columns: ["recipient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       comments: {
         Row: {
           content: string
@@ -255,54 +204,6 @@ export type Database = {
           },
         ]
       }
-      messages: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          is_read: boolean | null
-          is_request: boolean | null
-          receiver_id: string
-          request_status: string | null
-          sender_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          is_read?: boolean | null
-          is_request?: boolean | null
-          receiver_id: string
-          request_status?: string | null
-          sender_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          is_read?: boolean | null
-          is_request?: boolean | null
-          receiver_id?: string
-          request_status?: string | null
-          sender_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_receiver_id_fkey"
-            columns: ["receiver_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       notifications: {
         Row: {
           content: string
@@ -372,12 +273,16 @@ export type Database = {
           full_name: string | null
           genres: string[] | null
           id: string
+          instagram_url: string | null
           is_admin: boolean | null
           is_profile_completed: boolean | null
+          linkedin_url: string | null
           phone: string | null
           posts_count: number | null
           registration_number: string | null
+          snapchat_url: string | null
           state: string | null
+          twitter_url: string | null
           updated_at: string
           username: string
           whatsapp_number: string | null
@@ -395,12 +300,16 @@ export type Database = {
           full_name?: string | null
           genres?: string[] | null
           id: string
+          instagram_url?: string | null
           is_admin?: boolean | null
           is_profile_completed?: boolean | null
+          linkedin_url?: string | null
           phone?: string | null
           posts_count?: number | null
           registration_number?: string | null
+          snapchat_url?: string | null
           state?: string | null
+          twitter_url?: string | null
           updated_at?: string
           username: string
           whatsapp_number?: string | null
@@ -418,12 +327,16 @@ export type Database = {
           full_name?: string | null
           genres?: string[] | null
           id?: string
+          instagram_url?: string | null
           is_admin?: boolean | null
           is_profile_completed?: boolean | null
+          linkedin_url?: string | null
           phone?: string | null
           posts_count?: number | null
           registration_number?: string | null
+          snapchat_url?: string | null
           state?: string | null
+          twitter_url?: string | null
           updated_at?: string
           username?: string
           whatsapp_number?: string | null
@@ -434,36 +347,45 @@ export type Database = {
         Row: {
           applicant_id: string
           created_at: string
+          education: string | null
+          expected_salary: number | null
           experience: string | null
           id: string
           message: string
           phone_number: string | null
           portfolio: string | null
           project_id: string
+          skills: string[] | null
           status: string | null
           viewed_at: string | null
         }
         Insert: {
           applicant_id: string
           created_at?: string
+          education?: string | null
+          expected_salary?: number | null
           experience?: string | null
           id?: string
           message: string
           phone_number?: string | null
           portfolio?: string | null
           project_id: string
+          skills?: string[] | null
           status?: string | null
           viewed_at?: string | null
         }
         Update: {
           applicant_id?: string
           created_at?: string
+          education?: string | null
+          expected_salary?: number | null
           experience?: string | null
           id?: string
           message?: string
           phone_number?: string | null
           portfolio?: string | null
           project_id?: string
+          skills?: string[] | null
           status?: string | null
           viewed_at?: string | null
         }
@@ -488,12 +410,17 @@ export type Database = {
         Row: {
           allow_normal_apply: boolean | null
           allow_whatsapp_apply: boolean | null
+          application_deadline: string | null
           attachment_url: string | null
           author_id: string
+          company_name: string | null
           created_at: string
           deadline: string | null
           description: string
+          experience_level: string | null
           id: string
+          job_type: string | null
+          location: string | null
           max_budget: number | null
           min_budget: number | null
           notifications_count: number | null
@@ -505,12 +432,17 @@ export type Database = {
         Insert: {
           allow_normal_apply?: boolean | null
           allow_whatsapp_apply?: boolean | null
+          application_deadline?: string | null
           attachment_url?: string | null
           author_id: string
+          company_name?: string | null
           created_at?: string
           deadline?: string | null
           description: string
+          experience_level?: string | null
           id?: string
+          job_type?: string | null
+          location?: string | null
           max_budget?: number | null
           min_budget?: number | null
           notifications_count?: number | null
@@ -522,12 +454,17 @@ export type Database = {
         Update: {
           allow_normal_apply?: boolean | null
           allow_whatsapp_apply?: boolean | null
+          application_deadline?: string | null
           attachment_url?: string | null
           author_id?: string
+          company_name?: string | null
           created_at?: string
           deadline?: string | null
           description?: string
+          experience_level?: string | null
           id?: string
+          job_type?: string | null
+          location?: string | null
           max_budget?: number | null
           min_budget?: number | null
           notifications_count?: number | null
