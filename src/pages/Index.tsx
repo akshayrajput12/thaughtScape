@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -103,14 +102,8 @@ const Index = () => {
         // Fetch notification data
         const fetchNotificationData = async () => {
           try {
-            // Fetch unread messages
-            const { count: messagesCount } = await supabase
-              .from('messages')
-              .select('*', { count: 'exact', head: true })
-              .eq('receiver_id', session.user.id)
-              .eq('is_read', false);
-            
-            setUnreadMessages(messagesCount || 0);
+            // Set default values instead of querying messages table
+            setUnreadMessages(0);
             
             // Fetch projects by user to get applications
             const { data: userProjects } = await supabase
@@ -141,7 +134,7 @@ const Index = () => {
             setNewProjects(projectsCount || 0);
             
             // Show notification if there are any unread items
-            if ((messagesCount || 0) + (unviewedApplications || 0) + (projectsCount || 0) > 0) {
+            if ((unviewedApplications || 0) + (projectsCount || 0) > 0) {
               // Delay showing notification to allow page to load first
               setTimeout(() => setShowNotification(true), 1500);
             }

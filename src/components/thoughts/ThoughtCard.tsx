@@ -1,96 +1,123 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Thought } from '@/types';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { 
-  MessageSquare, 
   Heart, 
+  MessageSquare, 
   Bookmark, 
-  Share2,
-  MoreHorizontal
-} from 'lucide-react';
+  Share2, 
+  MoreVertical
+} from "lucide-react";
+import { formatDistanceToNow } from 'date-fns';
+import { Link } from 'react-router-dom';
+import type { Thought } from "@/types";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ThoughtCardProps {
   thought: Thought;
+  onDelete?: (id: string) => void;
+  showAuthor?: boolean;
+  isCurrentUserAuthor?: boolean;
+  isAdmin?: boolean;
 }
 
-export const ThoughtCard = ({ thought }: ThoughtCardProps) => {
-  const navigate = useNavigate();
-  
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    }).format(date);
-  };
-  
-  const handleProfileClick = () => {
-    navigate(`/profile/${thought.author.id}`);
-  };
-  
-  const handleThoughtClick = () => {
-    navigate(`/thought/${thought.id}`);
-  };
+export const ThoughtCard = ({ 
+  thought, 
+  onDelete,
+  showAuthor = true,
+  isCurrentUserAuthor = false,
+  isAdmin = false
+}: ThoughtCardProps) => {
+  const authorName = thought.author?.full_name || thought.author?.username || 'Unknown';
+  const likes = thought._count?.likes || 0;
+  const bookmarks = thought._count?.bookmarks || 0;
+  const comments = thought._count?.comments || 0;
   
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow overflow-hidden">
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-3" onClick={handleProfileClick}>
-            <Avatar className="h-10 w-10 cursor-pointer">
-              <AvatarImage src={thought.author.avatar_url || ''} />
-              <AvatarFallback>{thought.author.username[0].toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-medium text-gray-900">{thought.author.full_name || thought.author.username}</p>
-              <p className="text-xs text-gray-500">{formatDate(thought.created_at)}</p>
-            </div>
+    <Card className="h-full flex flex-col overflow-hidden transition-shadow hover:shadow-md">
+      <CardHeader className="pb-2">
+        {showAuthor && (
+          <div className="flex justify-between items-center">
+            <Link to={`/profile/${thought.author?.id}`} className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={thought.author?.avatar_url || ''} />
+                <AvatarFallback>{authorName[0]?.toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium text-sm">{authorName}</p>
+                <p className="text-xs text-gray-500">
+                  {formatDistanceToNow(new Date(thought.created_at), { addSuffix: true })}
+                </p>
+              </div>
+            </Link>
+            
+            {(isCurrentUserAuthor || isAdmin) && onDelete && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem 
+                    className="text-red-500 cursor-pointer"
+                    onClick={() => onDelete(thought.id)}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <MoreHorizontal className="h-5 w-5 text-gray-500" />
-          </Button>
-        </div>
+        )}
         
-        <div onClick={handleThoughtClick} className="cursor-pointer">
-          <h3 className="font-semibold text-lg mb-1">{thought.title}</h3>
-          <p className="text-gray-600 mb-3 line-clamp-3">{thought.content}</p>
-          
+        <Link to={`/thought/${thought.id}`}>
+          <h3 className="text-lg font-semibold mt-2">{thought.title}</h3>
+        </Link>
+      </CardHeader>
+      
+      <CardContent className="flex-grow">
+        <Link to={`/thought/${thought.id}`} className="text-gray-700">
+          <p className="line-clamp-5">{thought.content}</p>
           {thought.image_url && (
-            <div className="mb-3 rounded-lg overflow-hidden">
+            <div className="mt-3 h-48 overflow-hidden rounded">
               <img 
                 src={thought.image_url} 
                 alt={thought.title} 
-                className="w-full h-48 object-cover"
+                className="w-full h-full object-cover"
               />
             </div>
           )}
-        </div>
+        </Link>
+      </CardContent>
+      
+      <CardFooter className="border-t pt-3 flex justify-between text-gray-500 text-sm">
+        <Button variant="ghost" size="sm" className="gap-1">
+          <Heart className="h-4 w-4" /> 
+          <span>{likes}</span>
+        </Button>
         
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-          <div className="flex items-center space-x-4 text-gray-500">
-            <div className="flex items-center space-x-1">
-              <Heart className="h-4 w-4" />
-              <span className="text-xs">{thought._count?.likes || 0}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <MessageSquare className="h-4 w-4" />
-              <span className="text-xs">{thought._count?.comments || 0}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Bookmark className="h-4 w-4" />
-              <span className="text-xs">{thought._count?.bookmarks || 0}</span>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" className="text-xs">
-            <Share2 className="h-4 w-4 mr-1" />
-            Share
-          </Button>
-        </div>
-      </div>
-    </div>
+        <Button variant="ghost" size="sm" className="gap-1">
+          <MessageSquare className="h-4 w-4" /> 
+          <span>{comments}</span>
+        </Button>
+        
+        <Button variant="ghost" size="sm" className="gap-1">
+          <Bookmark className="h-4 w-4" />
+          <span>{bookmarks}</span>
+        </Button>
+        
+        <Button variant="ghost" size="sm">
+          <Share2 className="h-4 w-4" />
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };

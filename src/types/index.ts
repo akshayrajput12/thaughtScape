@@ -1,4 +1,3 @@
-
 export interface Profile {
   id: string;
   username: string;
@@ -134,8 +133,6 @@ export interface UserApplication {
   status: 'pending' | 'accepted' | 'rejected';
 }
 
-// Deprecated interfaces kept for backward compatibility
-// These will be used only in component props, not for actual data
 export interface Message {
   id: string;
   content: string;
@@ -144,6 +141,19 @@ export interface Message {
   created_at: string;
   is_read: boolean;
   request_status?: 'pending' | 'accepted' | 'declined';
+  is_request?: boolean;
   sender?: Profile;
+  receiver?: Profile;
+}
+
+export interface CallLog {
+  id: string;
+  call_type: 'audio' | 'video';
+  status: 'completed' | 'missed' | 'rejected';
+  duration?: number;
+  caller_id: string;
+  receiver_id: string;
+  created_at: string;
+  caller?: Profile;
   receiver?: Profile;
 }
