@@ -10,8 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import type { Project } from "@/types";
-import { Form, FormField, FormItem, FormControl, FormLabel, FormDescription } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
+import { useMobile } from "@/hooks/use-mobile";
 
 export interface NewProjectDialogProps {
   isOpen: boolean;
@@ -40,6 +39,11 @@ export const NewProjectDialog = ({
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [allowWhatsappApply, setAllowWhatsappApply] = useState(true);
   const [allowNormalApply, setAllowNormalApply] = useState(true);
+  const [companyName, setCompanyName] = useState("");
+  const [location, setLocation] = useState("");
+  const [jobType, setJobType] = useState("");
+  const [experienceLevel, setExperienceLevel] = useState("");
+  const isMobile = useMobile();
 
   const effectiveIsSubmitting = isSubmitting || localIsSubmitting;
 
@@ -56,6 +60,10 @@ export const NewProjectDialog = ({
         whatsapp_number: whatsappNumber,
         allow_whatsapp_apply: allowWhatsappApply,
         allow_normal_apply: allowNormalApply,
+        company_name: companyName,
+        location,
+        job_type: jobType,
+        experience_level: experienceLevel,
         deadline: deadline || undefined
       });
       return;
@@ -104,6 +112,10 @@ export const NewProjectDialog = ({
           status: 'open',
           allow_whatsapp_apply: allowWhatsappApply,
           allow_normal_apply: allowNormalApply,
+          company_name: companyName,
+          location,
+          job_type: jobType,
+          experience_level: experienceLevel,
           deadline: deadline || null
         })
         .select(`
@@ -132,6 +144,10 @@ export const NewProjectDialog = ({
       setMaxBudget("");
       setWhatsappNumber("");
       setDeadline("");
+      setCompanyName("");
+      setLocation("");
+      setJobType("");
+      setExperienceLevel("");
       
       onOpenChange(false);
       if (data) {
@@ -167,10 +183,28 @@ export const NewProjectDialog = ({
       fetchUserProfile();
     }
   }, [user, isOpen]);
+
+  const jobTypes = [
+    "Full-time",
+    "Part-time",
+    "Contract",
+    "Freelance",
+    "Internship"
+  ];
+  
+  const experienceLevels = [
+    "Entry Level",
+    "Junior",
+    "Mid-Level",
+    "Senior",
+    "Lead",
+    "Manager",
+    "Executive"
+  ];
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className={`${isMobile ? 'max-w-[95%]' : 'sm:max-w-[550px]'} max-h-[85vh] overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle className="text-xl">Create New Project</DialogTitle>
         </DialogHeader>
@@ -184,6 +218,16 @@ export const NewProjectDialog = ({
               onChange={(e) => setTitle(e.target.value)} 
               placeholder="e.g. Website Development"
               required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="companyName">Company Name</Label>
+            <Input 
+              id="companyName" 
+              value={companyName} 
+              onChange={(e) => setCompanyName(e.target.value)} 
+              placeholder="e.g. Tech Solutions Inc."
             />
           </div>
           
@@ -210,7 +254,7 @@ export const NewProjectDialog = ({
             />
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="minBudget">Minimum Budget (₹) *</Label>
               <Input 
@@ -235,14 +279,58 @@ export const NewProjectDialog = ({
             </div>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="deadline">Project Deadline</Label>
-            <Input 
-              id="deadline" 
-              type="date" 
-              value={deadline} 
-              onChange={(e) => setDeadline(e.target.value)}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input 
+                id="location" 
+                value={location} 
+                onChange={(e) => setLocation(e.target.value)} 
+                placeholder="e.g. Remote, Delhi, etc."
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="jobType">Job Type</Label>
+              <select
+                id="jobType"
+                value={jobType}
+                onChange={(e) => setJobType(e.target.value)}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              >
+                <option value="">Select Job Type</option>
+                {jobTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="experienceLevel">Experience Level</Label>
+              <select
+                id="experienceLevel"
+                value={experienceLevel}
+                onChange={(e) => setExperienceLevel(e.target.value)}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              >
+                <option value="">Select Experience Level</option>
+                {experienceLevels.map(level => (
+                  <option key={level} value={level}>{level}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="deadline">Project Deadline</Label>
+              <Input 
+                id="deadline" 
+                type="date" 
+                value={deadline} 
+                onChange={(e) => setDeadline(e.target.value)}
+              />
+            </div>
           </div>
           
           <div className="space-y-2">
@@ -278,7 +366,7 @@ export const NewProjectDialog = ({
             </div>
           </div>
           
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end space-x-3 pt-4 pb-6 md:pb-0">
             <Button 
               type="button" 
               variant="outline"

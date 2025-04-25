@@ -2,7 +2,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { Home, Search, PenSquare, Briefcase } from "lucide-react";
+import { Home, Search, PenSquare, Briefcase, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   DropdownMenu,
@@ -15,12 +15,14 @@ import {
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/types";
+import { useMobile } from "@/hooks/use-mobile";
 
 const Navigation = () => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const isMobile = useMobile();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -88,47 +90,76 @@ const Navigation = () => {
     return null;
   }
 
+  const navItems = [
+    { path: "/home", icon: <Home className="h-5 w-5" />, label: "Home" },
+    { path: "/explore", icon: <Search className="h-5 w-5" />, label: "Explore" },
+    { path: "/write", icon: <PenSquare className="h-5 w-5" />, label: "Write" },
+    { path: "/freelancing", icon: <Briefcase className="h-5 w-5" />, label: "Jobs" },
+  ];
+
   return (
-    <nav className="border-b bg-white">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="text-xl font-bold">
-              ThoughtScape
-            </Link>
-            {isAuthenticated && (
-              <div className="hidden md:flex items-center gap-6">
-                <Link to="/home" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-                  <Home className="h-5 w-5" />
-                  Home
-                </Link>
-                <Link to="/explore" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-                  <Search className="h-5 w-5" />
-                  Explore
-                </Link>
-                <Link to="/write" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-                  <PenSquare className="h-5 w-5" />
-                  Write
-                </Link>
-                <Link to="/freelancing" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-                  <Briefcase className="h-5 w-5" />
-                  Jobs
-                </Link>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-4">
-            {isAuthenticated ? (
-              <UserNav />
-            ) : (
-              <Button onClick={() => navigate('/auth')}>
-                Sign In
-              </Button>
-            )}
+    <>
+      {/* Desktop Navigation */}
+      <nav className="border-b bg-white hidden md:block">
+        <div className="container mx-auto px-4">
+          <div className="flex h-16 items-center justify-between">
+            <div className="flex items-center gap-8">
+              <Link to="/" className="text-xl font-bold">
+                ThoughtScape
+              </Link>
+              {isAuthenticated && (
+                <div className="flex items-center gap-6">
+                  {navItems.map(item => (
+                    <Link 
+                      key={item.path} 
+                      to={item.path} 
+                      className={`flex items-center gap-2 text-gray-600 hover:text-gray-900 ${location.pathname === item.path ? 'text-gray-900 font-medium' : ''}`}
+                    >
+                      {item.icon}
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              {isAuthenticated ? (
+                <UserNav />
+              ) : (
+                <Button onClick={() => navigate('/auth')}>
+                  Sign In
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+      
+      {/* Mobile Bottom Navigation */}
+      {isAuthenticated && isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t md:hidden z-10">
+          <div className="flex justify-around py-2">
+            {navItems.map(item => (
+              <Link 
+                key={item.path} 
+                to={item.path} 
+                className={`flex flex-col items-center p-2 ${location.pathname === item.path ? 'text-primary-foreground font-medium' : 'text-gray-500'}`}
+              >
+                {item.icon}
+                <span className="text-xs mt-1">{item.label}</span>
+              </Link>
+            ))}
+            <Link 
+              to={`/profile/${userProfile?.id}`} 
+              className={`flex flex-col items-center p-2 ${location.pathname.includes('/profile/') ? 'text-primary-foreground font-medium' : 'text-gray-500'}`}
+            >
+              <User className="h-5 w-5" />
+              <span className="text-xs mt-1">Profile</span>
+            </Link>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

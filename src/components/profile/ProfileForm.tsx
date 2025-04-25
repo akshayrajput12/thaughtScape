@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { Profile } from "@/types";
-import { z } from "zod";
+import { Instagram, Linkedin, Twitter, Snapchat } from "lucide-react";
 
 const colleges = [
   "Lovely Professional University",
@@ -39,6 +39,10 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
   const [state, setState] = useState(profile.state || "");
   const [city, setCity] = useState(profile.city || "");
   const [age, setAge] = useState(profile.age?.toString() || "");
+  const [instagramUrl, setInstagramUrl] = useState(profile.instagram_url || "");
+  const [linkedinUrl, setLinkedinUrl] = useState(profile.linkedin_url || "");
+  const [twitterUrl, setTwitterUrl] = useState(profile.twitter_url || "");
+  const [snapchatUrl, setSnapchatUrl] = useState(profile.snapchat_url || "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -47,6 +51,7 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
     const newErrors: Record<string, string> = {};
     const phoneRegex = /^[0-9]{10}$/;
     const ageValue = parseInt(age);
+    const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
 
     if (isFirstTimeSetup) {
       if (!fullName) newErrors.fullName = "Full name is required";
@@ -61,6 +66,20 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
       if (age && (isNaN(ageValue) || ageValue < 13 || ageValue > 100)) {
         newErrors.age = "Age must be between 13 and 100";
       }
+    }
+    
+    // Validate social media URLs if provided
+    if (instagramUrl && !urlRegex.test(instagramUrl)) {
+      newErrors.instagramUrl = "Please enter a valid URL";
+    }
+    if (linkedinUrl && !urlRegex.test(linkedinUrl)) {
+      newErrors.linkedinUrl = "Please enter a valid URL";
+    }
+    if (twitterUrl && !urlRegex.test(twitterUrl)) {
+      newErrors.twitterUrl = "Please enter a valid URL";
+    }
+    if (snapchatUrl && !urlRegex.test(snapchatUrl)) {
+      newErrors.snapchatUrl = "Please enter a valid URL";
     }
 
     setErrors(newErrors);
@@ -84,6 +103,10 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
         phone,
         college,
         registration_number: registrationNumber,
+        instagram_url: instagramUrl,
+        linkedin_url: linkedinUrl,
+        twitter_url: twitterUrl,
+        snapchat_url: snapchatUrl,
         is_profile_completed: true
       };
       
@@ -119,6 +142,41 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
   };
 
   const isLPU = college === "Lovely Professional University";
+  
+  // Social media input component for consistent styling
+  const SocialMediaInput = ({ 
+    id, 
+    icon, 
+    value, 
+    onChange, 
+    placeholder, 
+    error 
+  }: { 
+    id: string; 
+    icon: React.ReactNode; 
+    value: string; 
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; 
+    placeholder: string;
+    error?: string;
+  }) => (
+    <div className="space-y-2">
+      <div className="flex items-center">
+        <div className="mr-2">{icon}</div>
+        <Label htmlFor={id} className="text-sm font-medium text-gray-700">
+          {id.charAt(0).toUpperCase() + id.slice(1).replace('Url', '')} URL
+        </Label>
+      </div>
+      <Input
+        id={id}
+        type="text"
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${error ? 'border-red-500' : ''}`}
+      />
+      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+    </div>
+  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -251,20 +309,63 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
         )}
 
         {!isFirstTimeSetup && (
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="bio" className="text-sm font-medium text-gray-700">Bio</Label>
-            <Textarea
-              id="bio"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Write something about yourself"
-              className="border-gray-300 focus:ring-purple-500 focus:border-purple-500 min-h-[100px]"
-            />
-          </div>
+          <>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="bio" className="text-sm font-medium text-gray-700">Bio</Label>
+              <Textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Write something about yourself"
+                className="border-gray-300 focus:ring-purple-500 focus:border-purple-500 min-h-[100px]"
+              />
+            </div>
+            
+            <div className="md:col-span-2">
+              <h3 className="font-medium text-gray-700 mb-4">Social Media Links</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <SocialMediaInput 
+                  id="instagramUrl" 
+                  icon={<Instagram className="h-4 w-4 text-pink-600" />}
+                  value={instagramUrl} 
+                  onChange={(e) => setInstagramUrl(e.target.value)}
+                  placeholder="https://instagram.com/username"
+                  error={errors.instagramUrl}
+                />
+                
+                <SocialMediaInput 
+                  id="linkedinUrl" 
+                  icon={<Linkedin className="h-4 w-4 text-blue-600" />}
+                  value={linkedinUrl} 
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  placeholder="https://linkedin.com/in/username"
+                  error={errors.linkedinUrl}
+                />
+                
+                <SocialMediaInput 
+                  id="twitterUrl" 
+                  icon={<Twitter className="h-4 w-4 text-sky-500" />}
+                  value={twitterUrl} 
+                  onChange={(e) => setTwitterUrl(e.target.value)}
+                  placeholder="https://twitter.com/username"
+                  error={errors.twitterUrl}
+                />
+                
+                <SocialMediaInput 
+                  id="snapchatUrl" 
+                  icon={<Snapchat className="h-4 w-4 text-yellow-400" />}
+                  value={snapchatUrl} 
+                  onChange={(e) => setSnapchatUrl(e.target.value)}
+                  placeholder="https://snapchat.com/add/username"
+                  error={errors.snapchatUrl}
+                />
+              </div>
+            </div>
+          </>
         )}
       </motion.div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-6 pb-12 md:pb-0">
         <Button 
           type="submit" 
           disabled={isSubmitting}
