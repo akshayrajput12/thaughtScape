@@ -1,4 +1,3 @@
-
 export interface Profile {
   id: string;
   username: string;
@@ -26,6 +25,7 @@ export interface Profile {
   linkedin_url?: string;
   twitter_url?: string;
   snapchat_url?: string;
+  youtube_url?: string;
 }
 
 export interface Project {
