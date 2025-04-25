@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase, blockUser, unblockUser, isUserBlocked, isBlockedBy } from "@/integrations/supabase/client";
@@ -25,7 +24,6 @@ const Profile = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Check if the current user is following the profile being viewed
   useEffect(() => {
     const checkFollowStatus = async () => {
       if (!user?.id || !id) return;
@@ -48,7 +46,6 @@ const Profile = () => {
     checkFollowStatus();
   }, [user?.id, id]);
 
-  // Check if the current user has blocked or is blocked by the profile being viewed
   useEffect(() => {
     const checkBlockStatus = async () => {
       if (!user?.id || !id) return;
@@ -63,7 +60,6 @@ const Profile = () => {
     checkBlockStatus();
   }, [user?.id, id]);
 
-  // Fetch profile data
   const { data: profileData, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', id],
     queryFn: async () => {
@@ -79,7 +75,6 @@ const Profile = () => {
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
-  // Fetch thoughts (poems) for the profile
   const { data: thoughtsData, isLoading: thoughtsLoading } = useQuery({
     queryKey: ['thoughts', id],
     queryFn: async () => {
@@ -105,7 +100,6 @@ const Profile = () => {
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
-  // Check if the current user is an admin
   const { data: adminData } = useQuery({
     queryKey: ['isAdmin', user?.id],
     queryFn: async () => {
@@ -122,7 +116,6 @@ const Profile = () => {
     enabled: !!user?.id,
   });
 
-  // Check if this is the first time the user is setting up their profile
   const showFirstTimeProfileForm = user?.id === id && 
                                   profileData && 
                                   !profileData.is_profile_completed;
@@ -154,12 +147,10 @@ const Profile = () => {
         description: "Thought deleted successfully",
       });
 
-      // Update local state
       queryClient.setQueryData(['thoughts', id], (oldData: Thought[] | undefined) => 
         oldData ? oldData.filter(thought => thought.id !== thoughtId) : []
       );
       
-      // Update the post count
       if (profileData) {
         const updatedProfile = {
           ...profileData,
@@ -189,7 +180,6 @@ const Profile = () => {
       
       setIsFollowing(true);
       
-      // Update followers count in the profile data
       if (profileData) {
         const updatedProfile = {
           ...profileData,
@@ -198,7 +188,6 @@ const Profile = () => {
         queryClient.setQueryData(['profile', id], updatedProfile);
       }
       
-      // Invalidate queries that might be affected
       queryClient.invalidateQueries({ queryKey: ['profile', id] });
       
       toast({
@@ -229,7 +218,6 @@ const Profile = () => {
       
       setIsFollowing(false);
       
-      // Update followers count in the profile data
       if (profileData) {
         const updatedProfile = {
           ...profileData,
@@ -238,7 +226,6 @@ const Profile = () => {
         queryClient.setQueryData(['profile', id], updatedProfile);
       }
       
-      // Invalidate queries that might be affected
       queryClient.invalidateQueries({ queryKey: ['profile', id] });
       
       toast({
@@ -265,7 +252,6 @@ const Profile = () => {
       
       setIsBlocked(true);
       
-      // If blocking, also unfollow
       if (isFollowing) {
         await handleUnfollow();
       }
@@ -337,10 +323,8 @@ const Profile = () => {
 
   const shouldShowForm = showFirstTimeProfileForm || isEditing;
 
-  // Make sure counts match actual data
   const postsCount = (thoughtsData?.length || 0);
-  
-  // Update profile counts if needed before rendering
+
   if (profileData.posts_count !== postsCount && !isEditing) {
     const updatedProfile = {
       ...profileData,
@@ -360,11 +344,13 @@ const Profile = () => {
           isFollowing={isFollowing}
           isBlocked={isBlocked}
           isBlockedByUser={isBlockedByUser}
-          onFollow={handleFollow}
-          onUnfollow={handleUnfollow}
+          onFollowToggle={isFollowing ? handleUnfollow : handleFollow}
           onBlock={handleBlockUser}
           onUnblock={handleUnblockUser}
           onMessage={handleMessage}
+          postsCount={postsCount}
+          followersCount={profileData?.followers_count || 0}
+          followingCount={profileData?.following_count || 0}
         />
         
         {shouldShowForm ? (

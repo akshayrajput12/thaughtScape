@@ -19,6 +19,8 @@ interface ProfileHeaderProps {
   onBlock?: () => void;
   onUnblock?: () => void;
   onMessage?: () => void;
+  onFollow?: () => void;
+  onUnfollow?: () => void;
 }
 
 export function ProfileHeader({
@@ -35,7 +37,9 @@ export function ProfileHeader({
   isBlockedByUser,
   onBlock,
   onUnblock,
-  onMessage
+  onMessage,
+  onFollow,
+  onUnfollow
 }: ProfileHeaderProps) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm">
