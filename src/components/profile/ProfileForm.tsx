@@ -1,396 +1,329 @@
-
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { motion } from "framer-motion";
-import { Profile } from "@/types";
-import { Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
-import { ProfileImageUpload } from "./ProfileImageUpload";
-
-const colleges = [
-  "Lovely Professional University",
-  "Delhi University",
-  "IIT Delhi",
-  "IIT Bombay",
-  "IIT Madras",
-  "Amity University",
-  "Chandigarh University",
-  "Thapar University",
-  "Other"
-];
+import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { ProfileImageUpload } from './ProfileImageUpload';
 
 interface ProfileFormProps {
-  profile: Profile;
-  onSubmitSuccess: (updatedProfile: Profile) => void;
+  profile: any;
+  onSubmitSuccess: (updatedProfile: any) => void;
   isFirstTimeSetup?: boolean;
 }
 
-export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false }: ProfileFormProps) => {
-  const [fullName, setFullName] = useState(profile.full_name || "");
-  const [phone, setPhone] = useState(profile.phone || "");
-  const [college, setCollege] = useState(profile.college || "");
-  const [registrationNumber, setRegistrationNumber] = useState(profile.registration_number || "");
-  const [bio, setBio] = useState(profile.bio || "");
-  const [country, setCountry] = useState(profile.country || "");
-  const [state, setState] = useState(profile.state || "");
-  const [city, setCity] = useState(profile.city || "");
-  const [age, setAge] = useState(profile.age?.toString() || "");
-  const [instagramUrl, setInstagramUrl] = useState(profile.instagram_url || "");
-  const [linkedinUrl, setLinkedinUrl] = useState(profile.linkedin_url || "");
-  const [twitterUrl, setTwitterUrl] = useState(profile.twitter_url || "");
-  const [snapchatUrl, setSnapchatUrl] = useState(profile.snapchat_url || "");
-  const [youtubeUrl, setYoutubeUrl] = useState(profile.youtube_url || "");
-  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || "");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+interface Profile {
+  id: string;
+  username: string;
+  full_name: string;
+  avatar_url: string | null;
+  bio: string | null;
+  college: string | null;
+  registration_number: string | null;
+  whatsapp_number: string | null;
+  instagram_url: string | null;
+  linkedin_url: string | null;
+  twitter_url: string | null;
+  portfolio_url: string | null;
+  snapchat_url: string | null;
+  is_profile_completed: boolean;
+  updated_at: Date;
+}
+
+export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false }: ProfileFormProps) {
   const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatar_url);
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    const phoneRegex = /^[0-9]{10}$/;
-    const ageValue = parseInt(age);
-    const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+  // Define the form validation schema
+  const formSchema = z.object({
+    username: z
+      .string()
+      .min(3, { message: 'Username must be at least 3 characters' })
+      .max(50, { message: 'Username must be less than 50 characters' })
+      .regex(/^[a-z0-9_.]+$/, {
+        message: 'Username can only contain lowercase letters, numbers, underscores and periods',
+      }),
+    full_name: z.string().min(2, { message: 'Name is required' }).max(100),
+    bio: z.string().max(500).optional().nullable(),
+    college: z.string().max(100).optional().nullable(),
+    registration_number: z.string().max(50).optional().nullable(),
+    whatsapp_number: z.string().max(20).optional().nullable(),
+    instagram_url: z.string().url({ message: 'Please enter a valid URL' }).optional().nullable(),
+    linkedin_url: z.string().url({ message: 'Please enter a valid URL' }).optional().nullable(),
+    twitter_url: z.string().url({ message: 'Please enter a valid URL' }).optional().nullable(),
+    portfolio_url: z.string().url({ message: 'Please enter a valid URL' }).optional().nullable(),
+    snapchat_url: z.string().url({ message: 'Please enter a valid URL' }).optional().nullable(),
+  });
 
-    if (isFirstTimeSetup) {
-      if (!fullName) newErrors.fullName = "Full name is required";
-      if (!phone) newErrors.phone = "Phone number is required";
-      else if (!phoneRegex.test(phone)) newErrors.phone = "Phone number must be 10 digits";
-      if (!college) newErrors.college = "Please select your college";
-      if (college === "Lovely Professional University" && !registrationNumber) {
-        newErrors.registrationNumber = "Registration number is required for LPU students";
-      }
-    } else {
-      if (phone && !phoneRegex.test(phone)) newErrors.phone = "Phone number must be 10 digits";
-      if (age && (isNaN(ageValue) || ageValue < 13 || ageValue > 100)) {
-        newErrors.age = "Age must be between 13 and 100";
-      }
-    }
+  // Initialize the form with the profile data
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: profile.username || '',
+      full_name: profile.full_name || '',
+      bio: profile.bio || '',
+      college: profile.college || '',
+      registration_number: profile.registration_number || '',
+      whatsapp_number: profile.whatsapp_number || '',
+      instagram_url: profile.instagram_url || '',
+      linkedin_url: profile.linkedin_url || '',
+      twitter_url: profile.twitter_url || '',
+      portfolio_url: profile.portfolio_url || '',
+      snapchat_url: profile.snapchat_url || '',
+    },
+  });
 
-    // Validate social media URLs if provided
-    if (instagramUrl && !urlRegex.test(instagramUrl)) {
-      newErrors.instagramUrl = "Please enter a valid URL";
-    }
-    if (linkedinUrl && !urlRegex.test(linkedinUrl)) {
-      newErrors.linkedinUrl = "Please enter a valid URL";
-    }
-    if (twitterUrl && !urlRegex.test(twitterUrl)) {
-      newErrors.twitterUrl = "Please enter a valid URL";
-    }
-    if (snapchatUrl && !urlRegex.test(snapchatUrl)) {
-      newErrors.snapchatUrl = "Please enter a valid URL";
-    }
-    if (youtubeUrl && !urlRegex.test(youtubeUrl)) {
-      newErrors.youtubeUrl = "Please enter a valid URL";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
-
+  // Handle form submission
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const updatedProfile: Partial<Profile> = {
-        full_name: fullName,
-        bio,
-        country,
-        state,
-        city,
-        phone,
-        college,
-        registration_number: registrationNumber,
-        instagram_url: instagramUrl,
-        linkedin_url: linkedinUrl,
-        twitter_url: twitterUrl,
-        snapchat_url: snapchatUrl,
-        youtube_url: youtubeUrl,
-        avatar_url: avatarUrl,
-        is_profile_completed: true
-      };
-
-      if (age) updatedProfile.age = parseInt(age);
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('profiles')
-        .update(updatedProfile)
-        .eq('id', profile.id)
-        .select()
-        .single();
+        .update({
+          ...values,
+          avatar_url: avatarUrl,
+          is_profile_completed: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', profile.id);
 
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Profile updated successfully",
+        title: 'Success',
+        description: 'Your profile has been updated',
       });
 
-      if (data) {
-        onSubmitSuccess(data as Profile);
-      }
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
+      // Pass the updated profile back to the parent component
+      onSubmitSuccess({
+        ...profile,
+        ...values,
+        avatar_url: avatarUrl,
+        is_profile_completed: true,
+        updated_at: new Date(),
       });
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update profile',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleImageUploaded = (url: string) => {
+  // Handle avatar upload completion
+  const onUploadComplete = (url: string) => {
     setAvatarUrl(url);
+    setIsUploading(false);
   };
 
-  const isLPU = college === "Lovely Professional University";
-
-  const SocialMediaInput = ({
-    id,
-    icon,
-    value,
-    onChange,
-    placeholder,
-    error
-  }: {
-    id: string;
-    icon: React.ReactNode;
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    placeholder: string;
-    error?: string;
-  }) => (
-    <div className="space-y-2">
-      <div className="flex items-center">
-        <div className="mr-2">{icon}</div>
-        <Label htmlFor={id} className="text-sm font-medium text-gray-700">
-          {id.charAt(0).toUpperCase() + id.slice(1).replace('Url', '')} URL
-        </Label>
-      </div>
-      <Input
-        id={id}
-        type="text"
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${error ? 'border-red-500' : ''}`}
-      />
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-    </div>
-  );
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {!isFirstTimeSetup && (
-        <div className="flex justify-center mb-8">
-          <ProfileImageUpload profile={profile} onImageUploaded={handleImageUploaded} />
-        </div>
-      )}
-
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="space-y-2">
-          <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
-            Full Name {isFirstTimeSetup && <span className="text-red-500">*</span>}
-          </Label>
-          <Input
-            id="fullName"
-            type="text"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="Enter your full name"
-            className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${errors.fullName ? 'border-red-500' : ''}`}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex flex-col items-center mb-6">
+          <ProfileImageUpload
+            uid={profile.id}
+            url={avatarUrl}
+            onUploadStart={() => setIsUploading(true)}
+            onUploadComplete={onUploadComplete}
+            onError={() => setIsUploading(false)}
           />
-          {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
+          <p className="text-sm text-gray-500 mt-2">Click to upload a profile picture</p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
-            Phone Number {isFirstTimeSetup && <span className="text-red-500">*</span>}
-          </Label>
-          <Input
-            id="phone"
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Enter your phone number"
-            className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${errors.phone ? 'border-red-500' : ''}`}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="username"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Username</FormLabel>
+                <FormControl>
+                  <Input placeholder="username" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+
+          <FormField
+            control={form.control}
+            name="full_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="John Doe" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="college" className="text-sm font-medium text-gray-700">
-            College {isFirstTimeSetup && <span className="text-red-500">*</span>}
-          </Label>
-          <Select
-            value={college}
-            onValueChange={setCollege}
-          >
-            <SelectTrigger className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${errors.college ? 'border-red-500' : ''}`}>
-              <SelectValue placeholder="Select your college" />
-            </SelectTrigger>
-            <SelectContent>
-              {colleges.map((collegeName) => (
-                <SelectItem key={collegeName} value={collegeName}>
-                  {collegeName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.college && <p className="text-red-500 text-xs mt-1">{errors.college}</p>}
+        <FormField
+          control={form.control}
+          name="bio"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Bio</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Tell people a bit about yourself..."
+                  className="resize-none"
+                  {...field}
+                  value={field.value || ''}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="college"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>College/University</FormLabel>
+                <FormControl>
+                  <Input placeholder="Your college name" {...field} value={field.value || ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="registration_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Registration Number</FormLabel>
+                <FormControl>
+                  <Input placeholder="Your registration number" {...field} value={field.value || ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
-        {isLPU && (
-          <div className="space-y-2">
-            <Label htmlFor="registrationNumber" className="text-sm font-medium text-gray-700">
-              Registration Number <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="registrationNumber"
-              type="text"
-              value={registrationNumber}
-              onChange={(e) => setRegistrationNumber(e.target.value)}
-              placeholder="Enter your registration number"
-              className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${errors.registrationNumber ? 'border-red-500' : ''}`}
+        <FormField
+          control={form.control}
+          name="whatsapp_number"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>WhatsApp Number</FormLabel>
+              <FormControl>
+                <Input placeholder="Your WhatsApp number with country code" {...field} value={field.value || ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Social Media Links</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="instagram_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Instagram URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://instagram.com/username" {...field} value={field.value || ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.registrationNumber && <p className="text-red-500 text-xs mt-1">{errors.registrationNumber}</p>}
+
+            <FormField
+              control={form.control}
+              name="twitter_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Twitter URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://twitter.com/username" {...field} value={field.value || ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
-        )}
 
-        {!isFirstTimeSetup && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="age" className="text-sm font-medium text-gray-700">Age</Label>
-              <Input
-                id="age"
-                type="number"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                placeholder="Enter your age"
-                className={`border-gray-300 focus:ring-purple-500 focus:border-purple-500 ${errors.age ? 'border-red-500' : ''}`}
-              />
-              {errors.age && <p className="text-red-500 text-xs mt-1">{errors.age}</p>}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="linkedin_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>LinkedIn URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://linkedin.com/in/username" {...field} value={field.value || ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="country" className="text-sm font-medium text-gray-700">Country</Label>
-              <Input
-                id="country"
-                type="text"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                placeholder="Enter your country"
-                className="border-gray-300 focus:ring-purple-500 focus:border-purple-500"
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="portfolio_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Portfolio URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://yourportfolio.com" {...field} value={field.value || ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="state" className="text-sm font-medium text-gray-700">State</Label>
-              <Input
-                id="state"
-                type="text"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                placeholder="Enter your state"
-                className="border-gray-300 focus:ring-purple-500 focus:border-purple-500"
-              />
-            </div>
+          <FormField
+            control={form.control}
+            name="snapchat_url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Snapchat URL</FormLabel>
+                <FormControl>
+                  <Input placeholder="https://snapchat.com/add/username" {...field} value={field.value || ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="city" className="text-sm font-medium text-gray-700">City</Label>
-              <Input
-                id="city"
-                type="text"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="Enter your city"
-                className="border-gray-300 focus:ring-purple-500 focus:border-purple-500"
-              />
-            </div>
-          </>
-        )}
-
-        {!isFirstTimeSetup && (
-          <>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="bio" className="text-sm font-medium text-gray-700">Bio</Label>
-              <Textarea
-                id="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Write something about yourself"
-                className="border-gray-300 focus:ring-purple-500 focus:border-purple-500 min-h-[100px]"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <h3 className="font-medium text-gray-700 mb-4">Social Media Links</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SocialMediaInput
-                  id="instagramUrl"
-                  icon={<Instagram className="h-4 w-4 text-pink-600" />}
-                  value={instagramUrl}
-                  onChange={(e) => setInstagramUrl(e.target.value)}
-                  placeholder="https://instagram.com/username"
-                  error={errors.instagramUrl}
-                />
-
-                <SocialMediaInput
-                  id="linkedinUrl"
-                  icon={<Linkedin className="h-4 w-4 text-blue-600" />}
-                  value={linkedinUrl}
-                  onChange={(e) => setLinkedinUrl(e.target.value)}
-                  placeholder="https://linkedin.com/in/username"
-                  error={errors.linkedinUrl}
-                />
-
-                <SocialMediaInput
-                  id="twitterUrl"
-                  icon={<Twitter className="h-4 w-4 text-sky-500" />}
-                  value={twitterUrl}
-                  onChange={(e) => setTwitterUrl(e.target.value)}
-                  placeholder="https://twitter.com/username"
-                  error={errors.twitterUrl}
-                />
-
-                <SocialMediaInput
-                  id="youtubeUrl"
-                  icon={<Youtube className="h-4 w-4 text-red-600" />}
-                  value={youtubeUrl || ''}
-                  onChange={(e) => setYoutubeUrl(e.target.value)}
-                  placeholder="https://youtube.com/channel/username"
-                  error={errors.youtubeUrl}
-                />
-              </div>
-            </div>
-          </>
-        )}
-      </motion.div>
-
-      <div className="flex justify-end pt-6 pb-12 md:pb-0">
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-2 rounded-md shadow-md transition-all duration-300 hover:shadow-lg"
-        >
-          {isSubmitting ? "Saving..." : isFirstTimeSetup ? "Complete Profile" : "Save Changes"}
-        </Button>
-      </div>
-    </form>
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            disabled={isUploading}
+            className={isFirstTimeSetup ? "w-full" : ""}
+          >
+            {isUploading ? 'Uploading...' : isFirstTimeSetup ? 'Complete Profile' : 'Save Changes'}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
-};
+}

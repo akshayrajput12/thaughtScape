@@ -1,11 +1,12 @@
+
 import React, { useState } from 'react';
-import { EnhancedProjectCard } from './EnhancedProjectCard';
+import { ModernProjectCard } from '@/components/freelancing/ModernProjectCard';
 import type { Project } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Filter, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Briefcase } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Separator } from '@/components/ui/separator';
@@ -43,7 +44,7 @@ export const EnhancedProjectsList = ({
       project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.company_name && project.company_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (project.location && project.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (project.required_skills && project.required_skills.some(skill =>
+      (project.required_skills && Array.isArray(project.required_skills) && project.required_skills.some(skill =>
         skill.toLowerCase().includes(searchTerm.toLowerCase())
       ));
 
@@ -268,7 +269,7 @@ export const EnhancedProjectsList = ({
                   transition={{ duration: 0.4, delay: index * 0.1 }}
                   whileHover={{ y: -5, transition: { duration: 0.2 } }}
                 >
-                  <EnhancedProjectCard
+                  <ModernProjectCard
                     project={project}
                     hasApplied={userApplications.includes(project.id)}
                     onApply={onApply}
@@ -305,7 +306,7 @@ export const EnhancedProjectsList = ({
                 transition={{ duration: 0.3, delay: index * 0.05 }}
                 whileHover={{ y: -5, transition: { duration: 0.2 } }}
               >
-                <EnhancedProjectCard
+                <ModernProjectCard
                   project={project}
                   hasApplied={userApplications.includes(project.id)}
                   onApply={onApply}
@@ -351,3 +352,7 @@ export const EnhancedProjectsList = ({
     </div>
   );
 };
+
+function Award(props: any) {
+  return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+}

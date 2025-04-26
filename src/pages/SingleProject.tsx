@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -143,6 +144,36 @@ const SingleProject = () => {
     );
   }
 
+  // Function to safely render required skills
+  const renderRequiredSkills = () => {
+    if (!project.required_skills) return null;
+    
+    // Check if required_skills is an array
+    if (Array.isArray(project.required_skills)) {
+      return project.required_skills.map((skill, index) => (
+        <span 
+          key={index} 
+          className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
+        >
+          {skill.trim()}
+        </span>
+      ));
+    } 
+    // Check if required_skills is a string that can be split
+    else if (typeof project.required_skills === 'string') {
+      return project.required_skills.split(',').map((skill, index) => (
+        <span 
+          key={index} 
+          className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
+        >
+          {skill.trim()}
+        </span>
+      ));
+    }
+    
+    return null;
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-3xl mx-auto">
@@ -198,14 +229,7 @@ const SingleProject = () => {
               <div className="pt-2">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Required Skills:</h3>
                 <div className="flex flex-wrap gap-2">
-                  {project.required_skills.split(',').map((skill, index) => (
-                    <span 
-                      key={index} 
-                      className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
-                    >
-                      {skill.trim()}
-                    </span>
-                  ))}
+                  {renderRequiredSkills()}
                 </div>
               </div>
             )}

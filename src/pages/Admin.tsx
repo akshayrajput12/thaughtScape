@@ -1,270 +1,163 @@
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsersList } from "@/components/admin/UsersList";
 import { PoemsList } from "@/components/admin/PoemsList";
 import { ProjectsList } from "@/components/admin/ProjectsList";
-import {
-  Users,
-  File,
-  Briefcase,
-  LayoutDashboard,
-  Settings,
-  LogOut,
-  Menu,
-  X
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { UserStats } from "@/components/admin/UserStats";
+import { ProjectManagement } from "@/components/admin/ProjectManagement";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Project } from "@/types";
 
-const Admin = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("users");
+function AdminDashboard() {
   const { toast } = useToast();
+  const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("users");
+  const queryClient = useQueryClient();
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
+  // Check if user is admin
+  const { data: isAdmin, isLoading: checkingAdmin } = useQuery({
+    queryKey: ["isAdmin", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data?.is_admin || false;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch projects for the projects management tab
+  const { data: projects, isLoading: projectsLoading, refetch: refetchProjects } = useQuery({
+    queryKey: ["adminProjects"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select(`
+          *,
+          author:profiles(id, username, full_name, avatar_url)
+        `)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data as Project[];
+    },
+    enabled: !!isAdmin,
+  });
+
+  // Handle URL parameters for user selection
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get("tab");
+    const userId = params.get("user");
+    
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+    
+    if (userId) {
+      setActiveTab("users");
+      // Handle user selection if needed
+    }
+  }, [location]);
+
+  // Redirect if not admin
+  useEffect(() => {
+    if (!checkingAdmin && !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to access this page",
+        variant: "destructive",
+      });
+      navigate("/");
+    }
+  }, [checkingAdmin, isAdmin, navigate, toast]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    
+    // Update URL with new tab
+    const params = new URLSearchParams(location.search);
+    params.set("tab", value);
+    navigate({
+      pathname: location.pathname,
+      search: params.toString(),
+    });
   };
 
+  if (checkingAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/30 border-t-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return null; // Will redirect in the useEffect
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-purple-50/30">
-      {/* Mobile Header */}
-      <div className="lg:hidden bg-white border-b border-purple-100 shadow-sm sticky top-0 z-20">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-purple-700"
-            >
-              <Menu size={24} />
-            </Button>
-            <h1 className="font-bold text-xl bg-gradient-to-r from-purple-700 to-indigo-700 bg-clip-text text-transparent">
-              Admin Dashboard
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="text-red-600 border-red-200 hover:bg-red-50"
-            >
-              <LogOut size={16} className="mr-1" />
-              Logout
-            </Button>
-          </div>
+    <div className="container mx-auto py-10 px-4">
+      <div className="space-y-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+          <p className="text-muted-foreground">Manage users, content, and settings</p>
         </div>
-
-        {/* Mobile Tab Navigation */}
-        <div className="flex overflow-x-auto scrollbar-hide border-t border-purple-100 bg-white">
-          <button
-            className={`flex items-center gap-2 px-4 py-3 whitespace-nowrap transition-colors ${
-              activeTab === 'users'
-                ? 'text-purple-700 border-b-2 border-purple-700 font-medium'
-                : 'text-gray-600 hover:text-purple-700'
-            }`}
-            onClick={() => setActiveTab('users')}
-          >
-            <Users size={18} />
-            <span>Users</span>
-          </button>
-
-          <button
-            className={`flex items-center gap-2 px-4 py-3 whitespace-nowrap transition-colors ${
-              activeTab === 'thoughts'
-                ? 'text-purple-700 border-b-2 border-purple-700 font-medium'
-                : 'text-gray-600 hover:text-purple-700'
-            }`}
-            onClick={() => setActiveTab('thoughts')}
-          >
-            <File size={18} />
-            <span>Thoughts</span>
-          </button>
-
-          <button
-            className={`flex items-center gap-2 px-4 py-3 whitespace-nowrap transition-colors ${
-              activeTab === 'projects'
-                ? 'text-purple-700 border-b-2 border-purple-700 font-medium'
-                : 'text-gray-600 hover:text-purple-700'
-            }`}
-            onClick={() => setActiveTab('projects')}
-          >
-            <Briefcase size={18} />
-            <span>Projects</span>
-          </button>
+        
+        <div className="border-b">
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
+            <TabsList className="w-full justify-start">
+              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="poems">Thoughts</TabsTrigger>
+              <TabsTrigger value="projects">Projects</TabsTrigger>
+              <TabsTrigger value="stats">Stats</TabsTrigger>
+              <TabsTrigger value="project-management">Project Management</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
+        
+        <TabsContent value="users" className="m-0">
+          <UsersList />
+        </TabsContent>
+        
+        <TabsContent value="poems" className="m-0">
+          <PoemsList />
+        </TabsContent>
+        
+        <TabsContent value="projects" className="m-0">
+          <ProjectsList />
+        </TabsContent>
+        
+        <TabsContent value="stats" className="m-0">
+          <UserStats />
+        </TabsContent>
+        
+        <TabsContent value="project-management" className="m-0">
+          <ProjectManagement 
+            projects={projects || []} 
+            isLoading={projectsLoading} 
+            onRefresh={refetchProjects}
+          />
+        </TabsContent>
       </div>
-
-      <div className="flex">
-        {/* Sidebar - Desktop Only */}
-        <div
-          className={`h-screen bg-white border-r border-purple-100 shadow-lg transition-all duration-300 flex flex-col fixed lg:sticky top-0 z-30 ${
-            sidebarOpen ? 'w-72 translate-x-0' : 'w-72 -translate-x-full lg:w-20 lg:translate-x-0'
-          }`}
-        >
-          <div className="p-5 border-b border-purple-100 flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white">
-                <LayoutDashboard size={18} />
-              </div>
-              <h1 className={`font-bold text-xl bg-gradient-to-r from-purple-700 to-indigo-700 bg-clip-text text-transparent transition-opacity duration-300 ${!sidebarOpen && 'lg:opacity-0 lg:w-0 lg:hidden'}`}>
-                Admin Panel
-              </h1>
-            </div>
-            <button
-              className="text-gray-500 hover:text-purple-700 transition-colors p-2 rounded-full hover:bg-purple-50 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X size={20} />
-            </button>
-            <button
-              className="text-gray-500 hover:text-purple-700 transition-colors p-2 rounded-full hover:bg-purple-50 hidden lg:block"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto py-6 px-4">
-            <div className="mb-6">
-              <p className={`text-xs font-medium text-gray-400 uppercase tracking-wider mb-3 px-3 ${!sidebarOpen && 'lg:hidden'}`}>
-                Main Menu
-              </p>
-              <nav className="space-y-1">
-                <button
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                    activeTab === 'users'
-                      ? 'bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 font-medium shadow-sm'
-                      : 'text-gray-600 hover:bg-purple-50/50 hover:text-purple-700'
-                  }`}
-                  onClick={() => setActiveTab('users')}
-                >
-                  <Users size={20} className={activeTab === 'users' ? 'text-purple-600' : ''} />
-                  <span className={`transition-opacity duration-300 ${!sidebarOpen && 'lg:hidden'}`}>Users</span>
-                </button>
-
-                <button
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                    activeTab === 'thoughts'
-                      ? 'bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 font-medium shadow-sm'
-                      : 'text-gray-600 hover:bg-purple-50/50 hover:text-purple-700'
-                  }`}
-                  onClick={() => setActiveTab('thoughts')}
-                >
-                  <File size={20} className={activeTab === 'thoughts' ? 'text-purple-600' : ''} />
-                  <span className={`transition-opacity duration-300 ${!sidebarOpen && 'lg:hidden'}`}>Thoughts</span>
-                </button>
-
-                <button
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                    activeTab === 'projects'
-                      ? 'bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 font-medium shadow-sm'
-                      : 'text-gray-600 hover:bg-purple-50/50 hover:text-purple-700'
-                  }`}
-                  onClick={() => setActiveTab('projects')}
-                >
-                  <Briefcase size={20} className={activeTab === 'projects' ? 'text-purple-600' : ''} />
-                  <span className={`transition-opacity duration-300 ${!sidebarOpen && 'lg:hidden'}`}>Projects</span>
-                </button>
-              </nav>
-            </div>
-
-            <div className="mt-6">
-              <p className={`text-xs font-medium text-gray-400 uppercase tracking-wider mb-3 px-3 ${!sidebarOpen && 'lg:hidden'}`}>
-                Settings
-              </p>
-              <nav className="space-y-1">
-                <button
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-gray-600 hover:bg-purple-50/50 hover:text-purple-700"
-                >
-                  <Settings size={20} />
-                  <span className={`transition-opacity duration-300 ${!sidebarOpen && 'lg:hidden'}`}>Settings</span>
-                </button>
-              </nav>
-            </div>
-          </div>
-
-          <div className="p-4 border-t border-purple-100">
-            <button
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-all"
-              onClick={handleLogout}
-            >
-              <LogOut size={20} />
-              <span className={`transition-opacity duration-300 ${!sidebarOpen && 'lg:hidden'}`}>Logout</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Main content */}
-        <div className="flex-1 transition-all">
-          {/* Desktop Header */}
-          <div className="hidden lg:flex items-center justify-between p-6 border-b border-purple-100 bg-white sticky top-0 z-20">
-            <h1 className="text-2xl font-serif font-bold bg-gradient-to-r from-purple-700 to-indigo-700 bg-clip-text text-transparent">
-              Admin Dashboard
-            </h1>
-
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-purple-700 border-purple-200"
-              >
-                <Settings size={16} className="mr-2" />
-                Settings
-              </Button>
-            </div>
-          </div>
-
-          <div className="p-4 md:p-6 lg:p-8">
-            <div className="bg-white rounded-2xl shadow-lg border border-purple-100 overflow-hidden">
-              <div className="p-6 border-b border-purple-100 hidden lg:block">
-                <div className="flex items-center gap-2">
-                  {activeTab === 'users' && (
-                    <h2 className="text-xl font-medium text-gray-900 flex items-center gap-2">
-                      <Users size={20} className="text-purple-600" />
-                      User Management
-                    </h2>
-                  )}
-                  {activeTab === 'thoughts' && (
-                    <h2 className="text-xl font-medium text-gray-900 flex items-center gap-2">
-                      <File size={20} className="text-purple-600" />
-                      Thoughts Management
-                    </h2>
-                  )}
-                  {activeTab === 'projects' && (
-                    <h2 className="text-xl font-medium text-gray-900 flex items-center gap-2">
-                      <Briefcase size={20} className="text-purple-600" />
-                      Projects Management
-                    </h2>
-                  )}
-                </div>
-              </div>
-
-              <div className="p-4 md:p-6">
-                {activeTab === 'users' && <UsersList />}
-                {activeTab === 'thoughts' && <PoemsList />}
-                {activeTab === 'projects' && <ProjectsList />}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Overlay for mobile sidebar */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 z-20 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
     </div>
   );
-};
+}
 
-export default Admin;
+export default AdminDashboard;
