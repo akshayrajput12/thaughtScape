@@ -1,7 +1,16 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, ExternalLink, MessageSquare, Instagram, Twitter, Linkedin, Link as LinkIcon, Camera, BriefcaseIcon } from 'lucide-react';
+import { 
+  MoreHorizontal, 
+  ExternalLink, 
+  MessageSquare, 
+  Instagram, 
+  Twitter, 
+  Linkedin, 
+  Link as LinkIcon, 
+  Camera, 
+  BriefcaseIcon 
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
