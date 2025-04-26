@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -8,9 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { Profile } from "@/types";
-import { Instagram, Linkedin, Twitter, Youtube, Link as LinkIcon, Github } from "lucide-react";
+import { Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
 import { ProfileImageUpload } from "./ProfileImageUpload";
-import { SnapchatIcon } from "@/components/icons/SnapchatIcon";
 
 const colleges = [
   "Lovely Professional University",
@@ -45,12 +45,10 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
   const [twitterUrl, setTwitterUrl] = useState(profile.twitter_url || "");
   const [snapchatUrl, setSnapchatUrl] = useState(profile.snapchat_url || "");
   const [youtubeUrl, setYoutubeUrl] = useState(profile.youtube_url || "");
-  const [portfolioUrl, setPortfolioUrl] = useState(profile.portfolio_url || "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const [githubUrl, setGithubUrl] = useState(profile.github_url || "");
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -73,6 +71,7 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
       }
     }
 
+    // Validate social media URLs if provided
     if (instagramUrl && !urlRegex.test(instagramUrl)) {
       newErrors.instagramUrl = "Please enter a valid URL";
     }
@@ -87,9 +86,6 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
     }
     if (youtubeUrl && !urlRegex.test(youtubeUrl)) {
       newErrors.youtubeUrl = "Please enter a valid URL";
-    }
-    if (portfolioUrl && !urlRegex.test(portfolioUrl)) {
-      newErrors.portfolioUrl = "Please enter a valid URL";
     }
 
     setErrors(newErrors);
@@ -118,10 +114,8 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
         twitter_url: twitterUrl,
         snapchat_url: snapchatUrl,
         youtube_url: youtubeUrl,
-        portfolio_url: portfolioUrl,
         avatar_url: avatarUrl,
-        is_profile_completed: true,
-        github_url: githubUrl,
+        is_profile_completed: true
       };
 
       if (age) updatedProfile.age = parseInt(age);
@@ -345,17 +339,8 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
             </div>
 
             <div className="md:col-span-2">
-              <h3 className="font-medium text-gray-700 mb-4">Social Media & Portfolio Links</h3>
+              <h3 className="font-medium text-gray-700 mb-4">Social Media Links</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SocialMediaInput
-                  id="portfolioUrl"
-                  icon={<LinkIcon className="h-4 w-4 text-gray-600" />}
-                  value={portfolioUrl}
-                  onChange={(e) => setPortfolioUrl(e.target.value)}
-                  placeholder="https://yourportfolio.com"
-                  error={errors.portfolioUrl}
-                />
-
                 <SocialMediaInput
                   id="instagramUrl"
                   icon={<Instagram className="h-4 w-4 text-pink-600" />}
@@ -384,15 +369,6 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
                 />
 
                 <SocialMediaInput
-                  id="snapchatUrl"
-                  icon={<SnapchatIcon className="h-4 w-4 text-yellow-400" />}
-                  value={snapchatUrl}
-                  onChange={(e) => setSnapchatUrl(e.target.value)}
-                  placeholder="https://snapchat.com/add/username"
-                  error={errors.snapchatUrl}
-                />
-
-                <SocialMediaInput
                   id="youtubeUrl"
                   icon={<Youtube className="h-4 w-4 text-red-600" />}
                   value={youtubeUrl || ''}
@@ -400,23 +376,6 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
                   placeholder="https://youtube.com/channel/username"
                   error={errors.youtubeUrl}
                 />
-                
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <div className="mr-2"><Github className="h-4 w-4 text-gray-600" /></div>
-                    <Label htmlFor="githubUrl" className="text-sm font-medium text-gray-700">
-                      GitHub URL
-                    </Label>
-                  </div>
-                  <Input
-                    id="githubUrl"
-                    type="text"
-                    value={githubUrl}
-                    onChange={(e) => setGithubUrl(e.target.value)}
-                    placeholder="https://github.com/username"
-                    className="border-gray-300 focus:ring-purple-500 focus:border-purple-500"
-                  />
-                </div>
               </div>
             </div>
           </>

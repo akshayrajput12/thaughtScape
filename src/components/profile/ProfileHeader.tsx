@@ -1,361 +1,360 @@
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
-} from "@/components/ui/tooltip";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { 
-  CalendarDays, 
-  MapPin, 
-  School, 
-  MoreHorizontal, 
-  MessageSquare, 
-  UserCheck, 
-  UserMinus, 
-  UserX, 
-  ShieldCheck, 
-  Facebook, 
-  Instagram, 
-  Linkedin, 
-  Twitter, 
-  Youtube, 
-  Link as LinkIcon 
+import {
+  MessageCircle,
+  Edit,
+  UserPlus,
+  UserMinus,
+  Shield,
+  LinkedinIcon,
+  TwitterIcon,
+  InstagramIcon
 } from "lucide-react";
-import { Github } from 'lucide-react';
-import { SnapchatIcon } from "@/components/icons/SnapchatIcon";
-
-import { formatDistanceToNow } from 'date-fns';
-import type { Profile } from '@/types';
+import { Profile } from "@/types";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ProfileHeaderProps {
   profile: Profile;
-  isOwnProfile: boolean;
-  isEditing: boolean;
-  onEditClick: () => void;
   isFollowing: boolean;
-  isBlocked: boolean;
-  isBlockedByUser: boolean;
   onFollowToggle: () => void;
-  onBlock: () => void;
-  onUnblock: () => void;
-  onMessage: () => void;
+  isOwnProfile: boolean;
   postsCount: number;
   followersCount: number;
   followingCount: number;
+  isEditing?: boolean;
+  onEditClick?: () => void;
+  isBlocked?: boolean;
+  isBlockedByUser?: boolean;
+  onBlock?: () => void;
+  onUnblock?: () => void;
+  onMessage?: () => void;
+  onFollow?: () => void;
+  onUnfollow?: () => void;
   isAdmin?: boolean;
 }
 
-export const ProfileHeader = ({
+export function ProfileHeader({
   profile,
-  isOwnProfile,
-  isEditing,
-  onEditClick,
   isFollowing,
-  isBlocked,
-  isBlockedByUser,
   onFollowToggle,
-  onBlock,
-  onUnblock,
-  onMessage,
+  isOwnProfile,
   postsCount,
   followersCount,
   followingCount,
-  isAdmin = false,
-}: ProfileHeaderProps) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  isEditing,
+  onEditClick,
+  isBlocked,
+  isBlockedByUser,
+  onBlock,
+  onUnblock,
+  onMessage,
+  onFollow,
+  onUnfollow,
+  isAdmin
+}: ProfileHeaderProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [messageText, setMessageText] = useState("");
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
 
-  const handleDropdownToggle = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+  const handleAdminDashboardClick = async () => {
+    // Double-check if the user is actually an admin before navigating
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to access the admin dashboard",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error("Error checking admin status:", error);
+        toast({
+          title: "Error",
+          description: "Could not verify admin status",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data?.is_admin) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have permission to access the admin dashboard",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If we get here, the user is confirmed to be an admin
+      navigate('/admin');
+    } catch (error) {
+      console.error("Error navigating to admin dashboard:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleViewAdmin = () => {
-    navigate('/admin');
+  const handleSendMessage = async () => {
+    if (!messageText.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a message",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSendingMessage(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to send messages",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create a new message
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: session.user.id,
+          recipient_id: profile.id,
+          content: messageText,
+          is_read: false
+        });
+
+      if (error) throw error;
+
+      // Create a notification for the recipient
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: profile.id,
+          type: 'message',
+          content: 'You have a new message',
+          related_user_id: session.user.id
+        });
+
+      toast({
+        title: "Success",
+        description: "Message sent successfully",
+      });
+
+      setMessageText("");
+      setIsMessageDialogOpen(false);
+
+      // Call the onMessage callback if provided
+      if (onMessage) {
+        onMessage();
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingMessage(false);
+    }
   };
-
-  if (!profile) return null;
-
-  const showLocation = profile.city || profile.state || profile.country;
-  const location = [profile.city, profile.state, profile.country].filter(Boolean).join(', ');
-  
-  const getSocialLinks = () => {
-    const links = [];
-    
-    if (profile.portfolio_url) {
-      links.push({
-        url: profile.portfolio_url,
-        icon: <LinkIcon size={16} className="text-gray-600" />,
-        name: 'Portfolio'
-      });
-    }
-
-    if (profile.github_url) {
-      links.push({
-        url: profile.github_url,
-        icon: <Github size={16} className="text-gray-800" />,
-        name: 'GitHub'
-      });
-    }
-
-    if (profile.snapchat_url) {
-      links.push({
-        url: profile.snapchat_url,
-        icon: <SnapchatIcon className="text-yellow-400" width={16} height={16} />,
-        name: 'Snapchat'
-      });
-    }
-    
-    if (profile.instagram_url) {
-      links.push({
-        url: profile.instagram_url,
-        icon: <Instagram size={16} className="text-pink-600" />,
-        name: 'Instagram'
-      });
-    }
-    
-    if (profile.linkedin_url) {
-      links.push({
-        url: profile.linkedin_url,
-        icon: <Linkedin size={16} className="text-blue-600" />,
-        name: 'LinkedIn'
-      });
-    }
-    
-    if (profile.twitter_url) {
-      links.push({
-        url: profile.twitter_url,
-        icon: <Twitter size={16} className="text-sky-500" />,
-        name: 'Twitter'
-      });
-    }
-    
-    if (profile.youtube_url) {
-      links.push({
-        url: profile.youtube_url,
-        icon: <Youtube size={16} className="text-red-600" />,
-        name: 'YouTube'
-      });
-    }
-    
-    return links;
-  };
-
-  const socialLinks = getSocialLinks();
-
   return (
-    <div className="bg-white shadow rounded-xl overflow-hidden">
-      <div className="h-32 sm:h-48 bg-gradient-to-r from-purple-400 via-pink-500 to-indigo-500"></div>
-      
-      <div className="relative px-4 sm:px-6 pb-6">
-        <div className="absolute -top-16 left-6 ring-4 ring-white rounded-full">
-          <Avatar className="w-28 h-28 border-4 border-white shadow-lg">
-            <AvatarImage src={profile.avatar_url || ''} alt={profile.username} className="object-cover" />
-            <AvatarFallback className="text-3xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
-              {profile.full_name?.[0]?.toUpperCase() || profile.username?.[0]?.toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-        
-        <div className="flex justify-end mt-2 gap-2">
-          {isAdmin && !isOwnProfile && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge variant="outline" className="border-purple-200 text-purple-700 flex items-center gap-1 px-3 py-1.5">
-                    <ShieldCheck size={14} />
-                    <span>Admin</span>
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>This user is an admin</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+    <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
+      <div className="flex items-start gap-6">
+        <Avatar className="h-24 w-24 border-2 border-primary/10">
+          <AvatarImage src={profile.avatar_url || undefined} />
+          <AvatarFallback>{profile.username[0].toUpperCase()}</AvatarFallback>
+        </Avatar>
 
-          {isOwnProfile && isAdmin && (
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={handleViewAdmin}
-              className="border-purple-200 text-purple-700 hover:bg-purple-50"
-            >
-              <ShieldCheck size={16} className="mr-2" />
-              Admin Panel
-            </Button>
-          )}
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">{profile.full_name || profile.username}</h1>
+              <p className="text-muted-foreground">@{profile.username}</p>
+            </div>
 
-          {isOwnProfile && !isEditing && (
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={onEditClick}
-              className="border-purple-200 text-purple-700 hover:bg-purple-50"
-            >
-              Edit Profile
-            </Button>
-          )}
-
-          {!isOwnProfile && !isBlockedByUser && (
-            <>
-              <Button
-                variant={isFollowing ? "outline" : "default"}
-                size="sm"
-                onClick={onFollowToggle}
-                disabled={isBlocked}
-                className={isFollowing 
-                  ? "border-purple-200 text-purple-700 hover:bg-purple-50" 
-                  : "bg-purple-600 hover:bg-purple-700 text-white"
-                }
-              >
-                {isFollowing ? (
-                  <>
-                    <UserCheck size={16} className="mr-2" />
-                    Following
-                  </>
-                ) : (
-                  <>
-                    <UserCheck size={16} className="mr-2" />
-                    Follow
-                  </>
-                )}
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onMessage}
-                disabled={isBlocked || isBlockedByUser}
-                className="border-purple-200 text-purple-700 hover:bg-purple-50"
-              >
-                <MessageSquare size={16} className="mr-2" />
-                Message
-              </Button>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
-                    <MoreHorizontal size={18} />
+            <div className="flex flex-wrap gap-2">
+              {isOwnProfile ? (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={onEditClick}
+                    variant={isEditing ? "outline" : "default"}
+                    className="flex items-center gap-1"
+                  >
+                    <Edit className="h-4 w-4" />
+                    {isEditing ? "Cancel" : "Edit Profile"}
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {isBlocked ? (
-                    <DropdownMenuItem onClick={onUnblock}>
-                      <UserCheck size={16} className="mr-2 text-green-600" />
-                      <span>Unblock User</span>
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={onBlock}>
-                      <UserX size={16} className="mr-2 text-red-600" />
-                      <span>Block User</span>
-                    </DropdownMenuItem>
+
+                  {isAdmin && (
+                    <Button
+                      onClick={handleAdminDashboardClick}
+                      variant="outline"
+                      className="flex items-center gap-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                    >
+                      <Shield className="h-4 w-4" />
+                      Admin Dashboard
+                    </Button>
                   )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          )}
-        </div>
+                </div>
+              ) : (
+                <>
+                  <Button
+                    onClick={onFollowToggle}
+                    variant={isFollowing ? "outline" : "default"}
+                    className="flex items-center gap-1"
+                    size="sm"
+                  >
+                    {isFollowing ? (
+                      <>
+                        <UserMinus className="h-4 w-4" />
+                        <span>Unfollow</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4" />
+                        <span>Follow</span>
+                      </>
+                    )}
+                  </Button>
 
-        <div className="mt-16 space-y-3">
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold text-gray-900">
-                {profile.full_name || profile.username}
-              </h1>
+                  {!isBlocked && !isBlockedByUser && (
+                    <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-1 bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          Message
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2">
+                            <span>Message to {profile.username}</span>
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="flex flex-col gap-4 py-4">
+                          <div className="flex items-center gap-4 p-2 rounded-lg bg-muted/50">
+                            <Avatar className="h-10 w-10 border border-primary/10">
+                              <AvatarImage src={profile.avatar_url || undefined} />
+                              <AvatarFallback>{profile.username[0].toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm text-foreground">{profile.username}</p>
+                              <p className="text-xs text-muted-foreground">{profile.full_name}</p>
+                            </div>
+                          </div>
+                          <Textarea
+                            placeholder="Write your message here..."
+                            value={messageText}
+                            onChange={(e) => setMessageText(e.target.value)}
+                            className="min-h-[120px]"
+                          />
+                        </div>
+                        <DialogFooter className="sm:justify-between">
+                          <DialogClose asChild>
+                            <Button variant="outline" size="sm">Cancel</Button>
+                          </DialogClose>
+                          <Button
+                            onClick={handleSendMessage}
+                            disabled={isSendingMessage || !messageText.trim()}
+                            size="sm"
+                            className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+                          >
+                            {isSendingMessage ? "Sending..." : "Send Message"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
 
-              {profile.is_profile_completed && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge variant="secondary" className="h-5">Verified</Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Profile verified</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                  {!isBlockedByUser && (
+                    <Button
+                      onClick={isBlocked ? onUnblock : onBlock}
+                      variant="outline"
+                      size="sm"
+                      className={isBlocked ? "text-green-600 border-green-200 hover:bg-green-50 dark:text-green-400 dark:border-green-900 dark:hover:bg-green-950" : "text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-900 dark:hover:bg-red-950"}
+                    >
+                      {isBlocked ? "Unblock" : "Block"}
+                    </Button>
+                  )}
+                </>
               )}
             </div>
-            <p className="text-gray-500 text-sm">@{profile.username}</p>
           </div>
 
-          {isBlocked && (
-            <div className="bg-red-50 text-red-800 px-4 py-3 rounded-lg text-sm">
-              You have blocked this user.
+          <div className="mt-4 flex gap-6">
+            <div>
+              <span className="font-semibold text-foreground">{postsCount}</span>
+              <span className="text-muted-foreground ml-1">posts</span>
             </div>
+            <div>
+              <span className="font-semibold text-foreground">{followersCount}</span>
+              <span className="text-muted-foreground ml-1">followers</span>
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">{followingCount}</span>
+              <span className="text-muted-foreground ml-1">following</span>
+            </div>
+          </div>
+
+          {profile.bio && (
+            <p className="mt-4 text-foreground">{profile.bio}</p>
           )}
 
-          {isBlockedByUser && (
-            <div className="bg-red-50 text-red-800 px-4 py-3 rounded-lg text-sm">
-              This user has blocked you.
-            </div>
-          )}
-          
-          {!isBlocked && !isBlockedByUser && profile.bio && (
-            <p className="text-gray-700">{profile.bio}</p>
-          )}
-
-          {!isEditing && (
-            <div className="flex flex-wrap gap-y-3 gap-x-6 text-sm text-gray-500 pt-2">
-              <div className="flex items-center gap-1.5">
-                <CalendarDays size={18} className="text-gray-400" />
-                <span>Joined {formatDistanceToNow(new Date(profile.created_at), { addSuffix: true })}</span>
-              </div>
-              
-              {showLocation && (
-                <div className="flex items-center gap-1.5">
-                  <MapPin size={18} className="text-gray-400" />
-                  <span>{location}</span>
-                </div>
-              )}
-              
-              {profile.college && (
-                <div className="flex items-center gap-1.5">
-                  <School size={18} className="text-gray-400" />
-                  <span>{profile.college}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!isEditing && socialLinks.length > 0 && (
-            <div className="flex flex-wrap gap-3 pt-3">
-              {socialLinks.map((link, index) => (
-                <TooltipProvider key={index}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <a 
-                        href={link.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="p-2 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors"
-                      >
-                        {link.icon}
-                      </a>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{link.name}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ))}
-            </div>
-          )}
+          <div className="mt-4 flex gap-4">
+            {profile.instagram_url && (
+              <a href={profile.instagram_url} target="_blank" rel="noopener noreferrer">
+                <InstagramIcon className="h-5 w-5 text-muted-foreground hover:text-pink-500 transition-colors" />
+              </a>
+            )}
+            {profile.linkedin_url && (
+              <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer">
+                <LinkedinIcon className="h-5 w-5 text-muted-foreground hover:text-blue-500 transition-colors" />
+              </a>
+            )}
+            {profile.twitter_url && (
+              <a href={profile.twitter_url} target="_blank" rel="noopener noreferrer">
+                <TwitterIcon className="h-5 w-5 text-muted-foreground hover:text-sky-400 transition-colors" />
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
-};
+}

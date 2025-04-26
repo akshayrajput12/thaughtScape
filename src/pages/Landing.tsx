@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -19,8 +20,6 @@ const Landing = () => {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [userApplications, setUserApplications] = useState<string[]>([]);
-  const [thoughts, setThoughts] = useState<Thought[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
 
   const handleCallToAction = () => {
     if (isAuthenticated) {
@@ -41,20 +40,7 @@ const Landing = () => {
 
         if (error) throw error;
 
-        // Make sure we transform the data to include the necessary author property
-        if (data) {
-          const thoughtsWithAuthor: Thought[] = data.map((thought: any) => ({
-            ...thought,
-            author: {
-              id: thought.author_id,
-              username: 'unknown',
-              created_at: thought.created_at,
-              updated_at: thought.updated_at
-            }
-          }));
-          
-          setTopPosts(thoughtsWithAuthor);
-        }
+        setTopPosts(data || []);
       } catch (error) {
         console.error("Error fetching top posts:", error);
       } finally {
@@ -76,9 +62,7 @@ const Landing = () => {
               username,
               full_name,
               avatar_url,
-              whatsapp_number,
-              created_at,
-              updated_at
+              whatsapp_number
             )
           `)
           .eq('status', 'open')
@@ -87,15 +71,7 @@ const Landing = () => {
 
         if (error) throw error;
 
-        // Cast status to the correct type
-        if (data) {
-          const typedProjects: Project[] = data.map(project => ({
-            ...project,
-            status: project.status as "open" | "closed" | "in_progress"
-          }));
-          
-          setRecentProjects(typedProjects);
-        }
+        setRecentProjects(data || []);
       } catch (error) {
         console.error("Error fetching recent projects:", error);
       } finally {
@@ -124,74 +100,6 @@ const Landing = () => {
     fetchRecentProjects();
     fetchUserApplications();
   }, [user?.id]);
-
-  useEffect(() => {
-    const fetchThoughts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("thoughts")
-          .select(`
-            *,
-            author:profiles(id, username, full_name, avatar_url, created_at, updated_at)
-          `)
-          .limit(5)
-          .order("created_at", { ascending: false });
-      
-        if (error) throw error;
-      
-        if (data) {
-          // Ensure each thought has the correct author structure
-          const formattedThoughts = data.map(thought => ({
-            ...thought,
-            author: thought.author || {
-              id: thought.author_id,
-              username: 'unknown',
-              created_at: thought.created_at,
-              updated_at: thought.updated_at
-            }
-          })) as Thought[];
-          
-          setThoughts(formattedThoughts);
-        }
-      } catch (error) {
-        console.error("Error fetching thoughts:", error);
-      }
-    };
-    
-    fetchThoughts();
-  }, []);
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("projects")
-          .select(`
-            *,
-            author:profiles(id, username, full_name, avatar_url, created_at, updated_at, whatsapp_number)
-          `)
-          .eq("status", "open")
-          .limit(3)
-          .order("created_at", { ascending: false });
-      
-        if (error) throw error;
-      
-        if (data) {
-          // Ensure each project has the correct status type
-          const formattedProjects = data.map(project => ({
-            ...project,
-            status: project.status as "open" | "closed" | "in_progress"
-          })) as Project[];
-          
-          setProjects(formattedProjects);
-        }
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-      }
-    };
-    
-    fetchProjects();
-  }, []);
 
   const handleApplyToProject = (project: Project) => {
     if (isAuthenticated) {

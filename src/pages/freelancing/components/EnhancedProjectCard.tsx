@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import clsx from "clsx";
-import type { Project, Profile } from '@/types';
+import type { Project } from '@/types';
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -50,26 +50,91 @@ export const EnhancedProjectCard = ({
   const { user } = useAuth();
   const { toast } = useToast();
 
+  const handleWhatsAppApply = () => {
+    if (!project.author?.whatsapp_number) return;
+
+    const message = encodeURIComponent(
+      `Hi, I'm interested in your job "${project.title}". I found it on CampusCash.`
+    );
+
+    window.open(
+      `https://wa.me/${project.author.whatsapp_number}?text=${message}`,
+      '_blank'
+    );
+  };
+
+  const handleExternalApply = () => {
+    if (!project.application_link) return;
+    window.open(project.application_link, '_blank');
+  };
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/project/${project.id}`;
+    navigator.clipboard.writeText(url);
+
+    toast({
+      description: "Job link copied to clipboard",
+    });
+  };
+
+  const formatBudget = (min?: number, max?: number) => {
+    if (!min && !max) return "Not specified";
+    if (min && !max) return `₹${min.toLocaleString()}`;
+    if (!min && max) return `Up to ₹${max.toLocaleString()}`;
+    return `₹${min?.toLocaleString()} - ₹${max?.toLocaleString()}`;
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "No deadline";
+    return format(new Date(dateString), "MMM d, yyyy");
+  };
+
+  const getJobTypeColor = (jobType?: string) => {
+    switch (jobType?.toLowerCase()) {
+      case 'full-time': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'part-time': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      case 'contract': return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300';
+      case 'freelance': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300';
+      case 'internship': return 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+    }
+  };
+
+  const getExperienceLevelColor = (level?: string) => {
+    switch (level?.toLowerCase()) {
+      case 'entry':
+      case 'beginner':
+      case 'entry-level': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'intermediate': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'expert':
+      case 'advanced': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      case 'senior': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+    }
+  };
+
   const renderSocialLinks = () => {
-    const socialLinks: { name: string; url?: string; icon: React.ReactNode }[] = [
+    if (!project.author) return null;
+
+    const socialLinks = [
       {
         name: "GitHub",
-        url: project.author?.github_url,
+        url: project.author.github_url,
         icon: <Github className="h-4 w-4" />
       },
       {
         name: "LinkedIn",
-        url: project.author?.linkedin_url,
+        url: project.author.linkedin_url,
         icon: <Linkedin className="h-4 w-4" />
       },
       {
         name: "Instagram",
-        url: project.author?.instagram_url,
+        url: project.author.instagram_url,
         icon: <Instagram className="h-4 w-4" />
       },
       {
         name: "Twitter",
-        url: project.author?.twitter_url,
+        url: project.author.twitter_url,
         icon: <Twitter className="h-4 w-4" />
       }
     ];
@@ -99,28 +164,6 @@ export const EnhancedProjectCard = ({
         ))}
       </div>
     );
-  };
-
-  const handleCopyProjectLink = () => {
-    const projectLink = `${window.location.origin}/project/${project.id}`;
-    navigator.clipboard.writeText(projectLink);
-
-    toast({
-      title: "Link Copied",
-      description: "Project link copied to clipboard",
-    });
-  };
-
-  const handleExternalUrlClick = (url: string) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to access this link",
-        variant: "destructive"
-      });
-      return;
-    }
-    window.open(url, '_blank');
   };
 
   return (
@@ -220,7 +263,6 @@ export const EnhancedProjectCard = ({
             )}
           </div>
         </div>
-        {project.author && renderSocialLinks()}
       </CardHeader>
 
       <CardContent className="p-5 pt-2 pb-3 relative z-10">
@@ -322,13 +364,13 @@ export const EnhancedProjectCard = ({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors"
-                  onClick={handleCopyProjectLink}
+                  onClick={handleCopyLink}
                 >
                   <LinkIcon className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Copy project link</p>
+                <p>Copy job link</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -344,7 +386,7 @@ export const EnhancedProjectCard = ({
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => handleExternalUrlClick(project.application_link!)}
+                onClick={handleExternalApply}
                 className="gap-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 shadow-sm"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
@@ -367,23 +409,7 @@ export const EnhancedProjectCard = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  if (!user) {
-                    toast({
-                      title: "Authentication Required",
-                      description: "Please sign in to contact via WhatsApp",
-                      variant: "destructive"
-                    });
-                    return;
-                  }
-                  const message = encodeURIComponent(
-                    `Hi, I'm interested in your project "${project.title}".`
-                  );
-                  window.open(
-                    `https://wa.me/${project.author.whatsapp_number}?text=${message}`,
-                    '_blank'
-                  );
-                }}
+                onClick={handleWhatsAppApply}
                 className="gap-1.5 border-green-500/30 text-green-600 hover:bg-green-50 hover:text-green-700 dark:border-green-500/20 dark:text-green-400 dark:hover:bg-green-950 dark:hover:text-green-300"
               >
                 <MessageSquare className="h-3.5 w-3.5" />
@@ -407,40 +433,4 @@ export const EnhancedProjectCard = ({
       </CardFooter>
     </Card>
   );
-};
-
-const formatBudget = (min?: number, max?: number) => {
-  if (!min && !max) return "Not specified";
-  if (min && !max) return `₹${min.toLocaleString()}`;
-  if (!min && max) return `Up to ₹${max.toLocaleString()}`;
-  return `₹${min?.toLocaleString()} - ₹${max?.toLocaleString()}`;
-};
-
-const formatDate = (dateString?: string) => {
-  if (!dateString) return "No deadline";
-  return format(new Date(dateString), "MMM d, yyyy");
-};
-
-const getJobTypeColor = (jobType?: string) => {
-  switch (jobType?.toLowerCase()) {
-    case 'full-time': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-    case 'part-time': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
-    case 'contract': return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300';
-    case 'freelance': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300';
-    case 'internship': return 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300';
-    default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
-  }
-};
-
-const getExperienceLevelColor = (level?: string) => {
-  switch (level?.toLowerCase()) {
-    case 'entry':
-    case 'beginner':
-    case 'entry-level': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-    case 'intermediate': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-    case 'expert':
-    case 'advanced': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
-    case 'senior': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-    default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
-  }
 };
