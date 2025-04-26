@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ export interface ShareDialogProps {
   onOpenChange: (open: boolean) => void;
   followers: Profile[];
   onShare: (recipientId: string) => Promise<void>;
-  thoughtId: string;
+  thoughtId?: string; // Make thoughtId optional
 }
 
 export function ShareDialog({ open, onOpenChange, followers, onShare, thoughtId }: ShareDialogProps) {

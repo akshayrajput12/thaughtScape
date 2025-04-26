@@ -116,8 +116,20 @@ const Landing = () => {
       
         if (error) throw error;
       
-        // Cast the data properly to Thought[]
-        setThoughts(data as unknown as Thought[]);
+        if (data) {
+          // Ensure the data has the correct structure before setting state
+          const formattedThoughts = data.map(thought => ({
+            ...thought,
+            author: thought.author || {
+              id: thought.author_id,
+              username: 'unknown',
+              created_at: thought.created_at,
+              updated_at: thought.updated_at
+            }
+          })) as Thought[];
+          
+          setThoughts(formattedThoughts);
+        }
       } catch (error) {
         console.error("Error fetching thoughts:", error);
       }
@@ -141,11 +153,15 @@ const Landing = () => {
       
         if (error) throw error;
       
-        // Cast the data properly to Project[]
-        setProjects(data.map(project => ({
-          ...project,
-          status: project.status as "open" | "closed" | "in_progress"
-        })) as Project[]);
+        if (data) {
+          // Cast the data properly to Project[]
+          const formattedProjects = data.map(project => ({
+            ...project,
+            status: project.status as "open" | "closed" | "in_progress"
+          })) as Project[];
+          
+          setProjects(formattedProjects);
+        }
       } catch (error) {
         console.error("Error fetching projects:", error);
       }

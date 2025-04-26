@@ -207,14 +207,16 @@ const SingleProject = () => {
                         {skill.trim()}
                       </span>
                     )) : 
-                    project.required_skills.split(',').map((skill, index) => (
-                      <span 
-                        key={index} 
-                        className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
-                      >
-                        {skill.trim()}
-                      </span>
-                    ))
+                    typeof project.required_skills === 'string' ?
+                      project.required_skills.split(',').map((skill, index) => (
+                        <span 
+                          key={index} 
+                          className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
+                        >
+                          {skill.trim()}
+                        </span>
+                      )) :
+                      null
                   }
                 </div>
               </div>

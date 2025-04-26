@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -120,11 +119,12 @@ export const ThoughtsCard = ({
     }
   };
   
-  const handleShare = (followerId: string) => {
+  const handleShare = async (followerId: string): Promise<void> => {
     toast({
       description: 'Thought shared successfully!'
     });
     setShareDialogOpen(false);
+    return Promise.resolve();
   };
   
   // Check if user is admin
