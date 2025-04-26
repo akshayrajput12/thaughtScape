@@ -41,7 +41,20 @@ const Landing = () => {
 
         if (error) throw error;
 
-        setTopPosts(data || []);
+        // Make sure we transform the data to include the necessary author property
+        if (data) {
+          const thoughtsWithAuthor: Thought[] = data.map((thought: any) => ({
+            ...thought,
+            author: {
+              id: thought.author_id,
+              username: 'unknown',
+              created_at: thought.created_at,
+              updated_at: thought.updated_at
+            }
+          }));
+          
+          setTopPosts(thoughtsWithAuthor);
+        }
       } catch (error) {
         console.error("Error fetching top posts:", error);
       } finally {
@@ -72,7 +85,15 @@ const Landing = () => {
 
         if (error) throw error;
 
-        setRecentProjects(data || []);
+        // Cast status to the correct type
+        if (data) {
+          const typedProjects: Project[] = data.map(project => ({
+            ...project,
+            status: project.status as "open" | "closed" | "in_progress"
+          }));
+          
+          setRecentProjects(typedProjects);
+        }
       } catch (error) {
         console.error("Error fetching recent projects:", error);
       } finally {
@@ -100,7 +121,7 @@ const Landing = () => {
     fetchTopPosts();
     fetchRecentProjects();
     fetchUserApplications();
-  }, [user?.id]);
+  }, [user?.id, toast]);
 
   useEffect(() => {
     const fetchThoughts = async () => {

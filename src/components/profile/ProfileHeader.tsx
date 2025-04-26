@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -112,7 +113,7 @@ export const ProfileHeader = ({
     if (profile.snapchat_url) {
       links.push({
         url: profile.snapchat_url,
-        icon: <SnapchatIcon size={16} className="text-yellow-400" />,
+        icon: <SnapchatIcon className="text-yellow-400" width={16} height={16} />,
         name: 'Snapchat'
       });
     }
