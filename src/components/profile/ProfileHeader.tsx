@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -10,8 +9,7 @@ import {
   Linkedin, 
   Link as LinkIcon, 
   Camera, 
-  BriefcaseIcon,
-  Shield
+  BriefcaseIcon 
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -67,10 +65,6 @@ export function ProfileHeader({
   };
 
   const hasSocialLinks = profile.instagram_url || profile.twitter_url || profile.linkedin_url || profile.portfolio_url;
-
-  const handleAdminDashboardClick = () => {
-    navigate('/admin');
-  };
 
   return (
     <div className="relative bg-card/60 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-border/50">
@@ -153,21 +147,9 @@ export function ProfileHeader({
               )}
               
               {!isEditing && isOwnProfile && (
-                <>
-                  <Button onClick={onEditClick} variant="outline" className="gap-1.5">
-                    Edit Profile
-                  </Button>
-                  {isAdmin && (
-                    <Button 
-                      variant="outline" 
-                      onClick={handleAdminDashboardClick}
-                      className="gap-1.5 bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
-                    >
-                      <Shield className="h-4 w-4" />
-                      Admin Dashboard
-                    </Button>
-                  )}
-                </>
+                <Button onClick={onEditClick} variant="outline" className="gap-1.5">
+                  Edit Profile
+                </Button>
               )}
             </div>
           </div>

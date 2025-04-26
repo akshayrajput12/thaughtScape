@@ -34,10 +34,7 @@ export function SidebarContent({
   conversations = [],
   selectedUser,
   onSelectUser,
-  searchResults = [],
-  onAcceptRequest,
-  onDeclineRequest,
-  messageRequests = []
+  searchResults = []
 }: SidebarContentProps) {
   return (
     <>
@@ -53,30 +50,26 @@ export function SidebarContent({
         </div>
       </div>
 
-      {activeTab === "chats" && (
+      <TabsContent value="chats" className="m-0">
         <ConversationList
           conversations={conversations}
           searchQuery={searchQuery}
           selectedUser={selectedUser}
           onSelectUser={onSelectUser}
         />
-      )}
+      </TabsContent>
 
-      {activeTab === "requests" && (
-        <MessageRequests 
-          messageRequests={messageRequests}
-          onAcceptRequest={onAcceptRequest}
-          onDeclineRequest={onDeclineRequest}
-        />
-      )}
+      <TabsContent value="requests" className="m-0">
+        <MessageRequests />
+      </TabsContent>
 
-      {activeTab === "users" && (
+      <TabsContent value="users" className="m-0">
         <UserSearch
           searchResults={searchResults}
           searchQuery={searchQuery}
           onSelectUser={onSelectUser}
         />
-      )}
+      </TabsContent>
     </>
   );
 }

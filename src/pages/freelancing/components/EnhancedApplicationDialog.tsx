@@ -97,96 +97,94 @@ export const EnhancedApplicationDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col sm:max-h-[85vh]">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Project Application</DialogTitle>
           <DialogDescription>
             Submit your application for this project.
           </DialogDescription>
         </DialogHeader>
-        <div className="overflow-y-auto flex-1 pr-1 -mr-1">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="message"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Message</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Why are you a good fit for this project?"
-                        className="resize-none"
-                        value={message}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          onMessageChange(e.target.value);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your phone number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="experience"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Experience (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe your relevant experience"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="portfolio"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Portfolio (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Link to your portfolio" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {project.required_skills && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {renderSkillBadges()}
-                </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Message</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Why are you a good fit for this project?"
+                      className="resize-none"
+                      value={message}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        onMessageChange(e.target.value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-            </form>
-          </Form>
-        </div>
-        <DialogFooter className="pt-4 mt-2 border-t">
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting} onClick={handleApply}>
-            {isSubmitting ? "Submitting..." : "Submit Application"}
-          </Button>
-        </DialogFooter>
+            />
+            <FormField
+              control={form.control}
+              name="phoneNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your phone number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="experience"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Experience (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Describe your relevant experience"
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="portfolio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Portfolio (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Link to your portfolio" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {project.required_skills && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {renderSkillBadges()}
+              </div>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting} onClick={handleApply}>
+                {isSubmitting ? "Submitting..." : "Submit Application"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
