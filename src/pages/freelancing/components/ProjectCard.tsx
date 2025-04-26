@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
   IndianRupee,
@@ -11,7 +12,9 @@ import {
   Github,
   Linkedin,
   Instagram,
-  Twitter
+  Twitter,
+  Copy,
+  ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
 import clsx from "clsx";
@@ -24,6 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 
 export interface ProjectCardProps {
   project: Project;
@@ -53,6 +57,7 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
     navigator.clipboard.writeText(url);
 
     toast({
+      title: "Success",
       description: "Project link copied to clipboard",
     });
   };
@@ -75,6 +80,11 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
         name: "Twitter"
       },
       {
+        url: project.author?.portfolio_url,
+        icon: <ExternalLink className="h-4 w-4 text-purple-500" />,
+        name: "Portfolio"
+      },
+      {
         url: project.attachment_url,
         icon: <LinkIcon className="h-4 w-4 text-gray-500" />,
         name: "Project Link"
@@ -82,7 +92,7 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
     ];
 
     return (
-      <div className="flex items-center space-x-2 mt-2">
+      <div className="flex items-center space-x-2 mt-3">
         {socialLinks.map((link, index) => (
           link.url && (
             <TooltipProvider key={index}>
@@ -104,65 +114,40 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
             </TooltipProvider>
           )
         ))}
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="p-2 h-8 w-8"
+                onClick={handleCopyLink}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Copy project link</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     );
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100">
-      <div className="space-y-2">
-        <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
-          {project.title}
-        </h3>
-        <p className="text-sm text-gray-600 line-clamp-3">
-          {project.description}
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2 text-gray-600">
-            <Calendar className="w-4 h-4" />
-            <span className="text-sm truncate">
-              Deadline: {project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-gray-600">
-            <IndianRupee className="w-4 h-4" />
-            <span className="text-sm truncate">
-              Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 text-gray-600">
-          <User className="w-4 h-4" />
-          <span className="text-sm truncate">
-            Posted by: {project.author?.full_name || project.author?.username}
-          </span>
-        </div>
-
-        {project.required_skills && project.required_skills.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-2">
-            {project.required_skills.map((skill, index) => (
-              <span
-                key={index}
-                className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="pt-4 border-t border-gray-100 flex flex-col space-y-2">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span
+    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+      <CardHeader className="p-5 pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900 line-clamp-2 mb-2">
+              {project.title}
+            </h3>
+            
+            <Badge 
               className={clsx(
-                "px-3 py-1 rounded-full text-xs font-medium",
+                "px-2 py-1 font-medium",
                 {
                   "bg-green-100 text-green-800": project.status === "open",
                   "bg-yellow-100 text-yellow-800": project.status === "in_progress",
@@ -171,67 +156,111 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
               )}
             >
               {project.status?.toUpperCase()}
-            </span>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handleCopyLink}
-                  >
-                    <LinkIcon className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Copy project link</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            </Badge>
           </div>
-
-          {project.status === "open" && project.author_id !== user?.id && !hasApplied ? (
-            <div className="flex flex-wrap gap-2">
-              {project.allow_normal_apply !== false && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => onApply(project)}
-                >
-                  Apply Now
-                </Button>
-              )}
-
-              {project.author?.whatsapp_number && project.allow_whatsapp_apply !== false && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleWhatsAppApply}
-                >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Apply via WhatsApp
-                </Button>
-              )}
-            </div>
-          ) : (
-            hasApplied && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-blue-600 border-blue-600"
-                disabled
-              >
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Applied
-              </Button>
-            )
+          
+          {project.is_featured && (
+            <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
+              Featured
+            </Badge>
           )}
         </div>
+      </CardHeader>
+      
+      <CardContent className="p-5 pt-3">
+        <p className="text-gray-600 line-clamp-3 mb-4">
+          {project.description}
+        </p>
 
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center gap-2 text-gray-600">
+              <Calendar className="w-4 h-4 text-gray-500" />
+              <span className="text-sm truncate">
+                {project.deadline 
+                  ? `Deadline: ${format(new Date(project.deadline), 'PP')}` 
+                  : 'No deadline'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 text-gray-600">
+              <IndianRupee className="w-4 h-4 text-gray-500" />
+              <span className="text-sm truncate font-medium">
+                {project.budget 
+                  ? `₹${project.budget.toLocaleString('en-IN')}` 
+                  : project.min_budget && project.max_budget 
+                    ? `₹${project.min_budget.toLocaleString('en-IN')} - ₹${project.max_budget.toLocaleString('en-IN')}`
+                    : 'Budget not specified'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-gray-600">
+            <User className="w-4 h-4 text-gray-500" />
+            <span className="text-sm">
+              Posted by: <span className="font-medium">{project.author?.full_name || project.author?.username}</span>
+            </span>
+          </div>
+
+          {project.required_skills && project.required_skills.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {project.required_skills.map((skill, index) => (
+                <Badge key={index} variant="outline" className="bg-gray-50 text-gray-700">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+        
         {renderSocialLinks()}
-      </div>
-    </div>
+      </CardContent>
+
+      <CardFooter className="px-5 py-4 border-t border-gray-100 flex justify-end">
+        {project.status === "open" && project.author_id !== user?.id && !hasApplied ? (
+          <div className="flex flex-wrap gap-2">
+            {project.allow_normal_apply !== false && (
+              <Button
+                onClick={() => onApply(project)}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                Apply Now
+              </Button>
+            )}
+
+            {project.author?.whatsapp_number && project.allow_whatsapp_apply !== false && (
+              <Button
+                variant="outline"
+                className="border-green-600 text-green-600 hover:bg-green-50"
+                onClick={handleWhatsAppApply}
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Apply via WhatsApp
+              </Button>
+            )}
+          </div>
+        ) : (
+          hasApplied && (
+            <Button
+              variant="outline"
+              className="text-blue-600 border-blue-600"
+              disabled
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Applied
+            </Button>
+          )
+        )}
+        
+        {!user && (
+          <Button
+            variant="secondary"
+            onClick={() => window.location.href = "/auth/login"}
+          >
+            Login to Apply
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
   );
 };

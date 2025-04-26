@@ -14,16 +14,91 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  Plus
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useForm, Controller } from "react-hook-form";
 
 const Admin = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("users");
+  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: {
+      title: "",
+      description: "",
+      skills: "",
+      budget: "",
+      deadline: "",
+      jobPosterUrl: "",
+      companyName: "",
+      location: "",
+      jobType: "",
+    },
+  });
+
+  const onSubmitProject = async (data: any) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .insert([
+          {
+            title: data.title,
+            description: data.description,
+            required_skills: data.skills.split(',').map((skill: string) => skill.trim()),
+            min_budget: parseFloat(data.budget),
+            deadline: data.deadline,
+            attachment_url: data.jobPosterUrl,
+            author_id: (await supabase.auth.getUser()).data.user?.id,
+            company_name: data.companyName,
+            location: data.location,
+            job_type: data.jobType,
+            status: 'open',
+            is_featured: true
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Project created successfully!",
+      });
+      
+      setIsProjectDialogOpen(false);
+      reset();
+    } catch (error: any) {
+      console.error("Error creating project:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create project",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -210,6 +285,12 @@ const Admin = () => {
             </h1>
 
             <div className="flex items-center gap-4">
+              {activeTab === 'projects' && (
+                <Button onClick={() => setIsProjectDialogOpen(true)}>
+                  <Plus size={18} className="mr-2" />
+                  Add Project
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -224,24 +305,37 @@ const Admin = () => {
           <div className="p-4 md:p-6 lg:p-8">
             <div className="bg-white rounded-2xl shadow-lg border border-purple-100 overflow-hidden">
               <div className="p-6 border-b border-purple-100 hidden lg:block">
-                <div className="flex items-center gap-2">
-                  {activeTab === 'users' && (
-                    <h2 className="text-xl font-medium text-gray-900 flex items-center gap-2">
-                      <Users size={20} className="text-purple-600" />
-                      User Management
-                    </h2>
-                  )}
-                  {activeTab === 'thoughts' && (
-                    <h2 className="text-xl font-medium text-gray-900 flex items-center gap-2">
-                      <File size={20} className="text-purple-600" />
-                      Thoughts Management
-                    </h2>
-                  )}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    {activeTab === 'users' && (
+                      <h2 className="text-xl font-medium text-gray-900 flex items-center gap-2">
+                        <Users size={20} className="text-purple-600" />
+                        User Management
+                      </h2>
+                    )}
+                    {activeTab === 'thoughts' && (
+                      <h2 className="text-xl font-medium text-gray-900 flex items-center gap-2">
+                        <File size={20} className="text-purple-600" />
+                        Thoughts Management
+                      </h2>
+                    )}
+                    {activeTab === 'projects' && (
+                      <h2 className="text-xl font-medium text-gray-900 flex items-center gap-2">
+                        <Briefcase size={20} className="text-purple-600" />
+                        Projects Management
+                      </h2>
+                    )}
+                  </div>
+
+                  {/* Mobile Add Project Button */}
                   {activeTab === 'projects' && (
-                    <h2 className="text-xl font-medium text-gray-900 flex items-center gap-2">
-                      <Briefcase size={20} className="text-purple-600" />
-                      Projects Management
-                    </h2>
+                    <Button 
+                      onClick={() => setIsProjectDialogOpen(true)}
+                      className="lg:hidden"
+                    >
+                      <Plus size={18} className="mr-2" />
+                      Add Project
+                    </Button>
                   )}
                 </div>
               </div>
@@ -255,6 +349,125 @@ const Admin = () => {
           </div>
         </div>
       </div>
+
+      {/* Project Creation Dialog */}
+      <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Create New Featured Project</DialogTitle>
+            <DialogDescription>
+              Add a new project that will be featured on the platform
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit(onSubmitProject)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Project Title</Label>
+              <Input 
+                id="title" 
+                {...register("title", { required: "Title is required" })} 
+                placeholder="Enter project title" 
+              />
+              {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message?.toString()}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description" 
+                {...register("description", { required: "Description is required" })} 
+                placeholder="Describe the project in detail"
+                className="min-h-[100px]"
+              />
+              {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message?.toString()}</p>}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="budget">Budget (₹)</Label>
+                <Input 
+                  id="budget" 
+                  type="number"
+                  {...register("budget", { required: "Budget is required" })} 
+                  placeholder="Enter budget amount"
+                />
+                {errors.budget && <p className="text-red-500 text-xs mt-1">{errors.budget.message?.toString()}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deadline">Deadline</Label>
+                <Input 
+                  id="deadline" 
+                  type="date"
+                  {...register("deadline")} 
+                  placeholder="Select deadline"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="skills">Required Skills (comma separated)</Label>
+              <Input 
+                id="skills" 
+                {...register("skills", { required: "Required skills are needed" })} 
+                placeholder="React, Node.js, UI/UX Design"
+              />
+              {errors.skills && <p className="text-red-500 text-xs mt-1">{errors.skills.message?.toString()}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="jobPosterUrl">Job Poster URL</Label>
+              <Input 
+                id="jobPosterUrl" 
+                {...register("jobPosterUrl")} 
+                placeholder="https://example.com/poster.jpg"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="companyName">Company Name</Label>
+                <Input 
+                  id="companyName" 
+                  {...register("companyName")} 
+                  placeholder="Company name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input 
+                  id="location" 
+                  {...register("location")} 
+                  placeholder="Remote, Delhi, etc."
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="jobType">Job Type</Label>
+              <Input 
+                id="jobType" 
+                {...register("jobType")} 
+                placeholder="Full-time, Part-time, Contract, etc."
+              />
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsProjectDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create Project"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Overlay for mobile sidebar */}
       {sidebarOpen && (

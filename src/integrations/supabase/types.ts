@@ -414,6 +414,7 @@ export type Database = {
           allow_normal_apply: boolean | null
           allow_whatsapp_apply: boolean | null
           application_deadline: string | null
+          application_link: string | null
           attachment_url: string | null
           author_id: string
           company_name: string | null
@@ -422,6 +423,7 @@ export type Database = {
           description: string
           experience_level: string | null
           id: string
+          is_featured: boolean | null
           job_type: string | null
           location: string | null
           max_budget: number | null
@@ -436,6 +438,7 @@ export type Database = {
           allow_normal_apply?: boolean | null
           allow_whatsapp_apply?: boolean | null
           application_deadline?: string | null
+          application_link?: string | null
           attachment_url?: string | null
           author_id: string
           company_name?: string | null
@@ -444,6 +447,7 @@ export type Database = {
           description: string
           experience_level?: string | null
           id?: string
+          is_featured?: boolean | null
           job_type?: string | null
           location?: string | null
           max_budget?: number | null
@@ -458,6 +462,7 @@ export type Database = {
           allow_normal_apply?: boolean | null
           allow_whatsapp_apply?: boolean | null
           application_deadline?: string | null
+          application_link?: string | null
           attachment_url?: string | null
           author_id?: string
           company_name?: string | null
@@ -466,6 +471,7 @@ export type Database = {
           description?: string
           experience_level?: string | null
           id?: string
+          is_featured?: boolean | null
           job_type?: string | null
           location?: string | null
           max_budget?: number | null
@@ -657,6 +663,18 @@ export type Database = {
       delete_unconfirmed_users: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_most_liked_thoughts: {
+        Args: { limit_count?: number }
+        Returns: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          title: string
+          updated_at: string
+        }[]
       }
       get_suggested_users: {
         Args: { user_id: string }

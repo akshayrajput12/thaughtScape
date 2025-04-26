@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { Profile } from "@/types";
-import { Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
+import { Instagram, Linkedin, Twitter, Youtube, Link as LinkIcon, Snapchat } from "lucide-react";
 import { ProfileImageUpload } from "./ProfileImageUpload";
 
 const colleges = [
@@ -45,6 +45,7 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
   const [twitterUrl, setTwitterUrl] = useState(profile.twitter_url || "");
   const [snapchatUrl, setSnapchatUrl] = useState(profile.snapchat_url || "");
   const [youtubeUrl, setYoutubeUrl] = useState(profile.youtube_url || "");
+  const [portfolioUrl, setPortfolioUrl] = useState(profile.portfolio_url || "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,6 +88,9 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
     if (youtubeUrl && !urlRegex.test(youtubeUrl)) {
       newErrors.youtubeUrl = "Please enter a valid URL";
     }
+    if (portfolioUrl && !urlRegex.test(portfolioUrl)) {
+      newErrors.portfolioUrl = "Please enter a valid URL";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -114,6 +118,7 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
         twitter_url: twitterUrl,
         snapchat_url: snapchatUrl,
         youtube_url: youtubeUrl,
+        portfolio_url: portfolioUrl,
         avatar_url: avatarUrl,
         is_profile_completed: true
       };
@@ -339,8 +344,17 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
             </div>
 
             <div className="md:col-span-2">
-              <h3 className="font-medium text-gray-700 mb-4">Social Media Links</h3>
+              <h3 className="font-medium text-gray-700 mb-4">Social Media & Portfolio Links</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <SocialMediaInput
+                  id="portfolioUrl"
+                  icon={<LinkIcon className="h-4 w-4 text-gray-600" />}
+                  value={portfolioUrl}
+                  onChange={(e) => setPortfolioUrl(e.target.value)}
+                  placeholder="https://yourportfolio.com"
+                  error={errors.portfolioUrl}
+                />
+
                 <SocialMediaInput
                   id="instagramUrl"
                   icon={<Instagram className="h-4 w-4 text-pink-600" />}
@@ -366,6 +380,15 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
                   onChange={(e) => setTwitterUrl(e.target.value)}
                   placeholder="https://twitter.com/username"
                   error={errors.twitterUrl}
+                />
+
+                <SocialMediaInput
+                  id="snapchatUrl"
+                  icon={<Snapchat className="h-4 w-4 text-yellow-400" />}
+                  value={snapchatUrl}
+                  onChange={(e) => setSnapchatUrl(e.target.value)}
+                  placeholder="https://snapchat.com/add/username"
+                  error={errors.snapchatUrl}
                 />
 
                 <SocialMediaInput

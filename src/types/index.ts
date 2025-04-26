@@ -26,6 +26,7 @@ export interface Profile {
   twitter_url?: string;
   snapchat_url?: string;
   youtube_url?: string;
+  portfolio_url?: string;
 }
 
 export interface Project {
