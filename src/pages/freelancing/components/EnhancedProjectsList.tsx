@@ -9,6 +9,7 @@ import { Search, Filter, SlidersHorizontal, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Separator } from '@/components/ui/separator';
+import { Briefcase, Award, Clock } from '@/components/icons/ProjectIcons';
 
 interface EnhancedProjectsListProps {
   projects: Project[];
@@ -37,7 +38,6 @@ export const EnhancedProjectsList = ({
   };
 
   const filteredProjects = projects.filter(project => {
-    // Filter by search term
     const matchesSearch = searchTerm === '' ||
       project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -47,25 +47,20 @@ export const EnhancedProjectsList = ({
         skill.toLowerCase().includes(searchTerm.toLowerCase())
       ));
 
-    // Filter by job type
     const matchesJobType = selectedJobType === '' ||
       (project.job_type && project.job_type.toLowerCase() === selectedJobType.toLowerCase());
 
-    // Filter by experience level
     const matchesExperienceLevel = selectedExperienceLevel === '' ||
       (project.experience_level && project.experience_level.toLowerCase() === selectedExperienceLevel.toLowerCase());
 
-    // Filter by status
     const matchesStatus = selectedStatus === '' || project.status === selectedStatus;
 
     return matchesSearch && matchesJobType && matchesExperienceLevel && matchesStatus;
   });
 
-  // Get featured projects
   const featuredProjects = filteredProjects.filter(project => project.is_featured);
   const regularProjects = filteredProjects.filter(project => !project.is_featured);
 
-  // Get unique job types and experience levels for filters
   const jobTypes = [...new Set(projects
     .filter(p => p.job_type)
     .map(p => p.job_type as string))];
@@ -77,7 +72,6 @@ export const EnhancedProjectsList = ({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
-        {/* Enhanced search bar with gradient border */}
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           <div className="relative flex-1 w-full group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-md blur-sm opacity-75 group-hover:opacity-100 transition-opacity"></div>
@@ -134,7 +128,6 @@ export const EnhancedProjectsList = ({
               className="overflow-hidden"
             >
               <div className="relative">
-                {/* Decorative elements */}
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-xl blur-sm"></div>
 
                 <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 bg-card/95 backdrop-blur-sm rounded-xl border border-border shadow-sm">

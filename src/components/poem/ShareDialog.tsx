@@ -1,16 +1,25 @@
-
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Check, Search } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Profile } from "@/types";
 
-interface ShareDialogProps {
+export interface ShareDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   followers: Profile[];
-  onShare: (followerId: string) => void;
+  onShare: (recipientId: string) => Promise<void>;
+  thoughtId: string;
 }
 
-export const ShareDialog = ({ open, onOpenChange, followers = [], onShare }: ShareDialogProps) => {
+export function ShareDialog({ open, onOpenChange, followers, onShare, thoughtId }: ShareDialogProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [isSharing, setIsSharing] = useState(false);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">

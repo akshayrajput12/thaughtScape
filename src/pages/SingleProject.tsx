@@ -198,14 +198,24 @@ const SingleProject = () => {
               <div className="pt-2">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Required Skills:</h3>
                 <div className="flex flex-wrap gap-2">
-                  {project.required_skills.split(',').map((skill, index) => (
-                    <span 
-                      key={index} 
-                      className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
-                    >
-                      {skill.trim()}
-                    </span>
-                  ))}
+                  {Array.isArray(project.required_skills) ? 
+                    project.required_skills.map((skill, index) => (
+                      <span 
+                        key={index} 
+                        className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
+                      >
+                        {skill.trim()}
+                      </span>
+                    )) : 
+                    project.required_skills.split(',').map((skill, index) => (
+                      <span 
+                        key={index} 
+                        className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
+                      >
+                        {skill.trim()}
+                      </span>
+                    ))
+                  }
                 </div>
               </div>
             )}

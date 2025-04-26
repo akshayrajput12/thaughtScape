@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -20,6 +19,8 @@ const Landing = () => {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [userApplications, setUserApplications] = useState<string[]>([]);
+  const [thoughts, setThoughts] = useState<Thought[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   const handleCallToAction = () => {
     if (isAuthenticated) {
@@ -100,6 +101,58 @@ const Landing = () => {
     fetchRecentProjects();
     fetchUserApplications();
   }, [user?.id]);
+
+  useEffect(() => {
+    const fetchThoughts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("thoughts")
+          .select(`
+            *,
+            author:profiles(id, username, full_name, avatar_url, created_at, updated_at)
+          `)
+          .limit(5)
+          .order("created_at", { ascending: false });
+      
+        if (error) throw error;
+      
+        // Cast the data properly to Thought[]
+        setThoughts(data as unknown as Thought[]);
+      } catch (error) {
+        console.error("Error fetching thoughts:", error);
+      }
+    };
+    
+    fetchThoughts();
+  }, []);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("projects")
+          .select(`
+            *,
+            author:profiles(id, username, full_name, avatar_url, created_at, updated_at, whatsapp_number)
+          `)
+          .eq("status", "open")
+          .limit(3)
+          .order("created_at", { ascending: false });
+      
+        if (error) throw error;
+      
+        // Cast the data properly to Project[]
+        setProjects(data.map(project => ({
+          ...project,
+          status: project.status as "open" | "closed" | "in_progress"
+        })) as Project[]);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+      }
+    };
+    
+    fetchProjects();
+  }, []);
 
   const handleApplyToProject = (project: Project) => {
     if (isAuthenticated) {

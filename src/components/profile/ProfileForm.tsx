@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { Profile } from "@/types";
-import { Instagram, Linkedin, Twitter, Youtube, Link as LinkIcon, Snapchat, Github } from "lucide-react";
+import { Instagram, Linkedin, Twitter, Youtube, Link as LinkIcon, Github } from "lucide-react";
 import { ProfileImageUpload } from "./ProfileImageUpload";
+import { SnapchatIcon } from "@/components/icons/SnapchatIcon";
 
 const colleges = [
   "Lovely Professional University",
@@ -72,7 +73,6 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
       }
     }
 
-    // Validate social media URLs if provided
     if (instagramUrl && !urlRegex.test(instagramUrl)) {
       newErrors.instagramUrl = "Please enter a valid URL";
     }
@@ -385,7 +385,7 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
 
                 <SocialMediaInput
                   id="snapchatUrl"
-                  icon={<Snapchat className="h-4 w-4 text-yellow-400" />}
+                  icon={<SnapchatIcon className="h-4 w-4 text-yellow-400" />}
                   value={snapchatUrl}
                   onChange={(e) => setSnapchatUrl(e.target.value)}
                   placeholder="https://snapchat.com/add/username"

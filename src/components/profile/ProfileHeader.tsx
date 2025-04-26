@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,8 +34,8 @@ import {
   Youtube, 
   Link as LinkIcon 
 } from "lucide-react";
-import { Snapchat } from 'lucide-react';
 import { Github } from 'lucide-react';
+import { SnapchatIcon } from "@/components/icons/SnapchatIcon";
 
 import { formatDistanceToNow } from 'date-fns';
 import type { Profile } from '@/types';

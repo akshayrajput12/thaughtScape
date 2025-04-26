@@ -94,7 +94,6 @@ const Freelancing = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [experience, setExperience] = useState("");
   const [portfolio, setPortfolio] = useState("");
-  const [expectedSalary, setExpectedSalary] = useState("");
 
   const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
     queryKey: ["projects"],
@@ -316,18 +315,18 @@ const Freelancing = () => {
   });
 
   const applyProjectMutation = useMutation({
-    mutationFn: async ({
-      projectId,
-      message,
-      phoneNumber,
-      experience,
-      portfolio
-    }: {
-      projectId: string;
-      message: string;
-      phoneNumber?: string;
+    mutationFn: async ({ 
+      projectId, 
+      message, 
+      phoneNumber, 
+      experience, 
+      portfolio 
+    }: { 
+      projectId: string; 
+      message: string; 
+      phoneNumber: string;
       experience?: string;
-      portfolio?: string;
+      portfolio?: string; 
     }) => {
       const { data, error } = await supabase
         .from("project_applications")
@@ -514,14 +513,13 @@ const Freelancing = () => {
 
   const handleApplyToProject = () => {
     if (!selectedProject) return;
-
+    
     applyProjectMutation.mutate({
       projectId: selectedProject.id,
       message: applicationMessage,
-      phoneNumber,
-      experience,
-      portfolio,
-      expectedSalary: expectedSalary ? parseFloat(expectedSalary) : undefined,
+      phoneNumber: phoneNumber,
+      experience: experience,
+      portfolio: portfolio,
     });
   };
 
@@ -652,7 +650,6 @@ const Freelancing = () => {
                   setPhoneNumber("");
                   setExperience("");
                   setPortfolio("");
-                  setExpectedSalary("");
                   setIsApplicationDialogOpen(true);
                 }}
                 isLoading={isLoadingProjects}

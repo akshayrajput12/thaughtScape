@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -28,34 +27,37 @@ import type { Project } from "@/types";
 
 export const ProjectsList = () => {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setLoading] = useState(true);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        setIsLoading(true);
+        setLoading(true);
         const { data, error } = await supabase
           .from("projects")
           .select(`
             *,
-            author:profiles(id, username, full_name)
+            author:profiles(id, username, full_name, avatar_url, created_at, updated_at)
           `)
           .order("created_at", { ascending: false });
         
         if (error) throw error;
         
-        setProjects(data || []);
-      } catch (error: any) {
+        setProjects(data.map(project => ({
+          ...project,
+          status: project.status as "open" | "closed" | "in_progress"
+        })) as Project[]);
+      } catch (error) {
         console.error("Error fetching projects:", error);
         toast({
           title: "Error",
-          description: "Failed to load projects",
+          description: "Could not load projects",
           variant: "destructive",
         });
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
