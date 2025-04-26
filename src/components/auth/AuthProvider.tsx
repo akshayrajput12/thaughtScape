@@ -82,9 +82,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log("Auth state changed:", event, currentSession?.user?.id);
         
         if (currentSession) {
-          // Only set the user if their email is confirmed
+          // Only set the user if their email is confirmed or this is a password login
           const isEmailConfirmed = currentSession.user?.email_confirmed_at || 
-                                  currentSession.user?.app_metadata?.provider !== 'email';
+                                  currentSession.user?.app_metadata?.provider !== 'email' ||
+                                  event === 'SIGNED_IN';
           
           if (isEmailConfirmed) {
             setSession(currentSession);
@@ -95,12 +96,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setSession(null);
             setUser(null);
             setIsAuthenticated(false);
-            
-            // If this is a new sign-up, show a message to check their email
-            if (event === 'SIGNED_IN') {
-              // Sign out the user if their email is not confirmed
-              await supabase.auth.signOut();
-            }
           }
         } else {
           setSession(null);

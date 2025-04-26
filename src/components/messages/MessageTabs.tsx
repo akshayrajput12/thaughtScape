@@ -41,6 +41,7 @@ export function MessageTabs({ activeTab, onTabChange, requestsCount, children }:
           Users
         </TabsTrigger>
       </TabsList>
+      
       {children}
     </Tabs>
   );

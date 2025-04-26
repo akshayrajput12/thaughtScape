@@ -24,11 +24,7 @@ const AuthPage = () => {
   useEffect(() => {
     const handleAuthChange = (event: string, session: any) => {
       if (event === 'SIGNED_IN') {
-        if (session?.user?.email_confirmed_at) {
-          navigate('/home');
-        } else {
-          setShowVerificationMessage(true);
-        }
+        navigate('/home');
       } else if (event === 'PASSWORD_RECOVERY') {
         setAuthError({ message: 'Check your email for the password reset link.' });
       } else if (event === 'USER_UPDATED') {
@@ -200,6 +196,7 @@ const AuthPage = () => {
                   view="sign_in"
                   onlyThirdPartyProviders={false}
                   redirectTo={window.location.origin}
+                  magicLink={false}
                 />
                 <div className="text-right">
                   <a href="#" className="text-sm text-indigo-600 hover:text-indigo-500">
@@ -241,6 +238,7 @@ const AuthPage = () => {
                   view="sign_up"
                   onlyThirdPartyProviders={false}
                   redirectTo={window.location.origin}
+                  magicLink={false}
                 />
               </TabsContent>
             </Tabs>
