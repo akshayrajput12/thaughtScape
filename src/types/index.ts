@@ -35,7 +35,7 @@ export interface Project {
   id: string;
   title: string;
   description: string;
-  required_skills: string[] | string;
+  required_skills: string[];  // Changed from string[] | string to just string[]
   min_budget?: number;
   max_budget?: number;
   budget?: number;

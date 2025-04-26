@@ -179,6 +179,15 @@ export const ProjectsList = () => {
     });
   };
 
+  const renderSkills = (skills: string[]) => {
+    const skillsArray = Array.isArray(skills) ? skills : skills ? [skills] : [];
+    return skillsArray.map((skill, i) => (
+      <Badge key={i} variant="secondary" className="bg-indigo-50 text-indigo-700">
+        {skill}
+      </Badge>
+    ));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -222,11 +231,7 @@ export const ProjectsList = () => {
                   <div className="mt-4">
                     <div className="text-sm font-medium text-gray-700">Required Skills:</div>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {selectedProject.required_skills.map((skill, i) => (
-                        <Badge key={i} variant="secondary" className="bg-indigo-50 text-indigo-700">
-                          {skill}
-                        </Badge>
-                      ))}
+                      {renderSkills(selectedProject.required_skills)}
                     </div>
                   </div>
                   
@@ -389,8 +394,10 @@ export const ProjectsList = () => {
                 <div className="text-sm">
                   <span className="text-gray-500">Skills: </span>
                   <span className="text-gray-700">
-                    {project.required_skills.slice(0, 3).join(', ')}
-                    {project.required_skills.length > 3 && '...'}
+                    {Array.isArray(project.required_skills) 
+                      ? project.required_skills.slice(0, 3).join(', ') 
+                      : project.required_skills?.toString() || ''}
+                    {Array.isArray(project.required_skills) && project.required_skills.length > 3 && '...'}
                   </span>
                 </div>
                 

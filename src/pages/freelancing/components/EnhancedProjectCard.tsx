@@ -321,22 +321,15 @@ export const EnhancedProjectCard = ({
           )}
         </div>
 
-        {project.required_skills && project.required_skills.length > 0 && (
-          <div className="mt-4">
-            <div className="text-xs text-muted-foreground mb-2 flex items-center">
-              <Clock className="h-3 w-3 mr-1" /> Required Skills
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {project.required_skills.map((skill, index) => (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className="text-xs font-normal bg-gradient-to-r from-muted/80 to-muted hover:from-muted hover:to-muted/80 transition-colors"
-                >
-                  {skill}
-                </Badge>
-              ))}
-            </div>
+        {project.required_skills && (
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {(Array.isArray(project.required_skills) 
+              ? project.required_skills 
+              : [project.required_skills]).map((skill, index) => (
+              <Badge key={index} variant="outline" className="text-xs py-0.5">
+                {skill}
+              </Badge>
+            ))}
           </div>
         )}
       </CardContent>

@@ -1,31 +1,29 @@
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import type { Project } from "@/types";
-import { 
-  Briefcase, 
-  FileText, 
-  Link as LinkIcon, 
-  Phone, 
-  Calendar, 
-  MapPin, 
-  User, 
-  Building, 
-  ExternalLink,
-  Award,
-  IndianRupee
-} from "lucide-react";
-import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export interface EnhancedApplicationDialogProps {
+interface EnhancedApplicationDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   project: Project;
@@ -33,8 +31,14 @@ export interface EnhancedApplicationDialogProps {
   onMessageChange: (message: string) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
-  onExternalApply?: () => void;
 }
+
+const applicationSchema = z.object({
+  message: z.string().min(10, { message: "Message must be at least 10 characters." }),
+  phoneNumber: z.string().optional(),
+  experience: z.string().optional(),
+  portfolio: z.string().optional(),
+});
 
 export const EnhancedApplicationDialog = ({
   isOpen,
@@ -44,284 +48,121 @@ export const EnhancedApplicationDialog = ({
   onMessageChange,
   onSubmit,
   isSubmitting,
-  onExternalApply
 }: EnhancedApplicationDialogProps) => {
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [experience, setExperience] = useState("");
-  const [portfolio, setPortfolio] = useState("");
-  const [expectedSalary, setExpectedSalary] = useState("");
-  const [activeTab, setActiveTab] = useState("details");
+  const form = useForm<z.infer<typeof applicationSchema>>({
+    resolver: zodResolver(applicationSchema),
+    defaultValues: {
+      message: message,
+      phoneNumber: "",
+      experience: "",
+      portfolio: "",
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit();
-  };
-
-  const formatBudget = (min?: number, max?: number) => {
-    if (!min && !max) return "Not specified";
-    if (min && !max) return `₹${min.toLocaleString()}`;
-    if (!min && max) return `Up to ₹${max.toLocaleString()}`;
-    return `₹${min?.toLocaleString()} - ₹${max?.toLocaleString()}`;
-  };
-
-  const handleExternalApply = () => {
-    if (onExternalApply) {
-      onExternalApply();
-    } else if (project.application_link) {
-      window.open(project.application_link, '_blank');
+  const handleApply = () => {
+    if (form.formState.isValid) {
+      onSubmit();
+    } else {
+      form.trigger();
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl">Apply for Job</DialogTitle>
+          <DialogTitle>Project Application</DialogTitle>
           <DialogDescription>
-            Complete the application form below to apply for this position
+            Submit your application for this project.
           </DialogDescription>
         </DialogHeader>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="details">Job Details</TabsTrigger>
-            <TabsTrigger value="application">Application Form</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="details" className="space-y-4 pt-4">
-            <div className="flex items-start gap-4">
-              <Avatar className="h-12 w-12 border-2 border-primary/10">
-                <AvatarImage src={project.author?.avatar_url || ''} alt={project.author?.username || 'Company'} />
-                <AvatarFallback>{project.author?.username?.[0]?.toUpperCase() || project.company_name?.[0]?.toUpperCase() || 'C'}</AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1">
-                <h2 className="text-xl font-semibold">{project.title}</h2>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-muted-foreground">
-                  {project.company_name && (
-                    <span className="flex items-center">
-                      <Building className="h-3.5 w-3.5 mr-1" />
-                      {project.company_name}
-                    </span>
-                  )}
-                  
-                  {project.location && (
-                    <span className="flex items-center">
-                      <MapPin className="h-3.5 w-3.5 mr-1" />
-                      {project.location}
-                    </span>
-                  )}
-                  
-                  {project.job_type && (
-                    <Badge variant="outline" className="font-normal">
-                      {project.job_type}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <IndianRupee className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Budget</p>
-                    <p className="font-medium">{formatBudget(project.min_budget, project.max_budget)}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <Calendar className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Deadline</p>
-                    <p className="font-medium">
-                      {project.deadline ? format(new Date(project.deadline), 'MMM d, yyyy') : 'No deadline'}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {project.experience_level && (
-                <Card>
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <Award className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Experience</p>
-                      <p className="font-medium">{project.experience_level}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Message</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Why are you a good fit for this project?"
+                      className="resize-none"
+                      value={message}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        onMessageChange(e.target.value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-              
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <User className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Posted by</p>
-                    <p className="font-medium">{project.author?.username || 'Anonymous'}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div>
-              <h3 className="font-medium mb-2">Description</h3>
-              <div className="text-sm text-muted-foreground whitespace-pre-line">
-                {project.description}
-              </div>
-            </div>
-            
-            {project.required_skills && project.required_skills.length > 0 && (
-              <div>
-                <h3 className="font-medium mb-2">Required Skills</h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {project.required_skills.map((skill, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs font-normal">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
+            />
+            <FormField
+              control={form.control}
+              name="phoneNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your phone number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="experience"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Experience (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Describe your relevant experience"
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="portfolio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Portfolio (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Link to your portfolio" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {project.required_skills && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {(Array.isArray(project.required_skills) 
+                  ? project.required_skills 
+                  : project.required_skills ? [project.required_skills] : []).map((skill, index) => (
+                  <Badge key={index} variant="outline" className="text-xs font-medium">
+                    {skill}
+                  </Badge>
+                ))}
               </div>
             )}
-            
-            <div className="flex justify-between pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setActiveTab("application")}
-              >
-                Continue to Application
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+                Cancel
               </Button>
-              
-              {project.application_link && (
-                <Button
-                  variant="default"
-                  onClick={handleExternalApply}
-                  className="gap-1.5"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Apply Externally
-                </Button>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="application" className="space-y-4 pt-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <FileText className="h-4 w-4 mr-2 text-primary" />
-                  <Label htmlFor="message">Cover Letter *</Label>
-                </div>
-                <Textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => onMessageChange(e.target.value)}
-                  placeholder="Introduce yourself and explain why you're a good fit for this position"
-                  rows={5}
-                  required
-                  className="resize-none"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <Briefcase className="h-4 w-4 mr-2 text-primary" />
-                  <Label htmlFor="experience">Relevant Experience</Label>
-                </div>
-                <Textarea
-                  id="experience"
-                  value={experience}
-                  onChange={(e) => setExperience(e.target.value)}
-                  placeholder="Describe your relevant experience for this position"
-                  rows={4}
-                  className="resize-none"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <LinkIcon className="h-4 w-4 mr-2 text-primary" />
-                  <Label htmlFor="portfolio">Portfolio / Previous Work</Label>
-                </div>
-                <Input
-                  id="portfolio"
-                  value={portfolio}
-                  onChange={(e) => setPortfolio(e.target.value)}
-                  placeholder="Link to your portfolio or previous work"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <Phone className="h-4 w-4 mr-2 text-primary" />
-                    <Label htmlFor="phoneNumber">Phone Number</Label>
-                  </div>
-                  <Input
-                    id="phoneNumber"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="Your phone number (with country code)"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <IndianRupee className="h-4 w-4 mr-2 text-primary" />
-                    <Label htmlFor="expectedSalary">Expected Salary (₹)</Label>
-                  </div>
-                  <Input
-                    id="expectedSalary"
-                    type="number"
-                    value={expectedSalary}
-                    onChange={(e) => setExpectedSalary(e.target.value)}
-                    placeholder="Your expected salary"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-between pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setActiveTab("details")}
-                >
-                  Back to Details
-                </Button>
-                
-                <div className="space-x-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => onOpenChange(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={!message || isSubmitting}
-                    className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
-                  >
-                    {isSubmitting ? "Submitting..." : "Submit Application"}
-                  </Button>
-                </div>
-              </div>
-            </form>
-          </TabsContent>
-        </Tabs>
+              <Button type="submit" disabled={isSubmitting} onClick={handleApply}>
+                {isSubmitting ? "Submitting..." : "Submit Application"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -145,7 +144,9 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
 
         {project.required_skills && project.required_skills.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-2">
-            {project.required_skills.map((skill, index) => (
+            {(Array.isArray(project.required_skills) 
+              ? project.required_skills 
+              : [project.required_skills]).map((skill, index) => (
               <span
                 key={index}
                 className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -48,13 +47,10 @@ export function UsersList() {
     setUsers(data || []);
   };
   
-  // Fixed the function to properly handle the FormData type
   const handleEditSubmit = async (formData: FormData) => {
     try {
-      // Make sure we have the editing user
       if (!editingUser) return;
       
-      // Extract values from form data
       const updatedUser = {
         ...editingUser,
         full_name: formData.get('full_name') as string || editingUser.full_name,
@@ -119,7 +115,6 @@ export function UsersList() {
     fetchUsers();
   };
   
-  // Added the missing toggleAdminStatus function
   const toggleAdminStatus = async (userId: string, isCurrentlyAdmin: boolean | undefined) => {
     try {
       const { error } = await supabase
@@ -145,10 +140,8 @@ export function UsersList() {
     }
   };
   
-  // Add delete user functionality
   const deleteUser = async (userId: string) => {
     try {
-      // First delete the profile
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
@@ -156,7 +149,6 @@ export function UsersList() {
       
       if (profileError) throw profileError;
       
-      // Remove the user from the UI
       setUsers(users.filter(user => user.id !== userId));
       
       toast({
@@ -214,8 +206,10 @@ export function UsersList() {
 
               <div className="space-y-3">
                 <UserStats 
-                  followersCount={user.followers_count || 0}
+                  followersCount={user.followers_count || 0} 
                   followingCount={user.following_count || 0}
+                  postsCount={0} 
+                  usersCount={users.length || 0} 
                 />
                 
                 <div className="flex flex-wrap gap-2">

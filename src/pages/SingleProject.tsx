@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,6 +73,16 @@ const SingleProject = () => {
 
           if (!applicationError && applicationData) {
             setHasApplied(true);
+          }
+        }
+
+        if (data?.required_skills) {
+          if (Array.isArray(data.required_skills)) {
+            projectData.required_skills = data.required_skills;
+          } else if (typeof data.required_skills === 'string') {
+            projectData.required_skills = [data.required_skills];
+          } else {
+            projectData.required_skills = [];
           }
         }
       } catch (error) {

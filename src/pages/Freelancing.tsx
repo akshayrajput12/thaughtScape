@@ -66,6 +66,7 @@ import { useMobile } from "@/hooks/use-mobile";
 import { Checkbox } from "@/components/ui/checkbox";
 import { NewProjectDialog } from "@/pages/freelancing/components/NewProjectDialog";
 import { ApplicationDialog } from "@/pages/freelancing/components/ApplicationDialog";
+import { useForm } from "react-hook-form";
 
 const Freelancing = () => {
   const { user } = useAuth();
@@ -191,21 +192,28 @@ const Freelancing = () => {
           .eq("id", user.id);
       }
       
+      const skillsArray = Array.isArray(newProject.required_skills) 
+        ? newProject.required_skills 
+        : typeof newProject.required_skills === 'string' 
+          ? newProject.required_skills.split(',').map(s => s.trim())
+          : [];
+      
       const { data, error } = await supabase
         .from("projects")
-        .insert([{
+        .insert({
           title: newProject.title,
           description: newProject.description,
-          required_skills: newProject.required_skills,
+          required_skills: skillsArray,
           min_budget: newProject.budget,
           deadline: newProject.deadline,
           author_id: newProject.author_id,
           status: newProject.status,
           allow_whatsapp_apply: newProject.allow_whatsapp_apply,
           allow_normal_apply: newProject.allow_normal_apply
-        }])
+        })
         .select()
         .single();
+      
       if (error) throw error;
       return data;
     },
@@ -228,7 +236,7 @@ const Freelancing = () => {
 
   const updateProjectMutation = useMutation({
     mutationFn: async (updatedProject: Partial<Project> & { id: string, allow_whatsapp_apply?: boolean, allow_normal_apply?: boolean, whatsapp_number?: string }) => {
-      const { id, budget, whatsapp_number, ...projectData } = updatedProject;
+      const { id, budget, whatsapp_number, required_skills, ...projectData } = updatedProject;
       
       if (whatsapp_number && user?.id) {
         await supabase
@@ -237,11 +245,18 @@ const Freelancing = () => {
           .eq("id", user.id);
       }
       
+      const skillsArray = required_skills 
+        ? Array.isArray(required_skills)
+          ? required_skills
+          : required_skills.toString().split(',').map(s => s.trim())
+        : undefined;
+      
       const { data, error } = await supabase
         .from("projects")
         .update({
           ...projectData,
           min_budget: budget,
+          required_skills: skillsArray
         })
         .eq("id", id)
         .select()
@@ -670,13 +685,15 @@ const Freelancing = () => {
                         <span className="text-sm">{project.author?.full_name || project.author?.username}</span>
                       </div>
                       
-                      {project.required_skills && project.required_skills.length > 0 && (
+                      {project.required_skills && (
                         <div className="flex flex-wrap gap-1 pt-2">
-                          {project.required_skills.map((skill, index) => (
-                            <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                              {skill}
-                            </span>
-                          ))}
+                          {(Array.isArray(project.required_skills) 
+                            ? project.required_skills 
+                            : [project.required_skills]).map((skill, index) => (
+                              <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                                {skill}
+                              </span>
+                            ))}
                         </div>
                       )}
                     </div>
@@ -936,7 +953,11 @@ const Freelancing = () => {
                   </div>
                   <div>
                     <Label htmlFor="skills">Required Skills</Label>
-                    <Input id="skills" name="skills" defaultValue={selectedProject?.required_skills?.join(",")} />
+                    <Input id="skills" name="skills" defaultValue={
+                      Array.isArray(selectedProject?.required_skills)
+                        ? selectedProject?.required_skills?.join(",")
+                        : selectedProject?.required_skills || ""
+                    } />
                   </div>
                   <div>
                     <Label htmlFor="budget">Budget</Label>
