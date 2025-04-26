@@ -161,7 +161,6 @@ const SingleProject = () => {
     );
   }
 
-  // Fix the renderRequiredSkills function
   const renderRequiredSkills = () => {
     if (!project?.required_skills) return null;
     
@@ -172,13 +171,16 @@ const SingleProject = () => {
           key={index} 
           className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
         >
-          {skill.trim()}
+          {skill}
         </span>
       ));
     } 
     // Check if required_skills is a string and ensure it's not empty
-    else if (typeof project.required_skills === 'string' && project.required_skills.trim()) {
-      return project.required_skills.split(',').map((skill, index) => (
+    else if (typeof project.required_skills === 'string') {
+      const skillsText = project.required_skills as string;
+      if (skillsText.trim() === '') return null;
+      
+      return skillsText.split(',').map((skill, index) => (
         <span 
           key={index} 
           className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"

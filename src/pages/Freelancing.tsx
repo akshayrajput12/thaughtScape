@@ -196,8 +196,11 @@ const Freelancing = () => {
       
       if (Array.isArray(newProject.required_skills)) {
         skillsArray = newProject.required_skills;
-      } else if (typeof newProject.required_skills === 'string' && newProject.required_skills.trim()) {
-        skillsArray = newProject.required_skills.split(',').map(s => s.trim());
+      } else if (typeof newProject.required_skills === 'string') {
+        const skillsText = newProject.required_skills as string;
+        if (skillsText.trim() !== '') {
+          skillsArray = skillsText.split(',').map(s => s.trim());
+        }
       }
       
       const { data, error } = await supabase
@@ -252,8 +255,13 @@ const Freelancing = () => {
       if (required_skills !== undefined) {
         if (Array.isArray(required_skills)) {
           skillsArray = required_skills;
-        } else if (typeof required_skills === 'string' && required_skills.trim()) {
-          skillsArray = required_skills.split(',').map(s => s.trim());
+        } else if (typeof required_skills === 'string') {
+          const skillsText = required_skills as string;
+          if (skillsText.trim() !== '') {
+            skillsArray = skillsText.split(',').map(s => s.trim());
+          } else {
+            skillsArray = [];
+          }
         } else {
           skillsArray = [];
         }
@@ -576,8 +584,11 @@ const Freelancing = () => {
       ));
     } 
     
-    if (typeof project.required_skills === 'string' && project.required_skills.trim()) {
-      return project.required_skills.split(',').map((skill, index) => (
+    if (typeof project.required_skills === 'string') {
+      const skillsText = project.required_skills as string;
+      if (skillsText.trim() === '') return null;
+      
+      return skillsText.split(',').map((skill, index) => (
         <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
           {skill.trim()}
         </span>

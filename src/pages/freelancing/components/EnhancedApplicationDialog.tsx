@@ -81,8 +81,11 @@ export const EnhancedApplicationDialog = ({
       ));
     } 
     
-    if (typeof project.required_skills === 'string' && project.required_skills.trim()) {
-      return project.required_skills.split(',').map((skill, index) => (
+    if (typeof project.required_skills === 'string') {
+      const skillsText = project.required_skills as string;
+      if (skillsText.trim() === '') return null;
+      
+      return skillsText.split(',').map((skill, index) => (
         <Badge key={index} variant="outline" className="text-xs font-medium">
           {skill.trim()}
         </Badge>
