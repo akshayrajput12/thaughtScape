@@ -278,6 +278,7 @@ export type Database = {
           is_profile_completed: boolean | null
           linkedin_url: string | null
           phone: string | null
+          portfolio_url: string | null
           posts_count: number | null
           registration_number: string | null
           snapchat_url: string | null
@@ -306,6 +307,7 @@ export type Database = {
           is_profile_completed?: boolean | null
           linkedin_url?: string | null
           phone?: string | null
+          portfolio_url?: string | null
           posts_count?: number | null
           registration_number?: string | null
           snapchat_url?: string | null
@@ -334,6 +336,7 @@ export type Database = {
           is_profile_completed?: boolean | null
           linkedin_url?: string | null
           phone?: string | null
+          portfolio_url?: string | null
           posts_count?: number | null
           registration_number?: string | null
           snapchat_url?: string | null

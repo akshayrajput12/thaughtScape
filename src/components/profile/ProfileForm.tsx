@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { Profile } from "@/types";
-import { Instagram, Linkedin, Twitter, Youtube, Link as LinkIcon, Snapchat } from "lucide-react";
+import { Instagram, Linkedin, Twitter, Youtube, Link as LinkIcon, Snapchat, Github } from "lucide-react";
 import { ProfileImageUpload } from "./ProfileImageUpload";
 
 const colleges = [
@@ -50,6 +49,7 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const [githubUrl, setGithubUrl] = useState(profile.github_url || "");
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -120,7 +120,8 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
         youtube_url: youtubeUrl,
         portfolio_url: portfolioUrl,
         avatar_url: avatarUrl,
-        is_profile_completed: true
+        is_profile_completed: true,
+        github_url: githubUrl,
       };
 
       if (age) updatedProfile.age = parseInt(age);
@@ -399,6 +400,23 @@ export const ProfileForm = ({ profile, onSubmitSuccess, isFirstTimeSetup = false
                   placeholder="https://youtube.com/channel/username"
                   error={errors.youtubeUrl}
                 />
+                
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <div className="mr-2"><Github className="h-4 w-4 text-gray-600" /></div>
+                    <Label htmlFor="githubUrl" className="text-sm font-medium text-gray-700">
+                      GitHub URL
+                    </Label>
+                  </div>
+                  <Input
+                    id="githubUrl"
+                    type="text"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="https://github.com/username"
+                    className="border-gray-300 focus:ring-purple-500 focus:border-purple-500"
+                  />
+                </div>
               </div>
             </div>
           </>

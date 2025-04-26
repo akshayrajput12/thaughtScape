@@ -1,40 +1,41 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import {
-  CalendarDays,
-  MapPin,
-  School,
-  MoreHorizontal,
-  MessageSquare,
-  UserCheck,
-  UserMinus,
-  UserX,
-  ShieldCheck,
-  Facebook,
-  Instagram,
-  Linkedin,
-  Twitter,
-  Youtube,
-  Snapchat,
-  Link as LinkIcon
+import { 
+  CalendarDays, 
+  MapPin, 
+  School, 
+  MoreHorizontal, 
+  MessageSquare, 
+  UserCheck, 
+  UserMinus, 
+  UserX, 
+  ShieldCheck, 
+  Facebook, 
+  Instagram, 
+  Linkedin, 
+  Twitter, 
+  Youtube, 
+  Link as LinkIcon 
 } from "lucide-react";
+import { Snapchat } from 'lucide-react';
+import { Github } from 'lucide-react';
+
 import { formatDistanceToNow } from 'date-fns';
 import type { Profile } from '@/types';
 
@@ -99,6 +100,22 @@ export const ProfileHeader = ({
         name: 'Portfolio'
       });
     }
+
+    if (profile.github_url) {
+      links.push({
+        url: profile.github_url,
+        icon: <Github size={16} className="text-gray-800" />,
+        name: 'GitHub'
+      });
+    }
+
+    if (profile.snapchat_url) {
+      links.push({
+        url: profile.snapchat_url,
+        icon: <Snapchat size={16} className="text-yellow-400" />,
+        name: 'Snapchat'
+      });
+    }
     
     if (profile.instagram_url) {
       links.push({
@@ -132,14 +149,6 @@ export const ProfileHeader = ({
       });
     }
     
-    if (profile.snapchat_url) {
-      links.push({
-        url: profile.snapchat_url,
-        icon: <Snapchat size={16} className="text-yellow-400" />,
-        name: 'Snapchat'
-      });
-    }
-
     return links;
   };
 
@@ -147,11 +156,9 @@ export const ProfileHeader = ({
 
   return (
     <div className="bg-white shadow rounded-xl overflow-hidden">
-      {/* Cover Image - Gradient Background */}
       <div className="h-32 sm:h-48 bg-gradient-to-r from-purple-400 via-pink-500 to-indigo-500"></div>
       
       <div className="relative px-4 sm:px-6 pb-6">
-        {/* Avatar */}
         <div className="absolute -top-16 left-6 ring-4 ring-white rounded-full">
           <Avatar className="w-28 h-28 border-4 border-white shadow-lg">
             <AvatarImage src={profile.avatar_url || ''} alt={profile.username} className="object-cover" />
@@ -161,7 +168,6 @@ export const ProfileHeader = ({
           </Avatar>
         </div>
         
-        {/* Action Buttons */}
         <div className="flex justify-end mt-2 gap-2">
           {isAdmin && !isOwnProfile && (
             <TooltipProvider>
@@ -262,7 +268,6 @@ export const ProfileHeader = ({
           )}
         </div>
 
-        {/* Profile Info - after some spacing from avatar */}
         <div className="mt-16 space-y-3">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
