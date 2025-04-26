@@ -192,11 +192,13 @@ const Freelancing = () => {
           .eq("id", user.id);
       }
       
-      const skillsArray = Array.isArray(newProject.required_skills) 
-        ? newProject.required_skills 
-        : typeof newProject.required_skills === 'string' && newProject.required_skills
-          ? newProject.required_skills.split(',').map(s => s.trim())
-          : [];
+      let skillsArray: string[] = [];
+      
+      if (Array.isArray(newProject.required_skills)) {
+        skillsArray = newProject.required_skills;
+      } else if (typeof newProject.required_skills === 'string' && newProject.required_skills.trim()) {
+        skillsArray = newProject.required_skills.split(',').map(s => s.trim());
+      }
       
       const { data, error } = await supabase
         .from("projects")
@@ -245,12 +247,12 @@ const Freelancing = () => {
           .eq("id", user.id);
       }
       
-      let skillsArray;
+      let skillsArray: string[] | undefined;
       
       if (required_skills !== undefined) {
         if (Array.isArray(required_skills)) {
           skillsArray = required_skills;
-        } else if (typeof required_skills === 'string' && required_skills) {
+        } else if (typeof required_skills === 'string' && required_skills.trim()) {
           skillsArray = required_skills.split(',').map(s => s.trim());
         } else {
           skillsArray = [];
@@ -563,6 +565,28 @@ const Freelancing = () => {
     return application?.status || null;
   };
 
+  const renderProjectSkills = (project: Project) => {
+    if (!project.required_skills) return null;
+    
+    if (Array.isArray(project.required_skills)) {
+      return project.required_skills.map((skill, index) => (
+        <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+          {skill}
+        </span>
+      ));
+    } 
+    
+    if (typeof project.required_skills === 'string' && project.required_skills.trim()) {
+      return project.required_skills.split(',').map((skill, index) => (
+        <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+          {skill.trim()}
+        </span>
+      ));
+    }
+    
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
@@ -691,20 +715,7 @@ const Freelancing = () => {
                         <span className="text-sm">{project.author?.full_name || project.author?.username}</span>
                       </div>
                       
-                      {Array.isArray(project.required_skills) 
-                        ? project.required_skills.map((skill, index) => (
-                            <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                              {skill}
-                            </span>
-                          ))
-                        : typeof project.required_skills === 'string' && project.required_skills
-                          ? project.required_skills.split(',').map((skill, index) => (
-                              <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                                {skill.trim()}
-                              </span>
-                            ))
-                          : null
-                      }
+                      {renderProjectSkills(project)}
                     </div>
 
                     <div className="pt-4 flex flex-wrap gap-2 border-t border-gray-100">

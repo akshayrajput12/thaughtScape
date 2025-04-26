@@ -69,6 +69,29 @@ export const EnhancedApplicationDialog = ({
     }
   };
 
+  // Helper function to render skills safely
+  const renderSkillBadges = () => {
+    if (!project.required_skills) return null;
+    
+    if (Array.isArray(project.required_skills)) {
+      return project.required_skills.map((skill, index) => (
+        <Badge key={index} variant="outline" className="text-xs font-medium">
+          {skill}
+        </Badge>
+      ));
+    } 
+    
+    if (typeof project.required_skills === 'string' && project.required_skills.trim()) {
+      return project.required_skills.split(',').map((skill, index) => (
+        <Badge key={index} variant="outline" className="text-xs font-medium">
+          {skill.trim()}
+        </Badge>
+      ));
+    }
+    
+    return null;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -146,21 +169,7 @@ export const EnhancedApplicationDialog = ({
             />
             {project.required_skills && (
               <div className="flex flex-wrap gap-1 mt-2">
-                {Array.isArray(project.required_skills) ? 
-                  project.required_skills.map((skill, index) => (
-                    <Badge key={index} variant="outline" className="text-xs font-medium">
-                      {skill}
-                    </Badge>
-                  )) : 
-                  (typeof project.required_skills === 'string' && project.required_skills ? 
-                    project.required_skills.split(',').map((skill, index) => (
-                      <Badge key={index} variant="outline" className="text-xs font-medium">
-                        {skill.trim()}
-                      </Badge>
-                    )) : 
-                    null
-                  )
-                }
+                {renderSkillBadges()}
               </div>
             )}
             <DialogFooter>

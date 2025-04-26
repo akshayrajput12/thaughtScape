@@ -163,7 +163,7 @@ const SingleProject = () => {
 
   // Fix the renderRequiredSkills function
   const renderRequiredSkills = () => {
-    if (!project.required_skills) return null;
+    if (!project?.required_skills) return null;
     
     // Check if required_skills is an array
     if (Array.isArray(project.required_skills)) {
@@ -176,8 +176,8 @@ const SingleProject = () => {
         </span>
       ));
     } 
-    // Check if required_skills is a string
-    else if (typeof project.required_skills === 'string' && project.required_skills) {
+    // Check if required_skills is a string and ensure it's not empty
+    else if (typeof project.required_skills === 'string' && project.required_skills.trim()) {
       return project.required_skills.split(',').map((skill, index) => (
         <span 
           key={index} 
