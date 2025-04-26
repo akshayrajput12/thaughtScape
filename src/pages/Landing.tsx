@@ -89,7 +89,9 @@ const Landing = () => {
               username,
               full_name,
               avatar_url,
-              whatsapp_number
+              whatsapp_number,
+              created_at,
+              updated_at
             )
           `)
           .eq('status', 'open')
@@ -103,7 +105,7 @@ const Landing = () => {
           const typedProjects = data.map(project => ({
             ...project,
             status: project.status as "open" | "closed" | "in_progress"
-          }));
+          })) as Project[];
           
           setRecentProjects(typedProjects);
         } else {

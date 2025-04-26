@@ -34,7 +34,15 @@ const SingleProject = () => {
           .from("projects")
           .select(`
             *,
-            author:profiles(id, username, full_name, avatar_url, created_at, updated_at, whatsapp_number),
+            author:profiles!projects_author_id_fkey(
+              id,
+              username,
+              full_name,
+              avatar_url,
+              created_at,
+              updated_at,
+              whatsapp_number
+            ),
             applications:project_applications(count),
             comments:project_applications(count)
           `)
@@ -159,16 +167,31 @@ const SingleProject = () => {
         </span>
       ));
     } 
-    // Check if required_skills is a string that can be split
+    // Check if required_skills is a string that can be parsed as JSON
     else if (typeof project.required_skills === 'string') {
-      return project.required_skills.split(',').map((skill, index) => (
-        <span 
-          key={index} 
-          className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
-        >
-          {skill.trim()}
-        </span>
-      ));
+      try {
+        const parsedSkills = JSON.parse(project.required_skills);
+        if (Array.isArray(parsedSkills)) {
+          return parsedSkills.map((skill, index) => (
+            <span 
+              key={index} 
+              className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
+            >
+              {String(skill).trim()}
+            </span>
+          ));
+        }
+      } catch (e) {
+        // If JSON parsing fails, treat it as a comma-separated string
+        return project.required_skills.toString().split(',').map((skill, index) => (
+          <span 
+            key={index} 
+            className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
+          >
+            {skill.trim()}
+          </span>
+        ));
+      }
     }
     
     return null;

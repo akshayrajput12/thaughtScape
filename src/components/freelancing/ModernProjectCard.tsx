@@ -102,17 +102,34 @@ export const ModernProjectCard = ({
         </Badge>
       ));
     } 
-    // Check if required_skills is a string that can be split
+    // Handle required_skills as string
     else if (typeof project.required_skills === 'string') {
-      return project.required_skills.split(',').slice(0, 3).map((skill, index) => (
-        <Badge
-          key={index}
-          variant="secondary"
-          className="text-xs font-normal"
-        >
-          {skill.trim()}
-        </Badge>
-      ));
+      try {
+        // Try to parse it as JSON if it's a stringified array
+        const parsedSkills = JSON.parse(project.required_skills);
+        if (Array.isArray(parsedSkills)) {
+          return parsedSkills.slice(0, 3).map((skill, index) => (
+            <Badge
+              key={index}
+              variant="secondary"
+              className="text-xs font-normal"
+            >
+              {skill}
+            </Badge>
+          ));
+        }
+      } catch (e) {
+        // If parsing fails, treat it as a comma-separated string
+        return project.required_skills.toString().split(',').slice(0, 3).map((skill, index) => (
+          <Badge
+            key={index}
+            variant="secondary"
+            className="text-xs font-normal"
+          >
+            {skill.trim()}
+          </Badge>
+        ));
+      }
     }
     
     return null;
@@ -126,7 +143,14 @@ export const ModernProjectCard = ({
       return Math.max(0, project.required_skills.length - 3);
     } 
     else if (typeof project.required_skills === 'string') {
-      return Math.max(0, project.required_skills.split(',').length - 3);
+      try {
+        const parsedSkills = JSON.parse(project.required_skills);
+        if (Array.isArray(parsedSkills)) {
+          return Math.max(0, parsedSkills.length - 3);
+        }
+      } catch (e) {
+        return Math.max(0, project.required_skills.toString().split(',').length - 3);
+      }
     }
     
     return 0;

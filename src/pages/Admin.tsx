@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsersList } from "@/components/admin/UsersList";
@@ -19,6 +20,12 @@ function AdminDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("users");
   const queryClient = useQueryClient();
+  const [statsData, setStatsData] = useState({
+    followersCount: 0,
+    followingCount: 0,
+    postsCount: 0,
+    usersCount: 0
+  });
 
   const { data: isAdmin, isLoading: checkingAdmin } = useQuery({
     queryKey: ["isAdmin", user?.id],
@@ -56,6 +63,46 @@ function AdminDashboard() {
     },
     enabled: !!isAdmin,
   });
+
+  // Fetch stats data
+  useEffect(() => {
+    if (isAdmin) {
+      const fetchStatsData = async () => {
+        try {
+          // Get total users count
+          const { count: usersCount, error: usersError } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true });
+
+          // Get total posts count
+          const { count: postsCount, error: postsError } = await supabase
+            .from('thoughts')
+            .select('*', { count: 'exact', head: true });
+
+          // Get total followers/following
+          const { count: followsCount, error: followsError } = await supabase
+            .from('follows')
+            .select('*', { count: 'exact', head: true });
+
+          if (usersError || postsError || followsError) {
+            console.error("Error fetching stats:", { usersError, postsError, followsError });
+            return;
+          }
+
+          setStatsData({
+            followersCount: followsCount || 0,
+            followingCount: followsCount || 0,
+            postsCount: postsCount || 0,
+            usersCount: usersCount || 0
+          });
+        } catch (error) {
+          console.error("Error fetching stats data:", error);
+        }
+      };
+
+      fetchStatsData();
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -139,8 +186,10 @@ function AdminDashboard() {
         
         <TabsContent value="stats" className="m-0">
           <UserStats 
-            followersCount={0} 
-            followingCount={0} 
+            followersCount={statsData.followersCount}
+            followingCount={statsData.followingCount}
+            postsCount={statsData.postsCount}
+            usersCount={statsData.usersCount}
           />
         </TabsContent>
         

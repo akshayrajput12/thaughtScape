@@ -11,7 +11,7 @@ interface ShareDialogProps {
   thoughtId?: string; // Added thoughtId as optional prop
 }
 
-export const ShareDialog = ({ open, onOpenChange, followers = [], onShare }: ShareDialogProps) => {
+export const ShareDialog = ({ open, onOpenChange, followers = [], onShare, thoughtId }: ShareDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">

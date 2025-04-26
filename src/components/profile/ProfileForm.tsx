@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -17,35 +16,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ProfileImageUpload } from './ProfileImageUpload';
+import { Profile } from '@/types';
 
 interface ProfileFormProps {
-  profile: any;
-  onSubmitSuccess: (updatedProfile: any) => void;
+  profile: Profile;
+  onSubmitSuccess: (updatedProfile: Profile) => void;
   isFirstTimeSetup?: boolean;
-}
-
-interface Profile {
-  id: string;
-  username: string;
-  full_name: string;
-  avatar_url: string | null;
-  bio: string | null;
-  college: string | null;
-  registration_number: string | null;
-  whatsapp_number: string | null;
-  instagram_url: string | null;
-  linkedin_url: string | null;
-  twitter_url: string | null;
-  portfolio_url: string | null;
-  snapchat_url: string | null;
-  is_profile_completed: boolean;
-  updated_at: Date;
 }
 
 export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false }: ProfileFormProps) {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatar_url);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatar_url || null);
 
   // Define the form validation schema
   const formSchema = z.object({
@@ -112,7 +94,7 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
         ...values,
         avatar_url: avatarUrl,
         is_profile_completed: true,
-        updated_at: new Date(),
+        updated_at: new Date().toISOString(),
       });
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -124,8 +106,8 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
     }
   };
 
-  // Handle avatar upload completion
-  const onUploadComplete = (url: string) => {
+  // Handle avatar upload
+  const onImageUploaded = (url: string) => {
     setAvatarUrl(url);
     setIsUploading(false);
   };
@@ -135,11 +117,8 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="flex flex-col items-center mb-6">
           <ProfileImageUpload
-            id={profile.id} // Changed from uid to id
-            url={avatarUrl}
-            onUploadStart={() => setIsUploading(true)}
-            onUploadComplete={onUploadComplete}
-            onError={() => setIsUploading(false)}
+            profile={profile}
+            onImageUploaded={onImageUploaded}
           />
           <p className="text-sm text-gray-500 mt-2">Click to upload a profile picture</p>
         </div>

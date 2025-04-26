@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
 import type { Project } from "@/types";
 import { EnhancedProjectsList } from "./components/EnhancedProjectsList";
@@ -37,7 +39,7 @@ const FreelancingPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const router = useNavigate();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const projectIdFromParams = searchParams.get('projectId');
 
@@ -53,7 +55,9 @@ const FreelancingPage = () => {
             username,
             full_name,
             avatar_url,
-            whatsapp_number
+            whatsapp_number,
+            created_at,
+            updated_at
           )
         `)
         .eq('status', 'open')
@@ -68,9 +72,9 @@ const FreelancingPage = () => {
           status: project.status as "open" | "closed" | "in_progress"
         }));
         
-        return typedProjects;
+        return typedProjects as Project[];
       } else {
-        return [];
+        return [] as Project[];
       }
     },
   });
@@ -91,7 +95,9 @@ const FreelancingPage = () => {
           username,
           full_name,
           avatar_url,
-          whatsapp_number
+          whatsapp_number,
+          created_at,
+          updated_at
         )
       `)
       .eq('status', 'open')
@@ -112,7 +118,7 @@ const FreelancingPage = () => {
           status: project.status as "open" | "closed" | "in_progress"
         }));
         
-        setProjects(typedProjects);
+        setProjects(typedProjects as Project[]);
       } else {
         setProjects([]);
       }
@@ -155,7 +161,7 @@ const FreelancingPage = () => {
         description: "Please sign in to apply for this project",
         variant: "destructive",
       });
-      router.push('/auth');
+      navigate('/auth');
       return;
     }
 
@@ -237,7 +243,7 @@ const FreelancingPage = () => {
       setIsApplicationDialogOpen(false);
       fetchProjects();
       fetchUserApplications();
-      router.navigate('/freelancing');
+      navigate('/freelancing');
     } catch (error) {
       console.error("Error submitting application:", error);
       toast({

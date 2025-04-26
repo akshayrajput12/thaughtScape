@@ -1,3 +1,4 @@
+
 export interface Profile {
   id: string;
   username: string;
@@ -34,7 +35,7 @@ export interface Project {
   id: string;
   title: string;
   description: string;
-  required_skills: string[];
+  required_skills: string[] | string;
   min_budget?: number;
   max_budget?: number;
   budget?: number;
