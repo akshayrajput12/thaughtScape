@@ -179,13 +179,23 @@ export const ProjectsList = () => {
     });
   };
 
-  const renderSkills = (skills: string[]) => {
-    const skillsArray = Array.isArray(skills) ? skills : skills ? [skills] : [];
-    return skillsArray.map((skill, i) => (
-      <Badge key={i} variant="secondary" className="bg-indigo-50 text-indigo-700">
-        {skill}
-      </Badge>
-    ));
+  const renderSkills = (skills: string[] | string | null | undefined) => {
+    if (!skills) return null;
+    
+    if (Array.isArray(skills)) {
+      return skills.map((skill, i) => (
+        <Badge key={i} variant="secondary" className="bg-indigo-50 text-indigo-700">
+          {skill}
+        </Badge>
+      ));
+    } else if (typeof skills === 'string') {
+      return skills.split(',').map((skill, i) => (
+        <Badge key={i} variant="secondary" className="bg-indigo-50 text-indigo-700">
+          {skill.trim()}
+        </Badge>
+      ));
+    }
+    return null;
   };
 
   return (
@@ -396,7 +406,9 @@ export const ProjectsList = () => {
                   <span className="text-gray-700">
                     {Array.isArray(project.required_skills) 
                       ? project.required_skills.slice(0, 3).join(', ') 
-                      : project.required_skills?.toString() || ''}
+                      : typeof project.required_skills === 'string'
+                        ? project.required_skills
+                        : ''}
                     {Array.isArray(project.required_skills) && project.required_skills.length > 3 && '...'}
                   </span>
                 </div>

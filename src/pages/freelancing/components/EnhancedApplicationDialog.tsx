@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog,
@@ -5,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -144,13 +146,21 @@ export const EnhancedApplicationDialog = ({
             />
             {project.required_skills && (
               <div className="flex flex-wrap gap-1 mt-2">
-                {(Array.isArray(project.required_skills) 
-                  ? project.required_skills 
-                  : project.required_skills ? [project.required_skills] : []).map((skill, index) => (
-                  <Badge key={index} variant="outline" className="text-xs font-medium">
-                    {skill}
-                  </Badge>
-                ))}
+                {Array.isArray(project.required_skills) ? 
+                  project.required_skills.map((skill, index) => (
+                    <Badge key={index} variant="outline" className="text-xs font-medium">
+                      {skill}
+                    </Badge>
+                  )) : 
+                  (typeof project.required_skills === 'string' ? 
+                    project.required_skills.split(',').map((skill, index) => (
+                      <Badge key={index} variant="outline" className="text-xs font-medium">
+                        {skill.trim()}
+                      </Badge>
+                    )) : 
+                    null
+                  )
+                }
               </div>
             )}
             <DialogFooter>

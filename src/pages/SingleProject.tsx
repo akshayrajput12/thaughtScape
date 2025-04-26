@@ -176,31 +176,16 @@ const SingleProject = () => {
         </span>
       ));
     } 
-    // Check if required_skills is a string that can be parsed as JSON
+    // Check if required_skills is a string
     else if (typeof project.required_skills === 'string') {
-      try {
-        const parsedSkills = JSON.parse(project.required_skills);
-        if (Array.isArray(parsedSkills)) {
-          return parsedSkills.map((skill, index) => (
-            <span 
-              key={index} 
-              className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
-            >
-              {String(skill).trim()}
-            </span>
-          ));
-        }
-      } catch (e) {
-        // If JSON parsing fails, treat it as a comma-separated string
-        return project.required_skills.toString().split(',').map((skill, index) => (
-          <span 
-            key={index} 
-            className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
-          >
-            {skill.trim()}
-          </span>
-        ));
-      }
+      return project.required_skills.split(',').map((skill, index) => (
+        <span 
+          key={index} 
+          className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
+        >
+          {skill.trim()}
+        </span>
+      ));
     }
     
     return null;

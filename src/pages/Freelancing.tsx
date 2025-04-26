@@ -248,7 +248,9 @@ const Freelancing = () => {
       const skillsArray = required_skills 
         ? Array.isArray(required_skills)
           ? required_skills
-          : required_skills.toString().split(',').map(s => s.trim())
+          : typeof required_skills === 'string'
+            ? required_skills.split(',').map(s => s.trim())
+            : []
         : undefined;
       
       const { data, error } = await supabase
@@ -686,14 +688,21 @@ const Freelancing = () => {
                       </div>
                       
                       {project.required_skills && (
-                        <div className="flex flex-wrap gap-1 pt-2">
-                          {(Array.isArray(project.required_skills) 
-                            ? project.required_skills 
-                            : [project.required_skills]).map((skill, index) => (
-                              <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                                {skill}
-                              </span>
-                            ))}
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          {Array.isArray(project.required_skills) 
+                            ? project.required_skills.map((skill, index) => (
+                                <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                                  {skill}
+                                </span>
+                              ))
+                            : typeof project.required_skills === 'string' 
+                              ? project.required_skills.split(',').map((skill, index) => (
+                                  <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                                    {skill.trim()}
+                                  </span>
+                                ))
+                              : null
+                          }
                         </div>
                       )}
                     </div>
