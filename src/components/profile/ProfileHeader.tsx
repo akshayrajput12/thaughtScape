@@ -64,8 +64,7 @@ export function ProfileHeader({
     setShowSocialLinks(!showSocialLinks);
   };
 
-  // Check if user has any social media links
-  const hasSocialLinks = profile.instagram_url || profile.twitter_url || profile.linkedin_url || profile.portfolio_url || profile.snapchat_url;
+  const hasSocialLinks = profile.instagram_url || profile.twitter_url || profile.linkedin_url || profile.portfolio_url;
 
   return (
     <div className="relative bg-card/60 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-border/50">
@@ -206,18 +205,6 @@ export function ProfileHeader({
                     title="Portfolio"
                   >
                     <BriefcaseIcon className="h-5 w-5" />
-                  </a>
-                )}
-                
-                {profile.snapchat_url && (
-                  <a 
-                    href={profile.snapchat_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                    title="Snapchat"
-                  >
-                    <Camera className="h-5 w-5" />
                   </a>
                 )}
               </div>
