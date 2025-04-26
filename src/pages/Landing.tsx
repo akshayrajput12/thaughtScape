@@ -76,7 +76,9 @@ const Landing = () => {
               username,
               full_name,
               avatar_url,
-              whatsapp_number
+              whatsapp_number,
+              created_at,
+              updated_at
             )
           `)
           .eq('status', 'open')
@@ -121,7 +123,7 @@ const Landing = () => {
     fetchTopPosts();
     fetchRecentProjects();
     fetchUserApplications();
-  }, [user?.id, toast]);
+  }, [user?.id]);
 
   useEffect(() => {
     const fetchThoughts = async () => {

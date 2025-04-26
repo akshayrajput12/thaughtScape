@@ -54,7 +54,6 @@ const SingleProject = () => {
         
         setProject(projectData);
 
-        // Check if user has applied
         if (user?.id) {
           const { data: applicationData, error: applicationError } = await supabase
             .from('project_applications')
