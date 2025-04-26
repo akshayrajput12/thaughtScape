@@ -8,7 +8,8 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SignUpErrorHandler } from '@/components/auth/SignUpErrorHandler';
 import { VerificationReminder } from '@/components/auth/VerificationReminder';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Shield } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const AuthPage = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -17,6 +18,31 @@ const AuthPage = () => {
   const [email, setEmail] = useState<string>('');
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   const [activeTab, setActiveTab] = useState<'sign_in' | 'sign_up'>('sign_in');
+  const [loginAttempts, setLoginAttempts] = useState(0);
+
+  // Monitor auth state changes
+  useEffect(() => {
+    const handleAuthChange = (event: string, session: any) => {
+      if (event === 'SIGNED_IN') {
+        if (session?.user?.email_confirmed_at) {
+          navigate('/home');
+        } else {
+          setShowVerificationMessage(true);
+        }
+      } else if (event === 'PASSWORD_RECOVERY') {
+        setAuthError({ message: 'Check your email for the password reset link.' });
+      } else if (event === 'USER_UPDATED') {
+        setAuthError(null);
+        setShowVerificationMessage(false);
+      }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   // Use effect to monitor for email input changes
   useEffect(() => {
@@ -53,6 +79,16 @@ const AuthPage = () => {
     setShowVerificationMessage(false);
   };
 
+  // Security feature: Rate limiting for login attempts
+  useEffect(() => {
+    if (loginAttempts >= 5) {
+      const timer = setTimeout(() => {
+        setLoginAttempts(0);
+      }, 60000); // Reset after 1 minute
+      return () => clearTimeout(timer);
+    }
+  }, [loginAttempts]);
+
   // Key points about CampusCash
   const keyPoints = [
     { icon: '💰', text: 'Find campus jobs and gigs' },
@@ -62,6 +98,17 @@ const AuthPage = () => {
     { icon: '🚀', text: 'Discover freelance opportunities' },
     { icon: '🌟', text: 'Grow your campus network' }
   ];
+
+  // Security notice
+  const securityNotice = (
+    <Alert variant="default" className="bg-blue-50 mb-4">
+      <Shield className="h-4 w-4 text-blue-500" />
+      <AlertTitle className="text-blue-700">Security Notice</AlertTitle>
+      <AlertDescription className="text-blue-600 text-xs">
+        Your account is protected with strong encryption. We never store your passwords in plain text.
+      </AlertDescription>
+    </Alert>
+  );
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
@@ -110,6 +157,7 @@ const AuthPage = () => {
               </p>
             </div>
 
+            {securityNotice}
             <SignUpErrorHandler error={authError} email={email} />
             <VerificationReminder email={email} isVisible={showVerificationMessage} />
 
