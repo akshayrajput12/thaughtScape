@@ -8,6 +8,7 @@ interface ShareDialogProps {
   onOpenChange: (open: boolean) => void;
   followers: Profile[];
   onShare: (followerId: string) => void;
+  thoughtId?: string; // Added thoughtId as optional prop
 }
 
 export const ShareDialog = ({ open, onOpenChange, followers = [], onShare }: ShareDialogProps) => {

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -134,7 +135,7 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="flex flex-col items-center mb-6">
           <ProfileImageUpload
-            uid={profile.id}
+            id={profile.id} // Changed from uid to id
             url={avatarUrl}
             onUploadStart={() => setIsUploading(true)}
             onUploadComplete={onUploadComplete}

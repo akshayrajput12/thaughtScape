@@ -7,7 +7,6 @@ import {
   MessageSquare,
   CheckCircle2,
   Link as LinkIcon,
-  Github,
   Linkedin,
   Instagram,
   Twitter,
@@ -118,11 +117,6 @@ export const EnhancedProjectCard = ({
 
     const socialLinks = [
       {
-        name: "GitHub",
-        url: project.author.github_url,
-        icon: <Github className="h-4 w-4" />
-      },
-      {
         name: "LinkedIn",
         url: project.author.linkedin_url,
         icon: <Linkedin className="h-4 w-4" />
@@ -171,10 +165,8 @@ export const EnhancedProjectCard = ({
       "overflow-hidden transition-all duration-300 group hover:shadow-md border-border relative",
       featured && "ring-2 ring-primary/20 shadow-lg"
     )}>
-      {/* Background gradient effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-card/50 via-card to-card/80 opacity-50" />
 
-      {/* Featured badge */}
       {featured && (
         <div className="absolute top-0 right-0 z-10">
           <Badge
@@ -186,7 +178,6 @@ export const EnhancedProjectCard = ({
         </div>
       )}
 
-      {/* Decorative elements */}
       {featured && (
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/80 via-secondary/80 to-primary/80" />
       )}
@@ -266,7 +257,6 @@ export const EnhancedProjectCard = ({
       </CardHeader>
 
       <CardContent className="p-5 pt-2 pb-3 relative z-10">
-        {/* Description with subtle gradient background */}
         <div className="relative">
           <div className="absolute inset-0 rounded-md bg-gradient-to-r from-primary/5 to-secondary/5 opacity-50" />
           <p className="relative text-sm text-muted-foreground line-clamp-3 mb-4 p-2 rounded-md">
@@ -274,7 +264,6 @@ export const EnhancedProjectCard = ({
           </p>
         </div>
 
-        {/* Job details with enhanced styling */}
         <div className="grid grid-cols-2 gap-3 mb-4 mt-5">
           <div className="flex items-center text-sm bg-muted/30 p-2 rounded-md">
             <div className="bg-primary/10 p-1.5 rounded-full mr-2">
@@ -332,7 +321,6 @@ export const EnhancedProjectCard = ({
           )}
         </div>
 
-        {/* Skills with enhanced styling */}
         {project.required_skills && project.required_skills.length > 0 && (
           <div className="mt-4">
             <div className="text-xs text-muted-foreground mb-2 flex items-center">

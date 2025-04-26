@@ -1,12 +1,12 @@
-
-import React, { useState } from 'react';
+import React from 'react';
+import { useState } from 'react';
 import { ModernProjectCard } from '@/components/freelancing/ModernProjectCard';
 import type { Project } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, SlidersHorizontal, X, Briefcase } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Briefcase, Calendar, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Separator } from '@/components/ui/separator';

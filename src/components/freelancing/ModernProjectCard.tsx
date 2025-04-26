@@ -86,6 +86,52 @@ export const ModernProjectCard = ({
     return format(new Date(dateString), "MMM d, yyyy");
   };
 
+  // Function to safely render skills
+  const renderSkills = () => {
+    if (!project.required_skills) return null;
+
+    // Check if required_skills is an array
+    if (Array.isArray(project.required_skills)) {
+      return project.required_skills.slice(0, 3).map((skill, index) => (
+        <Badge
+          key={index}
+          variant="secondary"
+          className="text-xs font-normal"
+        >
+          {skill}
+        </Badge>
+      ));
+    } 
+    // Check if required_skills is a string that can be split
+    else if (typeof project.required_skills === 'string') {
+      return project.required_skills.split(',').slice(0, 3).map((skill, index) => (
+        <Badge
+          key={index}
+          variant="secondary"
+          className="text-xs font-normal"
+        >
+          {skill.trim()}
+        </Badge>
+      ));
+    }
+    
+    return null;
+  };
+
+  // Function to get skills count for the "+X" badge
+  const getSkillsCount = () => {
+    if (!project.required_skills) return 0;
+    
+    if (Array.isArray(project.required_skills)) {
+      return Math.max(0, project.required_skills.length - 3);
+    } 
+    else if (typeof project.required_skills === 'string') {
+      return Math.max(0, project.required_skills.split(',').length - 3);
+    }
+    
+    return 0;
+  };
+
   return (
     <Card className={clsx(
       "overflow-hidden transition-all duration-300 group hover:shadow-md border-muted/70 relative h-full flex flex-col",
@@ -192,40 +238,16 @@ export const ModernProjectCard = ({
         </div>
 
         {/* Skills */}
-        {project.required_skills && project.required_skills.length > 0 && (
+        {project.required_skills && (
           <div className="mt-2">
             <div className="flex flex-wrap gap-1">
-              {Array.isArray(project.required_skills) ? 
-                project.required_skills.slice(0, 3).map((skill, index) => (
-                  <Badge
-                    key={index}
-                    variant="secondary"
-                    className="text-xs font-normal"
-                  >
-                    {skill}
-                  </Badge>
-                ))
-                : 
-                typeof project.required_skills === 'string' && 
-                project.required_skills.split(',').slice(0, 3).map((skill, index) => (
-                  <Badge
-                    key={index}
-                    variant="secondary"
-                    className="text-xs font-normal"
-                  >
-                    {skill.trim()}
-                  </Badge>
-                ))
-              }
+              {renderSkills()}
               
-              {(Array.isArray(project.required_skills) && project.required_skills.length > 3) || 
-              (typeof project.required_skills === 'string' && project.required_skills.split(',').length > 3) ? (
+              {getSkillsCount() > 0 && (
                 <Badge variant="outline" className="text-xs">
-                  +{Array.isArray(project.required_skills) ? 
-                    project.required_skills.length - 3 : 
-                    project.required_skills.split(',').length - 3}
+                  +{getSkillsCount()}
                 </Badge>
-              ) : null}
+              )}
             </div>
           </div>
         )}

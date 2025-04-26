@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsersList } from "@/components/admin/UsersList";
@@ -21,7 +20,6 @@ function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("users");
   const queryClient = useQueryClient();
 
-  // Check if user is admin
   const { data: isAdmin, isLoading: checkingAdmin } = useQuery({
     queryKey: ["isAdmin", user?.id],
     queryFn: async () => {
@@ -42,7 +40,6 @@ function AdminDashboard() {
     enabled: !!user?.id,
   });
 
-  // Fetch projects for the projects management tab
   const { data: projects, isLoading: projectsLoading, refetch: refetchProjects } = useQuery({
     queryKey: ["adminProjects"],
     queryFn: async () => {
@@ -60,7 +57,6 @@ function AdminDashboard() {
     enabled: !!isAdmin,
   });
 
-  // Handle URL parameters for user selection
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get("tab");
@@ -72,11 +68,9 @@ function AdminDashboard() {
     
     if (userId) {
       setActiveTab("users");
-      // Handle user selection if needed
     }
   }, [location]);
 
-  // Redirect if not admin
   useEffect(() => {
     if (!checkingAdmin && !isAdmin) {
       toast({
@@ -91,7 +85,6 @@ function AdminDashboard() {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     
-    // Update URL with new tab
     const params = new URLSearchParams(location.search);
     params.set("tab", value);
     navigate({
@@ -145,7 +138,10 @@ function AdminDashboard() {
         </TabsContent>
         
         <TabsContent value="stats" className="m-0">
-          <UserStats />
+          <UserStats 
+            followersCount={0} 
+            followingCount={0} 
+          />
         </TabsContent>
         
         <TabsContent value="project-management" className="m-0">

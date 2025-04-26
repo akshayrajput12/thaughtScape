@@ -40,9 +40,36 @@ const Landing = () => {
 
         if (error) throw error;
 
-        setTopPosts(data || []);
+        // Ensure the data includes author information
+        if (data && Array.isArray(data)) {
+          // First, get all posts with their author information
+          const postsWithAuthors = await Promise.all(
+            data.map(async (post) => {
+              const { data: authorData } = await supabase
+                .from('profiles')
+                .select('id, username, full_name, avatar_url, created_at, updated_at')
+                .eq('id', post.author_id)
+                .single();
+              
+              return {
+                ...post,
+                author: authorData || {
+                  id: post.author_id,
+                  username: 'unknown',
+                  created_at: post.created_at,
+                  updated_at: post.created_at
+                }
+              } as Thought;
+            })
+          );
+          
+          setTopPosts(postsWithAuthors);
+        } else {
+          setTopPosts([]);
+        }
       } catch (error) {
         console.error("Error fetching top posts:", error);
+        setTopPosts([]);
       } finally {
         setLoadingPosts(false);
       }
@@ -71,9 +98,20 @@ const Landing = () => {
 
         if (error) throw error;
 
-        setRecentProjects(data || []);
+        // Ensure the status is properly cast to the expected type
+        if (data) {
+          const typedProjects = data.map(project => ({
+            ...project,
+            status: project.status as "open" | "closed" | "in_progress"
+          }));
+          
+          setRecentProjects(typedProjects);
+        } else {
+          setRecentProjects([]);
+        }
       } catch (error) {
         console.error("Error fetching recent projects:", error);
+        setRecentProjects([]);
       } finally {
         setLoadingProjects(false);
       }
