@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProfileHeader } from '../components/profile/ProfileHeader';
 import { MemoryRouter } from 'react-router-dom';
+import '../__tests__/setup';
 
 // Mock navigate
 const mockNavigate = vi.fn();

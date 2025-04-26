@@ -1,6 +1,8 @@
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProfileImageUpload } from '../components/profile/ProfileImageUpload';
+import '../__tests__/setup';
 
 // Mock Supabase
 vi.mock('@/integrations/supabase/client', () => ({

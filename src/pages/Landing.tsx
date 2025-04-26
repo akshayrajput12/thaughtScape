@@ -117,7 +117,7 @@ const Landing = () => {
         if (error) throw error;
       
         if (data) {
-          // Ensure the data has the correct structure before setting state
+          // Ensure each thought has the correct author structure
           const formattedThoughts = data.map(thought => ({
             ...thought,
             author: thought.author || {
@@ -154,7 +154,7 @@ const Landing = () => {
         if (error) throw error;
       
         if (data) {
-          // Cast the data properly to Project[]
+          // Ensure each project has the correct status type
           const formattedProjects = data.map(project => ({
             ...project,
             status: project.status as "open" | "closed" | "in_progress"
