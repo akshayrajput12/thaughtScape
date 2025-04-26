@@ -161,7 +161,7 @@ const SingleProject = () => {
     );
   }
 
-  // Function to safely render required skills
+  // Fix the renderRequiredSkills function
   const renderRequiredSkills = () => {
     if (!project.required_skills) return null;
     
@@ -177,7 +177,7 @@ const SingleProject = () => {
       ));
     } 
     // Check if required_skills is a string
-    else if (typeof project.required_skills === 'string') {
+    else if (typeof project.required_skills === 'string' && project.required_skills) {
       return project.required_skills.split(',').map((skill, index) => (
         <span 
           key={index} 

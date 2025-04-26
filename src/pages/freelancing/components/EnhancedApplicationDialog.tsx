@@ -152,7 +152,7 @@ export const EnhancedApplicationDialog = ({
                       {skill}
                     </Badge>
                   )) : 
-                  (typeof project.required_skills === 'string' ? 
+                  (typeof project.required_skills === 'string' && project.required_skills ? 
                     project.required_skills.split(',').map((skill, index) => (
                       <Badge key={index} variant="outline" className="text-xs font-medium">
                         {skill.trim()}

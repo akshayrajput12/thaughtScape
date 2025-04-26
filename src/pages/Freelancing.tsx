@@ -194,7 +194,7 @@ const Freelancing = () => {
       
       const skillsArray = Array.isArray(newProject.required_skills) 
         ? newProject.required_skills 
-        : typeof newProject.required_skills === 'string' 
+        : typeof newProject.required_skills === 'string' && newProject.required_skills
           ? newProject.required_skills.split(',').map(s => s.trim())
           : [];
       
@@ -245,13 +245,17 @@ const Freelancing = () => {
           .eq("id", user.id);
       }
       
-      const skillsArray = required_skills 
-        ? Array.isArray(required_skills)
-          ? required_skills
-          : typeof required_skills === 'string'
-            ? required_skills.split(',').map(s => s.trim())
-            : []
-        : undefined;
+      let skillsArray;
+      
+      if (required_skills !== undefined) {
+        if (Array.isArray(required_skills)) {
+          skillsArray = required_skills;
+        } else if (typeof required_skills === 'string' && required_skills) {
+          skillsArray = required_skills.split(',').map(s => s.trim());
+        } else {
+          skillsArray = [];
+        }
+      }
       
       const { data, error } = await supabase
         .from("projects")
@@ -687,24 +691,20 @@ const Freelancing = () => {
                         <span className="text-sm">{project.author?.full_name || project.author?.username}</span>
                       </div>
                       
-                      {project.required_skills && (
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          {Array.isArray(project.required_skills) 
-                            ? project.required_skills.map((skill, index) => (
-                                <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                                  {skill}
-                                </span>
-                              ))
-                            : typeof project.required_skills === 'string' 
-                              ? project.required_skills.split(',').map((skill, index) => (
-                                  <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                                    {skill.trim()}
-                                  </span>
-                                ))
-                              : null
-                          }
-                        </div>
-                      )}
+                      {Array.isArray(project.required_skills) 
+                        ? project.required_skills.map((skill, index) => (
+                            <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                              {skill}
+                            </span>
+                          ))
+                        : typeof project.required_skills === 'string' && project.required_skills
+                          ? project.required_skills.split(',').map((skill, index) => (
+                              <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                                {skill.trim()}
+                              </span>
+                            ))
+                          : null
+                      }
                     </div>
 
                     <div className="pt-4 flex flex-wrap gap-2 border-t border-gray-100">
