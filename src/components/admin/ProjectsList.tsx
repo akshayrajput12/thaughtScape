@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Briefcase, 
   Calendar, 
@@ -14,11 +14,12 @@ import {
   Eye,
   Plus,
   RefreshCw,
+  ChevronRight,
   User
 } from "lucide-react";
 import type { Project, ProjectApplication } from "@/types";
 import { ProjectApplicationCard } from "@/components/freelancing/ProjectApplicationCard";
-import { NewProjectModal } from "@/components/freelancing/components/NewProjectModal";
+import { NewProjectDialog } from "@/pages/freelancing/components/NewProjectDialog";
 
 export const ProjectsList = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -43,9 +44,7 @@ export const ProjectsList = () => {
             id,
             username,
             full_name,
-            avatar_url,
-            created_at,
-            updated_at
+            avatar_url
           ),
           client:profiles(
             id,
@@ -70,10 +69,8 @@ export const ProjectsList = () => {
       const projectsWithCounts = projectsData?.map(project => ({
         ...project,
         budget: project.min_budget,
-        category: project.job_type || "other", // Add category field based on job_type
         applications_count: project.applications_count || 0,
-        milestones_count: project.milestones_count || 0,
-        status: (project.status || 'open') as "open" | "closed" | "in_progress"
+        milestones_count: project.milestones_count || 0
       })) as Project[];
 
       setProjects(projectsWithCounts);
@@ -458,26 +455,10 @@ export const ProjectsList = () => {
         ))}
       </div>
       
-      <NewProjectModal 
+      <NewProjectDialog 
         isOpen={showNewProjectDialog}
         onOpenChange={setShowNewProjectDialog}
-        onSubmit={(projectData) => {
-          const newProject = {
-            ...projectData,
-            id: crypto.randomUUID(),
-            created_at: new Date().toISOString(),
-            author: {
-              id: "system",
-              username: "Admin",
-              full_name: "System Admin",
-              avatar_url: "",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            }
-          } as Project;
-          handleProjectCreated(newProject);
-        }}
-        isLoading={false}
+        onProjectCreated={handleProjectCreated}
       />
     </div>
   );

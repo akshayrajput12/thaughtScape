@@ -1,134 +1,71 @@
 
-import type { ProjectExtension } from './extension';
-
 export interface Profile {
   id: string;
   username: string;
-  full_name: string;
-  avatar_url: string;
-  bio?: string;
-  website?: string;
-  college?: string;
-  instagram_url?: string;
-  twitter_url?: string;
-  linkedin_url?: string;
-  portfolio_url?: string;
-  is_following?: boolean;
-  followers_count?: number;
-  following_count?: number;
-  is_admin?: boolean;
-  created_at: string;
-  updated_at: string;
-  // Adding missing properties
+  full_name?: string;
   age?: number;
+  phone?: string;
   country?: string;
   state?: string;
   city?: string;
-  is_profile_completed?: boolean;
-  registration_number?: string;
-  whatsapp_number?: string;
-  snapchat_url?: string;
-  posts_count?: number;
-}
-
-export interface Thought {
-  id: string;
-  author_id: string;
-  content: string;
+  bio?: string;
+  avatar_url?: string;
+  is_admin?: boolean;
   created_at: string;
   updated_at: string;
-  likes_count?: number;
-  comments_count?: number;
-  author?: Profile;
-  is_liked?: boolean;
-  // Adding missing properties
-  title?: string;
-  accepted_tags?: string[];
-  image_url?: string;
-  likes?: { count: number }[];
-  bookmarks?: { count: number }[];
-  comments?: { count: number }[];
-  _count?: {
-    likes: number;
-    bookmarks: number;
-    comments: number;
-  };
+  is_profile_completed?: boolean;
+  followers_count?: number;
+  following_count?: number;
+  posts_count?: number;
+  college?: string;
+  registration_number?: string;
+  is_following?: boolean;
+  whatsapp_number?: string;
+  genres?: string[];
+  instagram_url?: string;
+  linkedin_url?: string;
+  twitter_url?: string;
+  snapchat_url?: string;
+  youtube_url?: string;
+  portfolio_url?: string;
+  github_url?: string;
 }
 
-export interface Project extends ProjectExtension {
+export interface Project {
   id: string;
   title: string;
   description: string;
-  author_id: string;
-  budget?: number;
+  required_skills: string[];  // This should be consistently typed as string[]
   min_budget?: number;
   max_budget?: number;
-  deadline?: string;
-  created_at: string;
-  updated_at?: string;
-  status: "open" | "closed" | "in_progress";
-  required_skills?: string[];
-  job_type?: string;
-  experience_level?: string;
-  location?: string;
-  is_featured?: boolean;
-  author?: Profile;
-  // Adding missing properties
-  company_name?: string;
-  application_link?: string;
-  allow_normal_apply?: boolean;
-  allow_whatsapp_apply?: boolean;
-  applications_count?: number | { count: number }[];
-  milestones_count?: number | { count: number }[];
+  budget?: number;
+  deadline: string;
   attachment_url?: string;
-  _count?: {
-    applications?: number;
-    milestones?: number;
-  };
-}
-
-export interface Comment {
-  id: string;
-  thought_id: string;
+  status: 'open' | 'closed' | 'in_progress';
   author_id: string;
-  content: string;
+  notifications_count?: number;
   created_at: string;
   updated_at: string;
   author?: Profile;
-}
-
-export interface Notification {
-  id: string;
-  user_id: string;
-  type: string;
-  content: string;
-  is_read: boolean;
-  created_at: string;
-  related_user_id?: string;
-  related_thought_id?: string;
-  related_comment_id?: string;
-  related_user?: Profile;
-}
-
-// Add new interfaces needed by components
-export interface Tag {
-  id: string;
-  thought_id: string;
-  user_id: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  created_at: string;
-  name?: string;
-}
-
-export interface Message {
-  id: string;
-  sender_id: string;
-  recipient_id: string;
-  content: string;
-  created_at: string;
-  is_read: boolean;
-  sender?: Profile;
-  recipient?: Profile;
+  client_id?: string;
+  freelancer_id?: string;
+  client?: Profile;
+  freelancer?: Profile;
+  _count?: {
+    comments: number;
+    applications: number;
+  };
+  applications_count?: number | { count: number }[];
+  milestones_count?: number | { count: number }[];
+  company_name?: string;
+  location?: string;
+  job_type?: string;
+  experience_level?: string;
+  application_deadline?: string;
+  allow_normal_apply?: boolean;
+  allow_whatsapp_apply?: boolean;
+  application_link?: string;
+  is_featured?: boolean;
 }
 
 export interface ProjectApplication {
@@ -136,30 +73,93 @@ export interface ProjectApplication {
   project_id: string;
   applicant_id: string;
   message: string;
-  status: string;
-  created_at: string;
-  expected_salary?: number;
-  skills?: string[];
-  applicant?: Profile;
-  portfolio?: string;
-  experience?: string;
-  education?: string;
   phone_number?: string;
+  status: 'pending' | 'accepted' | 'rejected';
   viewed_at?: string;
+  created_at: string;
+  applicant?: Profile;
+  experience?: string;
+  portfolio?: string;
+  education?: string;
+  skills?: string[];
+  expected_salary?: number;
 }
 
-// Add CallLog interface that was missing
-export interface CallLog {
+export interface Thought {
   id: string;
-  caller_id: string;
+  title: string;
+  content: string;
+  author_id: string;
+  created_at: string;
+  updated_at: string;
+  image_url?: string;
+  author: {
+    id: string;
+    username: string;
+    full_name?: string;
+    avatar_url?: string;
+    created_at: string;
+    updated_at: string;
+  };
+  _count?: {
+    likes: number;
+    bookmarks: number;
+    comments?: number;
+  };
+  comments?: { count: number }[];
+  likes?: any[];
+  bookmarks?: any[];
+  tagged_users?: string[];
+  accepted_tags?: string[];
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: 'follow' | 'like' | 'comment' | 'message' | 'tag' | 'share';
+  content: string;
+  is_read: boolean;
+  related_user_id?: string;
+  related_thought_id?: string;
+  created_at: string;
+  related_user?: Profile;
+  tag_status?: 'pending' | 'accepted' | 'rejected';
+}
+
+export interface Tag {
+  id: string;
+  thought_id: string;
+  user_id: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+}
+
+export interface UserApplication {
+  project_id: string;
+  status: 'pending' | 'accepted' | 'rejected';
+}
+
+export interface Message {
+  id: string;
+  content: string;
+  sender_id: string;
   receiver_id: string;
-  start_time: string;
-  end_time?: string;
-  duration?: number;
-  status: 'ongoing' | 'completed' | 'missed' | 'rejected';
-  call_type: 'audio' | 'video';
-  caller?: Profile;
+  created_at: string;
+  is_read: boolean;
+  request_status?: 'pending' | 'accepted' | 'declined';
+  is_request?: boolean;
+  sender?: Profile;
   receiver?: Profile;
 }
 
-// Add any other types your application needs
+export interface CallLog {
+  id: string;
+  call_type: 'audio' | 'video';
+  status: 'completed' | 'missed' | 'rejected';
+  duration?: number;
+  caller_id: string;
+  receiver_id: string;
+  created_at: string;
+  caller?: Profile;
+  receiver?: Profile;
+}

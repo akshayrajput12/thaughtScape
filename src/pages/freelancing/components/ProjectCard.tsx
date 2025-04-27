@@ -74,7 +74,7 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
         name: "Twitter"
       },
       {
-        url: project.attachment_url || '',
+        url: project.attachment_url,
         icon: <LinkIcon className="h-4 w-4 text-gray-500" />,
         name: "Project Link"
       }

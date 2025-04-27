@@ -34,7 +34,10 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         
         if (profileData) {
           console.log("Profile data:", profileData);
-          setProfile(profileData);
+          setProfile({
+            ...profileData,
+            is_profile_completed: profileData.is_profile_completed || false
+          });
         }
         
         setProfileLoading(false);
