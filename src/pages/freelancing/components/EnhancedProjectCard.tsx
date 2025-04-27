@@ -50,6 +50,15 @@ export const EnhancedProjectCard = ({
   const { toast } = useToast();
 
   const handleWhatsAppApply = () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to apply for this job",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!project.author?.whatsapp_number) return;
 
     const message = encodeURIComponent(
@@ -63,6 +72,15 @@ export const EnhancedProjectCard = ({
   };
 
   const handleExternalApply = () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to apply for this job",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!project.application_link) return;
     window.open(project.application_link, '_blank');
   };
@@ -323,8 +341,8 @@ export const EnhancedProjectCard = ({
 
         {project.required_skills && (
           <div className="mt-4 flex flex-wrap gap-1.5">
-            {(Array.isArray(project.required_skills) 
-              ? project.required_skills 
+            {(Array.isArray(project.required_skills)
+              ? project.required_skills
               : [project.required_skills]).map((skill, index) => (
               <Badge key={index} variant="outline" className="text-xs py-0.5">
                 {skill}
@@ -379,7 +397,17 @@ export const EnhancedProjectCard = ({
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => onApply(project)}
+                onClick={() => {
+                  if (!user) {
+                    toast({
+                      title: "Authentication Required",
+                      description: "Please sign in to apply for this job",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  onApply(project);
+                }}
                 className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 shadow-sm"
               >
                 Apply Now

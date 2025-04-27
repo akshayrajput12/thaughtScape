@@ -35,6 +35,15 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
   const { toast } = useToast();
 
   const handleWhatsAppApply = () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to apply for this job",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!project.author?.whatsapp_number) return;
 
     const message = encodeURIComponent(
@@ -144,8 +153,8 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
 
         {project.required_skills && project.required_skills.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-2">
-            {(Array.isArray(project.required_skills) 
-              ? project.required_skills 
+            {(Array.isArray(project.required_skills)
+              ? project.required_skills
               : [project.required_skills]).map((skill, index) => (
               <span
                 key={index}
@@ -199,7 +208,17 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => onApply(project)}
+                  onClick={() => {
+                    if (!user) {
+                      toast({
+                        title: "Authentication Required",
+                        description: "Please sign in to apply for this job",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    onApply(project);
+                  }}
                 >
                   Apply Now
                 </Button>

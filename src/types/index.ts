@@ -66,6 +66,9 @@ export interface Project {
   allow_whatsapp_apply?: boolean;
   application_link?: string;
   is_featured?: boolean;
+  job_poster_name?: string;
+  application_method?: 'direct' | 'inbuilt' | 'whatsapp';
+  application_methods?: ('direct' | 'inbuilt' | 'whatsapp')[];
 }
 
 export interface ProjectApplication {

@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, UserPlus, UserMinus, Users, Tag, Badge } from "lucide-react";
+import { Search, UserPlus, UserMinus, Users, Tag, Badge, Briefcase, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PoemCard } from "@/components/PoemCard";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,14 @@ import type { Profile, Thought } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import JobsTab from "@/components/explore/JobsTab";
 
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [activeTab, setActiveTab] = useState("thoughts");
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -330,69 +333,117 @@ const Explore = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
-          {/* Main Content - Thoughts */}
+          {/* Main Content - Tabs */}
           <div className="lg:col-span-2 space-y-6 md:space-y-8 order-2 lg:order-1">
-            <div className="flex items-center justify-between">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex items-center"
-              >
-                <div className="w-1 md:w-1.5 h-6 md:h-8 bg-primary rounded-full mr-2 md:mr-3"></div>
-                <h2 className="text-xl md:text-2xl font-serif font-bold text-foreground">
-                  Campus Buzz
-                </h2>
-              </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-card/80 backdrop-blur-md rounded-xl md:rounded-2xl p-4 shadow-lg border border-border w-full"
+            >
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="thoughts" className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>Campus Buzz</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="jobs" className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4" />
+                    <span>Jobs</span>
+                  </TabsTrigger>
+                </TabsList>
 
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-muted-foreground"
-              >
-                <Tag size={14} className="md:h-4 md:w-4" />
-                <span className="hidden sm:inline">Popular now</span>
-                <span className="sm:hidden">Popular</span>
-              </motion.div>
-            </div>
+                <TabsContent value="thoughts" className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex items-center"
+                    >
+                      <div className="w-1 md:w-1.5 h-6 md:h-8 bg-primary rounded-full mr-2 md:mr-3"></div>
+                      <h2 className="text-xl md:text-2xl font-serif font-bold text-foreground">
+                        Campus Buzz
+                      </h2>
+                    </motion.div>
 
-            {thoughtsLoading ? (
-              <div className="space-y-4 md:space-y-8">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg border border-border">
-                    <div className="flex items-center space-x-3 md:space-x-4 mb-3 md:mb-4">
-                      <Skeleton className="h-10 w-10 md:h-12 md:w-12 rounded-full" />
-                      <div className="space-y-1 md:space-y-2">
-                        <Skeleton className="h-3 md:h-4 w-24 md:w-32" />
-                        <Skeleton className="h-2 md:h-3 w-16 md:w-24" />
-                      </div>
-                    </div>
-                    <Skeleton className="h-16 md:h-24 w-full" />
-                    <div className="flex justify-between mt-3 md:mt-4">
-                      <Skeleton className="h-6 md:h-8 w-16 md:w-20 rounded-full" />
-                      <Skeleton className="h-6 md:h-8 w-16 md:w-20 rounded-full" />
-                    </div>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-muted-foreground"
+                    >
+                      <Tag size={14} className="md:h-4 md:w-4" />
+                      <span className="hidden sm:inline">Popular now</span>
+                      <span className="sm:hidden">Popular</span>
+                    </motion.div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {thoughts.map((thought, index) => (
-                  <motion.div
-                    key={thought.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="transform hover:-translate-y-1 transition-all duration-300"
-                  >
-                    <PoemCard
-                      poem={thought}
-                      currentUserId={user?.id || null}
-                      onDelete={handleDelete}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-            )}
+
+                  {thoughtsLoading ? (
+                    <div className="space-y-4 md:space-y-8">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg border border-border">
+                          <div className="flex items-center space-x-3 md:space-x-4 mb-3 md:mb-4">
+                            <Skeleton className="h-10 w-10 md:h-12 md:w-12 rounded-full" />
+                            <div className="space-y-1 md:space-y-2">
+                              <Skeleton className="h-3 md:h-4 w-24 md:w-32" />
+                              <Skeleton className="h-2 md:h-3 w-16 md:w-24" />
+                            </div>
+                          </div>
+                          <Skeleton className="h-16 md:h-24 w-full" />
+                          <div className="flex justify-between mt-3 md:mt-4">
+                            <Skeleton className="h-6 md:h-8 w-16 md:w-20 rounded-full" />
+                            <Skeleton className="h-6 md:h-8 w-16 md:w-20 rounded-full" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {thoughts.map((thought, index) => (
+                        <motion.div
+                          key={thought.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="transform hover:-translate-y-1 transition-all duration-300"
+                        >
+                          <PoemCard
+                            poem={thought}
+                            currentUserId={user?.id || null}
+                            onDelete={handleDelete}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="jobs" className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex items-center"
+                    >
+                      <div className="w-1 md:w-1.5 h-6 md:h-8 bg-primary rounded-full mr-2 md:mr-3"></div>
+                      <h2 className="text-xl md:text-2xl font-serif font-bold text-foreground">
+                        Job Opportunities
+                      </h2>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-muted-foreground"
+                    >
+                      <Briefcase size={14} className="md:h-4 md:w-4" />
+                      <span className="hidden sm:inline">Latest jobs</span>
+                      <span className="sm:hidden">Latest</span>
+                    </motion.div>
+                  </div>
+
+                  <JobsTab />
+                </TabsContent>
+              </Tabs>
+            </motion.div>
           </div>
 
           {/* Sidebar - Suggested Users */}

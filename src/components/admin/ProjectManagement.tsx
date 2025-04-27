@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PlusCircle, Trash } from "lucide-react";
 import { format } from "date-fns";
 import { type Project } from '@/types';
@@ -33,7 +34,7 @@ export function ProjectManagement({ projects, isLoading, onRefresh }: ProjectMan
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // New project form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -44,10 +45,12 @@ export function ProjectManagement({ projects, isLoading, onRefresh }: ProjectMan
   const [requiredSkills, setRequiredSkills] = useState('');
   const [location, setLocation] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [applicationMethods, setApplicationMethods] = useState<('direct' | 'inbuilt' | 'whatsapp')[]>(['inbuilt']);
+  const [applicationLink, setApplicationLink] = useState('');
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!title || !description) {
       toast({
         title: "Missing fields",
@@ -57,15 +60,43 @@ export function ProjectManagement({ projects, isLoading, onRefresh }: ProjectMan
       return;
     }
 
+    // Validate application methods specific fields
+    if (applicationMethods.includes('direct') && !applicationLink) {
+      toast({
+        title: "Missing fields",
+        description: "Please provide an external application link",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (applicationMethods.includes('whatsapp') && !applicationLink) {
+      toast({
+        title: "Missing fields",
+        description: "Please provide a WhatsApp number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (applicationMethods.length === 0) {
+      toast({
+        title: "Missing fields",
+        description: "Please select at least one application method",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      
+
       // Parse skills into array
       const skillsArray = requiredSkills
         .split(',')
         .map(skill => skill.trim())
         .filter(skill => skill.length > 0);
-      
+
       const { data, error } = await supabase
         .from('projects')
         .insert({
@@ -77,8 +108,13 @@ export function ProjectManagement({ projects, isLoading, onRefresh }: ProjectMan
           required_skills: skillsArray,
           author_id: user?.id,
           status: 'open',
-          company_name: companyName || jobPosterName || null,
+          job_poster_name: jobPosterName || null,
+          company_name: companyName || null,
           location: location || null,
+          application_methods: applicationMethods,
+          application_method: applicationMethods.length > 0 ? applicationMethods[0] : 'inbuilt',
+          application_link: applicationMethods.includes('direct') ? applicationLink :
+                            applicationMethods.includes('whatsapp') ? `https://wa.me/${applicationLink.replace(/\D/g, '')}` : '',
         })
         .select();
 
@@ -88,10 +124,10 @@ export function ProjectManagement({ projects, isLoading, onRefresh }: ProjectMan
         title: "Success",
         description: "Project created successfully",
       });
-      
+
       setIsOpen(false);
       onRefresh();
-      
+
       // Reset form
       setTitle('');
       setDescription('');
@@ -102,7 +138,9 @@ export function ProjectManagement({ projects, isLoading, onRefresh }: ProjectMan
       setRequiredSkills('');
       setLocation('');
       setCompanyName('');
-      
+      setApplicationMethods(['inbuilt']);
+      setApplicationLink('');
+
     } catch (error) {
       console.error("Error creating project:", error);
       toast({
@@ -117,7 +155,7 @@ export function ProjectManagement({ projects, isLoading, onRefresh }: ProjectMan
 
   const handleDeleteProject = async (projectId: string) => {
     if (!confirm("Are you sure you want to delete this project?")) return;
-    
+
     try {
       const { error } = await supabase
         .from('projects')
@@ -130,9 +168,9 @@ export function ProjectManagement({ projects, isLoading, onRefresh }: ProjectMan
         title: "Success",
         description: "Project deleted successfully",
       });
-      
+
       onRefresh();
-      
+
     } catch (error) {
       console.error("Error deleting project:", error);
       toast({
@@ -262,6 +300,83 @@ export function ProjectManagement({ projects, isLoading, onRefresh }: ProjectMan
                 />
               </div>
 
+              <div className="space-y-4">
+                <Label>Application Methods *</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="admin-inbuilt"
+                      checked={applicationMethods.includes('inbuilt')}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setApplicationMethods([...applicationMethods, 'inbuilt']);
+                        } else {
+                          setApplicationMethods(applicationMethods.filter(method => method !== 'inbuilt'));
+                        }
+                      }}
+                    />
+                    <Label htmlFor="admin-inbuilt" className="cursor-pointer">Inbuilt App Apply (Web App Form)</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="admin-direct"
+                      checked={applicationMethods.includes('direct')}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setApplicationMethods([...applicationMethods, 'direct']);
+                        } else {
+                          setApplicationMethods(applicationMethods.filter(method => method !== 'direct'));
+                        }
+                      }}
+                    />
+                    <Label htmlFor="admin-direct" className="cursor-pointer">Direct Apply (External Link Redirect)</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="admin-whatsapp"
+                      checked={applicationMethods.includes('whatsapp')}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setApplicationMethods([...applicationMethods, 'whatsapp']);
+                        } else {
+                          setApplicationMethods(applicationMethods.filter(method => method !== 'whatsapp'));
+                        }
+                      }}
+                    />
+                    <Label htmlFor="admin-whatsapp" className="cursor-pointer">WhatsApp Apply</Label>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">Select one or more application methods</p>
+              </div>
+
+              {applicationMethods.includes('direct') && (
+                <div className="space-y-2">
+                  <Label htmlFor="applicationLink">External Application Link *</Label>
+                  <Input
+                    id="applicationLink"
+                    value={applicationLink}
+                    onChange={(e) => setApplicationLink(e.target.value)}
+                    placeholder="e.g. https://example.com/apply"
+                    required={applicationMethods.includes('direct')}
+                  />
+                </div>
+              )}
+
+              {applicationMethods.includes('whatsapp') && (
+                <div className="space-y-2">
+                  <Label htmlFor="applicationLink">WhatsApp Number *</Label>
+                  <Input
+                    id="applicationLink"
+                    value={applicationLink}
+                    onChange={(e) => setApplicationLink(e.target.value)}
+                    placeholder="e.g. +919876543210 (with country code)"
+                    required={applicationMethods.includes('whatsapp')}
+                  />
+                </div>
+              )}
+
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                   Cancel
@@ -285,7 +400,7 @@ export function ProjectManagement({ projects, isLoading, onRefresh }: ProjectMan
             <div className="text-right">Actions</div>
           </div>
         </div>
-        
+
         <div className="divide-y">
           {isLoading ? (
             <div className="p-4 text-center text-muted-foreground">Loading projects...</div>
@@ -300,20 +415,20 @@ export function ProjectManagement({ projects, isLoading, onRefresh }: ProjectMan
                     {project.company_name || project.author?.username}
                   </div>
                 </div>
-                
+
                 <div className="hidden md:block">
                   {project.min_budget ? `₹${project.min_budget.toLocaleString()}` : 'N/A'}
                   {project.max_budget && ` - ₹${project.max_budget.toLocaleString()}`}
                 </div>
-                
+
                 <div className="hidden lg:block text-xs text-muted-foreground">
                   {project.created_at && format(new Date(project.created_at), 'MMM d, yyyy')}
                 </div>
-                
+
                 <div className="text-center">
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    project.status === 'open' 
-                      ? 'bg-emerald-100 text-emerald-800' 
+                    project.status === 'open'
+                      ? 'bg-emerald-100 text-emerald-800'
                       : project.status === 'in_progress'
                       ? 'bg-amber-100 text-amber-800'
                       : 'bg-gray-100 text-gray-800'
@@ -321,7 +436,7 @@ export function ProjectManagement({ projects, isLoading, onRefresh }: ProjectMan
                     {project.status}
                   </span>
                 </div>
-                
+
                 <div className="text-right">
                   <Button
                     variant="ghost"

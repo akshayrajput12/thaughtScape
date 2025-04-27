@@ -1,11 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
@@ -37,14 +38,16 @@ export const NewProjectDialog = ({
   const [deadline, setDeadline] = useState("");
   const [localIsSubmitting, setLocalIsSubmitting] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("");
-  const [allowWhatsappApply, setAllowWhatsappApply] = useState(true);
-  const [allowNormalApply, setAllowNormalApply] = useState(true);
+  const [jobPosterName, setJobPosterName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [location, setLocation] = useState("");
   const [jobType, setJobType] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("");
   const [applicationLink, setApplicationLink] = useState("");
+  const [applicationMethods, setApplicationMethods] = useState<("direct" | "inbuilt" | "whatsapp")[]>(["inbuilt"]);
   const [isFeatured, setIsFeatured] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userFullName, setUserFullName] = useState("");
   const isMobile = useMobile();
 
   const effectiveIsSubmitting = isSubmitting || localIsSubmitting;
@@ -60,14 +63,16 @@ export const NewProjectDialog = ({
         min_budget: parseFloat(minBudget),
         max_budget: maxBudget ? parseFloat(maxBudget) : null,
         whatsapp_number: whatsappNumber,
-        allow_whatsapp_apply: allowWhatsappApply,
-        allow_normal_apply: allowNormalApply,
+        job_poster_name: isAdmin ? jobPosterName : userFullName,
         company_name: companyName,
         location,
         job_type: jobType,
         experience_level: experienceLevel,
         deadline: deadline || undefined,
-        application_link: applicationLink,
+        application_methods: applicationMethods,
+        application_method: applicationMethods.length > 0 ? applicationMethods[0] : 'inbuilt',
+        application_link: applicationMethods.includes('direct') ? applicationLink :
+                          applicationMethods.includes('whatsapp') ? `https://wa.me/${whatsappNumber.replace(/\D/g, '')}` : '',
         is_featured: isFeatured
       });
       return;
@@ -86,6 +91,34 @@ export const NewProjectDialog = ({
       toast({
         title: "Missing fields",
         description: "Please fill all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate application methods specific fields
+    if (applicationMethods.includes('direct') && !applicationLink) {
+      toast({
+        title: "Missing fields",
+        description: "Please provide an external application link",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (applicationMethods.includes('whatsapp') && !whatsappNumber) {
+      toast({
+        title: "Missing fields",
+        description: "Please provide a WhatsApp number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (applicationMethods.length === 0) {
+      toast({
+        title: "Missing fields",
+        description: "Please select at least one application method",
         variant: "destructive",
       });
       return;
@@ -114,14 +147,16 @@ export const NewProjectDialog = ({
           max_budget: maxBudget ? parseFloat(maxBudget) : null,
           author_id: user.id,
           status: 'open',
-          allow_whatsapp_apply: allowWhatsappApply,
-          allow_normal_apply: allowNormalApply,
+          job_poster_name: isAdmin ? jobPosterName : userFullName,
           company_name: companyName,
           location,
           job_type: jobType,
           experience_level: experienceLevel,
           deadline: deadline || null,
-          application_link: applicationLink,
+          application_methods: applicationMethods,
+          application_method: applicationMethods.length > 0 ? applicationMethods[0] : 'inbuilt',
+          application_link: applicationMethods.includes('direct') ? applicationLink :
+                            applicationMethods.includes('whatsapp') ? `https://wa.me/${whatsappNumber.replace(/\D/g, '')}` : '',
           is_featured: isFeatured
         })
         .select(`
@@ -155,6 +190,7 @@ export const NewProjectDialog = ({
       setJobType("");
       setExperienceLevel("");
       setApplicationLink("");
+      setApplicationMethods(["inbuilt"]);
       setIsFeatured(false);
 
       onOpenChange(false);
@@ -173,18 +209,26 @@ export const NewProjectDialog = ({
     }
   };
 
-  // Fetch user's whatsapp number if available
-  React.useEffect(() => {
+  // Fetch user's profile information if available
+  useEffect(() => {
     if (user && isOpen) {
       const fetchUserProfile = async () => {
         const { data, error } = await supabase
           .from('profiles')
-          .select('whatsapp_number')
+          .select('whatsapp_number, is_admin, full_name, username')
           .eq('id', user.id)
           .single();
 
-        if (!error && data && data.whatsapp_number) {
-          setWhatsappNumber(data.whatsapp_number);
+        if (!error && data) {
+          if (data.whatsapp_number) {
+            setWhatsappNumber(data.whatsapp_number);
+          }
+          setIsAdmin(!!data.is_admin);
+
+          // Set job poster name from user's full name or username
+          const userName = data.full_name || data.username || '';
+          setUserFullName(userName);
+          setJobPosterName(userName);
         }
       };
 
@@ -228,6 +272,19 @@ export const NewProjectDialog = ({
               required
             />
           </div>
+
+          {isAdmin && (
+            <div className="space-y-2">
+              <Label htmlFor="jobPosterName">Job Poster Name</Label>
+              <Input
+                id="jobPosterName"
+                value={jobPosterName}
+                onChange={(e) => setJobPosterName(e.target.value)}
+                placeholder="Name of person posting the job"
+              />
+              <p className="text-xs text-muted-foreground">As an admin, you can set any name as the job poster</p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="companyName">Company Name</Label>
@@ -341,57 +398,92 @@ export const NewProjectDialog = ({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="whatsapp_number">WhatsApp Number (for direct contact)</Label>
-            <Input
-              id="whatsapp_number"
-              value={whatsappNumber}
-              onChange={(e) => setWhatsappNumber(e.target.value)}
-              placeholder="e.g. +919876543210 (with country code)"
-            />
-            <p className="text-xs text-muted-foreground">This will be saved to your profile for future projects</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="application_link">External Application Link</Label>
-            <Input
-              id="application_link"
-              value={applicationLink}
-              onChange={(e) => setApplicationLink(e.target.value)}
-              placeholder="e.g. https://example.com/apply"
-            />
-            <p className="text-xs text-muted-foreground">Optional link to an external application form or website</p>
-          </div>
-
           <div className="space-y-4">
-            <Label>Application Options</Label>
+            <Label>Application Methods *</Label>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="inbuilt"
+                  checked={applicationMethods.includes('inbuilt')}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setApplicationMethods([...applicationMethods, 'inbuilt']);
+                    } else {
+                      setApplicationMethods(applicationMethods.filter(method => method !== 'inbuilt'));
+                    }
+                  }}
+                />
+                <Label htmlFor="inbuilt" className="cursor-pointer">Inbuilt App Apply (Web App Form)</Label>
+              </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="allow_normal_apply"
-                checked={allowNormalApply}
-                onCheckedChange={(checked) => setAllowNormalApply(checked as boolean)}
-              />
-              <Label htmlFor="allow_normal_apply" className="cursor-pointer">Allow normal application through platform</Label>
-            </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="direct"
+                  checked={applicationMethods.includes('direct')}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setApplicationMethods([...applicationMethods, 'direct']);
+                    } else {
+                      setApplicationMethods(applicationMethods.filter(method => method !== 'direct'));
+                    }
+                  }}
+                />
+                <Label htmlFor="direct" className="cursor-pointer">Direct Apply (External Link Redirect)</Label>
+              </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="allow_whatsapp_apply"
-                checked={allowWhatsappApply}
-                onCheckedChange={(checked) => setAllowWhatsappApply(checked as boolean)}
-              />
-              <Label htmlFor="allow_whatsapp_apply" className="cursor-pointer">Allow direct WhatsApp application</Label>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="whatsapp"
+                  checked={applicationMethods.includes('whatsapp')}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setApplicationMethods([...applicationMethods, 'whatsapp']);
+                    } else {
+                      setApplicationMethods(applicationMethods.filter(method => method !== 'whatsapp'));
+                    }
+                  }}
+                />
+                <Label htmlFor="whatsapp" className="cursor-pointer">WhatsApp Apply</Label>
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground">Select one or more application methods</p>
+          </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="is_featured"
-                checked={isFeatured}
-                onCheckedChange={(checked) => setIsFeatured(checked as boolean)}
+          {applicationMethods.includes('direct') && (
+            <div className="space-y-2">
+              <Label htmlFor="application_link">External Application Link *</Label>
+              <Input
+                id="application_link"
+                value={applicationLink}
+                onChange={(e) => setApplicationLink(e.target.value)}
+                placeholder="e.g. https://example.com/apply"
+                required={applicationMethods.includes('direct')}
               />
-              <Label htmlFor="is_featured" className="cursor-pointer">Mark as featured job</Label>
+              <p className="text-xs text-muted-foreground">Link to an external application form or website</p>
             </div>
+          )}
+
+          {applicationMethods.includes('whatsapp') && (
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp_number">WhatsApp Number *</Label>
+              <Input
+                id="whatsapp_number"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+                placeholder="e.g. +919876543210 (with country code)"
+                required={applicationMethods.includes('whatsapp')}
+              />
+              <p className="text-xs text-muted-foreground">This will be saved to your profile for future projects</p>
+            </div>
+          )}
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="is_featured"
+              checked={isFeatured}
+              onCheckedChange={(checked) => setIsFeatured(checked as boolean)}
+            />
+            <Label htmlFor="is_featured" className="cursor-pointer">Mark as featured job</Label>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4 pb-6 md:pb-0">

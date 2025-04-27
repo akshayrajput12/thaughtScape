@@ -7,11 +7,11 @@ import { Loader2, Calendar, IndianRupee, User, MessageSquare, Link as LinkIcon }
 import type { Project } from "@/types";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
 } from "@/components/ui/tooltip";
 
 const SingleProject = () => {
@@ -49,7 +49,7 @@ const SingleProject = () => {
           .single();
 
         if (error) throw error;
-        
+
         const projectData = {
           ...data,
           budget: data.min_budget,
@@ -59,7 +59,7 @@ const SingleProject = () => {
           },
           status: data.status as "open" | "closed" | "in_progress"
         } as Project;
-        
+
         setProject(projectData);
 
         // Check if user has applied
@@ -109,30 +109,36 @@ const SingleProject = () => {
       handleAuthPrompt();
       return;
     }
-    
+
     navigate(`/freelancing?projectId=${id}`);
   };
 
   const handleWhatsAppApply = () => {
     if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to apply via WhatsApp",
-        variant: "destructive",
-      });
+      handleAuthPrompt();
       return;
     }
-    
+
     if (!project?.author?.whatsapp_number) return;
-    
+
     const message = encodeURIComponent(
       `Hi, I'm interested in your project "${project.title}". I found it on the freelancing platform.`
     );
-    
+
     window.open(
       `https://wa.me/${project.author.whatsapp_number}?text=${message}`,
       '_blank'
     );
+  };
+
+  const handleExternalApply = () => {
+    if (!isAuthenticated) {
+      handleAuthPrompt();
+      return;
+    }
+
+    if (!project?.application_link) return;
+    window.open(project.application_link, '_blank');
   };
 
   const handleCopyLink = () => {
@@ -163,33 +169,33 @@ const SingleProject = () => {
 
   const renderRequiredSkills = () => {
     if (!project?.required_skills) return null;
-    
+
     // Check if required_skills is an array
     if (Array.isArray(project.required_skills)) {
       return project.required_skills.map((skill, index) => (
-        <span 
-          key={index} 
+        <span
+          key={index}
           className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
         >
           {skill}
         </span>
       ));
-    } 
+    }
     // Check if required_skills is a string and ensure it's not empty
     else if (typeof project.required_skills === 'string') {
       const skillsText = project.required_skills as string;
       if (skillsText.trim() === '') return null;
-      
+
       return skillsText.split(',').map((skill, index) => (
-        <span 
-          key={index} 
+        <span
+          key={index}
           className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs"
         >
           {skill.trim()}
         </span>
       ));
     }
-    
+
     return null;
   };
 
@@ -204,30 +210,30 @@ const SingleProject = () => {
             </Button>
           </div>
         )}
-        
+
         <div className="bg-white rounded-xl shadow-md p-6 space-y-6">
           <div className="space-y-4">
             <div className="flex justify-between items-start">
               <h1 className="text-2xl font-bold text-gray-900">{project.title}</h1>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleCopyLink}
                 className="h-8 w-8"
               >
                 <LinkIcon className="h-4 w-4" />
               </Button>
             </div>
-            
+
             <div className="flex items-center gap-2 text-gray-600">
               <User className="w-4 h-4" />
               <span className="text-sm">
                 Posted by: {project.author?.full_name || project.author?.username}
               </span>
             </div>
-            
+
             <p className="text-gray-700 whitespace-pre-line">{project.description}</p>
-            
+
             <div className="grid grid-cols-2 gap-4 pt-4">
               <div className="flex items-center gap-2 text-gray-600">
                 <Calendar className="w-4 h-4" />
@@ -235,7 +241,7 @@ const SingleProject = () => {
                   Deadline: {project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-2 text-gray-600">
                 <IndianRupee className="w-4 h-4" />
                 <span className="text-sm">
@@ -243,7 +249,7 @@ const SingleProject = () => {
                 </span>
               </div>
             </div>
-            
+
             {project.required_skills && (
               <div className="pt-2">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Required Skills:</h3>
@@ -253,12 +259,15 @@ const SingleProject = () => {
               </div>
             )}
           </div>
-          
+
           <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-100">
             {project.status === "open" && (
               <>
-                {project.allow_normal_apply !== false && (
-                  <Button 
+                {/* Inbuilt application method */}
+                {(project.application_methods?.includes('inbuilt') ||
+                  project.application_method === 'inbuilt' ||
+                  project.allow_normal_apply !== false) && (
+                  <Button
                     onClick={handleApply}
                     disabled={hasApplied}
                     className={hasApplied ? "bg-green-600 hover:bg-green-700" : ""}
@@ -266,22 +275,39 @@ const SingleProject = () => {
                     {hasApplied ? "Applied" : "Apply Now"}
                   </Button>
                 )}
-                
-                {project.allow_whatsapp_apply && project.author?.whatsapp_number && (
+
+                {/* Direct application method */}
+                {(project.application_methods?.includes('direct') ||
+                  project.application_method === 'direct') &&
+                  project.application_link && (
+                  <Button
+                    variant="outline"
+                    onClick={handleExternalApply}
+                    className="gap-2"
+                  >
+                    <LinkIcon className="h-4 w-4" />
+                    Apply Externally
+                  </Button>
+                )}
+
+                {/* WhatsApp application method */}
+                {(project.application_methods?.includes('whatsapp') ||
+                  project.application_method === 'whatsapp' ||
+                  (project.allow_whatsapp_apply && project.author?.whatsapp_number)) && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           onClick={handleWhatsAppApply}
                           className="gap-2"
                         >
-                          <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            width="16" 
-                            height="16" 
-                            viewBox="0 0 24 24" 
-                            fill="#25D366" 
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="#25D366"
                             stroke="none"
                           >
                             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -297,11 +323,11 @@ const SingleProject = () => {
                 )}
               </>
             )}
-            
+
             {project.status === "closed" && (
               <div className="text-red-500 font-medium">This project is closed</div>
             )}
-            
+
             {project.status === "in_progress" && (
               <div className="text-blue-500 font-medium">This project is in progress</div>
             )}
