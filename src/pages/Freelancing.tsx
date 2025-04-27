@@ -68,7 +68,7 @@ import { NewProjectDialog } from "@/pages/freelancing/components/NewProjectDialo
 import { ApplicationDialog } from "@/pages/freelancing/components/ApplicationDialog";
 import { useForm } from "react-hook-form";
 
-const Freelancing = () => {
+export const Freelancing = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -598,6 +598,170 @@ const Freelancing = () => {
     return null;
   };
 
+  const renderProjectActions = (project: Project) => {
+    if (project.status === "in_progress" && hasApplied(project.id) && getApplicationStatus(project.id) === "accepted") {
+      return (
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-green-600 border-green-600"
+        >
+          <CheckCircle2 className="w-4 h-4 mr-1" />
+          Awarded
+        </Button>
+      );
+    }
+
+    if (project.status === "open" && project.author_id !== user?.id && !hasApplied(project.id)) {
+      return (
+        <div className="flex flex-wrap gap-2">
+          {project.allow_normal_apply !== false && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                if (!user) {
+                  toast({
+                    title: "Authentication Required",
+                    description: "Please sign in to apply for this project",
+                    variant: "destructive",
+                  });
+                  navigate('/auth', { state: { from: `/freelancing` } });
+                  return;
+                }
+                setSelectedProject(project);
+                setIsApplicationDialogOpen(true);
+              }}
+            >
+              Apply Now
+            </Button>
+          )}
+          
+          {project.author?.whatsapp_number && project.allow_whatsapp_apply !== false && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!user) {
+                  toast({
+                    title: "Authentication Required",
+                    description: "Please sign in to contact via WhatsApp",
+                    variant: "destructive",
+                  });
+                  navigate('/auth', { state: { from: `/freelancing` } });
+                  return;
+                }
+                const message = encodeURIComponent(
+                  `Hi, I'm interested in your project "${project.title}". I found it on the freelancing platform.`
+                );
+                window.open(
+                  `https://wa.me/${project.author.whatsapp_number}?text=${message}`,
+                  '_blank'
+                );
+              }}
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Apply via WhatsApp
+            </Button>
+          )}
+        </div>
+      );
+    }
+
+    if (hasApplied(project.id)) {
+      return (
+        <span className={clsx(
+          "px-3 py-1 rounded-full text-xs capitalize font-medium",
+          {
+            "bg-blue-100 text-blue-800": getApplicationStatus(project.id) === "pending",
+            "bg-green-100 text-green-800": getApplicationStatus(project.id) === "accepted",
+            "bg-red-100 text-red-800": getApplicationStatus(project.id) === "rejected"
+          }
+        )}>
+          {getApplicationStatus(project.id) || "Applied"}
+        </span>
+      );
+    }
+
+    return null;
+  };
+
+  const renderProjectCard = (project: Project) => (
+    <div
+      key={project.id}
+      className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100"
+    >
+      <div className="space-y-2">
+        <div className="flex justify-between items-start">
+          <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
+            {project.title}
+          </h3>
+          {user?.id === project.author_id && (
+            <div className="flex gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8"
+                onClick={() => handleEditProject(project)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 text-red-500"
+                onClick={() => handleDeleteProject(project)}
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+        <p className="text-sm text-gray-600 line-clamp-3">
+          {project.description}
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-gray-600">
+          <Calendar className="w-4 h-4" />
+          <span className="text-sm">
+            Deadline: {project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
+          </span>
+        </div>
+        
+        <div className="flex items-center gap-2 text-gray-600">
+          <IndianRupee className="w-4 h-4" />
+          <span className="text-sm">Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
+        </div>
+
+        <div className="flex items-center gap-2 text-gray-600">
+          <User className="w-4 h-4" />
+          <span className="text-sm">{project.author?.full_name || project.author?.username}</span>
+        </div>
+        
+        {renderProjectSkills(project)}
+      </div>
+
+      <div className="pt-4 flex flex-wrap gap-2 border-t border-gray-100">
+        <div className="w-full flex flex-wrap justify-between items-center">
+          <span className={clsx(
+            "px-3 py-1 rounded-full text-xs font-medium",
+            {
+              "bg-green-100 text-green-800": project.status === "open",
+              "bg-yellow-100 text-yellow-800": project.status === "in_progress",
+              "bg-gray-100 text-gray-800": project.status === "closed"
+            }
+          )}>
+            {project.status?.toUpperCase()}
+          </span>
+          
+          {renderProjectActions(project)}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
@@ -673,137 +837,7 @@ const Freelancing = () => {
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {projects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
-                          {project.title}
-                        </h3>
-                        {user?.id === project.author_id && (
-                          <div className="flex gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8"
-                              onClick={() => handleEditProject(project)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-red-500"
-                              onClick={() => handleDeleteProject(project)}
-                            >
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 line-clamp-3">
-                        {project.description}
-                      </p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Calendar className="w-4 h-4" />
-                        <span className="text-sm">
-                          Deadline: {project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <IndianRupee className="w-4 h-4" />
-                        <span className="text-sm">Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <User className="w-4 h-4" />
-                        <span className="text-sm">{project.author?.full_name || project.author?.username}</span>
-                      </div>
-                      
-                      {renderProjectSkills(project)}
-                    </div>
-
-                    <div className="pt-4 flex flex-wrap gap-2 border-t border-gray-100">
-                      <div className="w-full flex flex-wrap justify-between items-center">
-                        <span className={clsx(
-                          "px-3 py-1 rounded-full text-xs font-medium",
-                          {
-                            "bg-green-100 text-green-800": project.status === "open",
-                            "bg-yellow-100 text-yellow-800": project.status === "in_progress",
-                            "bg-gray-100 text-gray-800": project.status === "closed"
-                          }
-                        )}>
-                          {project.status?.toUpperCase()}
-                        </span>
-                        
-                        {project.status === "in_progress" && hasApplied(project.id) && getApplicationStatus(project.id) === "accepted" ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-green-600 border-green-600"
-                          >
-                            <CheckCircle2 className="w-4 h-4 mr-1" />
-                            Awarded
-                          </Button>
-                        ) : (
-                          project.status === "open" && project.author_id !== user?.id && !hasApplied(project.id) ? (
-                            <div className="flex flex-wrap gap-2">
-                              {project.allow_normal_apply !== false && (
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedProject(project);
-                                    setIsApplicationDialogOpen(true);
-                                  }}
-                                >
-                                  Apply Now
-                                </Button>
-                              )}
-                              
-                              {project.author?.whatsapp_number && project.allow_whatsapp_apply !== false && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const message = encodeURIComponent(
-                                      `Hi, I'm interested in your project "${project.title}". I found it on the freelancing platform.`
-                                    );
-                                    window.open(
-                                      `https://wa.me/${project.author.whatsapp_number}?text=${message}`,
-                                      '_blank'
-                                    );
-                                  }}
-                                >
-                                  <MessageSquare className="w-4 h-4 mr-2" />
-                                  Apply via WhatsApp
-                                </Button>
-                              )}
-                            </div>
-                          ) : (
-                            hasApplied(project.id) && (
-                              <span className={clsx(
-                                "px-3 py-1 rounded-full text-xs capitalize font-medium",
-                                {
-                                  "bg-blue-100 text-blue-800": getApplicationStatus(project.id) === "pending",
-                                  "bg-green-100 text-green-800": getApplicationStatus(project.id) === "accepted",
-                                  "bg-red-100 text-red-800": getApplicationStatus(project.id) === "rejected"
-                                }
-                              )}>
-                                {getApplicationStatus(project.id) || "Applied"}
-                              </span>
-                            )
-                          )
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  renderProjectCard(project)
                 ))}
               </div>
             )}
@@ -834,64 +868,7 @@ const Freelancing = () => {
                     {projects
                       .filter((project) => hasApplied(project.id))
                       .map((project) => (
-                        <div
-                          key={project.id}
-                          className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100"
-                        >
-                          <div className="space-y-2">
-                            <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
-                              {project.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 line-clamp-3">
-                              {project.description}
-                            </p>
-                          </div>
-
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Calendar className="w-4 h-4" />
-                              <span className="text-sm">
-                                Deadline: {project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <IndianRupee className="w-4 h-4" />
-                              <span className="text-sm">Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
-                            </div>
-
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <User className="w-4 h-4" />
-                              <span className="text-sm">{project.author?.full_name || project.author?.username}</span>
-                            </div>
-                          </div>
-
-                          <div className="pt-4 flex justify-between items-center border-t border-gray-100">
-                            <span
-                              className={clsx(
-                                "px-3 py-1 rounded-full text-xs capitalize font-medium",
-                                {
-                                  "bg-blue-100 text-blue-800": getApplicationStatus(project.id) === "pending",
-                                  "bg-green-100 text-green-800": getApplicationStatus(project.id) === "accepted",
-                                  "bg-red-100 text-red-800": getApplicationStatus(project.id) === "rejected"
-                                }
-                              )}
-                            >
-                              {getApplicationStatus(project.id) || "Applied"}
-                            </span>
-
-                            <span className={clsx(
-                              "px-3 py-1 rounded-full text-xs font-medium",
-                              {
-                                "bg-green-100 text-green-800": project.status === "open",
-                                "bg-yellow-100 text-yellow-800": project.status === "in_progress",
-                                "bg-gray-100 text-gray-800": project.status === "closed"
-                              }
-                            )}>
-                              {project.status?.toUpperCase()}
-                            </span>
-                          </div>
-                        </div>
+                        renderProjectCard(project)
                       ))}
                   </div>
                 )}
