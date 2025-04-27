@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BriefcaseIcon, CalendarIcon, Clock, MessageSquare } from "lucide-react";
+import { BriefcaseIcon, MessageSquare } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -102,10 +102,38 @@ export const ProjectCard = ({ project, onProjectClick, hasApplied = false, onApp
         </CardContent>
         
         <CardFooter className="p-4 pt-0">
-          <Button variant="default" className="w-full gap-2">
-            <BriefcaseIcon className="h-4 w-4" />
-            View Project
-          </Button>
+          <div className="flex gap-2 w-full">
+            {project.status === "open" && !hasApplied && (
+              <>
+                {project.allow_normal_apply !== false && onApply && (
+                  <Button 
+                    variant="default" 
+                    className="flex-1"
+                    onClick={() => onApply(project)}
+                  >
+                    <BriefcaseIcon className="h-4 w-4 mr-2" />
+                    Apply
+                  </Button>
+                )}
+                
+                {project.allow_whatsapp_apply !== false && project.author?.whatsapp_number && (
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={handleWhatsAppApply}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Apply via WhatsApp
+                  </Button>
+                )}
+              </>
+            )}
+            {hasApplied && (
+              <Button variant="outline" className="w-full" disabled>
+                Applied
+              </Button>
+            )}
+          </div>
         </CardFooter>
       </Card>
 
