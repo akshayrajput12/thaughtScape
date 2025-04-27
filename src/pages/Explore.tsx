@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, UserPlus, UserMinus, Users, Tag, Badge, Filter } from "lucide-react";
@@ -9,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/AuthProvider";
-import type { Profile, Thought } from "@/types";
+import type { Profile, Thought, Project } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -20,12 +19,16 @@ const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [activeTab, setActiveTab] = useState("posts");
+  const [showFilters, setShowFilters] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]);
+
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Fetch thoughts with React Query
   const { data: thoughts = [], isLoading: thoughtsLoading } = useQuery({
     queryKey: ['thoughts'],
     queryFn: async () => {
@@ -50,7 +53,6 @@ const Explore = () => {
     }
   });
 
-  // Fetch suggested users with React Query
   const { data: suggestedUsers = [], isLoading: suggestedUsersLoading } = useQuery({
     queryKey: ['suggestedUsers', user?.id],
     queryFn: async () => {
@@ -69,6 +71,32 @@ const Explore = () => {
     enabled: !!user?.id
   });
 
+  const { data: projects = [], isLoading: projectsLoading } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          author:profiles(id, username, full_name, avatar_url, created_at, updated_at)
+        `)
+        .eq("is_featured", true)
+        .limit(3);
+
+      if (error) throw error;
+
+      const mappedProjects = data.map(project => ({
+        ...project,
+        budget: project.min_budget || 0,
+        category: project.job_type || "other",
+        status: (project.status || 'open') as "open" | "closed" | "in_progress"
+      })) as Project[];
+
+      setFeaturedProjects(mappedProjects);
+      return mappedProjects;
+    }
+  });
+
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (!query.trim()) {
@@ -85,7 +113,6 @@ const Explore = () => {
 
       if (error) throw error;
 
-      // Check follow status for each search result
       if (user?.id && data?.length > 0) {
         const userIds = data.map(profile => profile.id);
         const { data: followData } = await supabase
@@ -96,7 +123,6 @@ const Explore = () => {
 
         const followingMap = new Set(followData?.map(item => item.following_id) || []);
 
-        // Add is_following property to each profile
         const profilesWithFollowStatus = data.map(profile => ({
           ...profile,
           is_following: followingMap.has(profile.id)
@@ -147,7 +173,6 @@ const Explore = () => {
                          searchResults.find(u => u.id === userId)?.is_following;
 
       if (isFollowing) {
-        // Unfollow
         const { error } = await supabase
           .from('follows')
           .delete()
@@ -156,7 +181,6 @@ const Explore = () => {
 
         if (error) throw error;
 
-        // Update local state
         if (showSearchResults) {
           setSearchResults(prevResults =>
             prevResults.map(profile =>
@@ -167,7 +191,6 @@ const Explore = () => {
           );
         }
 
-        // Invalidate queries to refetch data
         queryClient.invalidateQueries({ queryKey: ['suggestedUsers'] });
         queryClient.invalidateQueries({ queryKey: ['profile', userId] });
 
@@ -176,7 +199,6 @@ const Explore = () => {
           description: "You have unfollowed this user",
         });
       } else {
-        // Follow
         const { error } = await supabase
           .from('follows')
           .insert({
@@ -186,7 +208,6 @@ const Explore = () => {
 
         if (error) throw error;
 
-        // Update notification for the followed user
         await supabase
           .from('notifications')
           .insert({
@@ -196,7 +217,6 @@ const Explore = () => {
             related_user_id: user.id
           });
 
-        // Update local state
         if (showSearchResults) {
           setSearchResults(prevResults =>
             prevResults.map(profile =>
@@ -207,7 +227,6 @@ const Explore = () => {
           );
         }
 
-        // Invalidate queries to refetch data
         queryClient.invalidateQueries({ queryKey: ['suggestedUsers'] });
         queryClient.invalidateQueries({ queryKey: ['profile', userId] });
 
@@ -232,34 +251,6 @@ const Explore = () => {
            false;
   };
 
-  const [activeTab, setActiveTab] = useState("posts");
-  const [showFilters, setShowFilters] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState("all");
-
-  const filteredThoughts = thoughts?.filter(thought => {
-    if (!searchQuery) return true;
-    return (
-      thought.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      thought.author?.username?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
-
-  const { data: projects = [], isLoading: projectsLoading } = useQuery({
-    queryKey: ['projects'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('projects')
-        .select(`
-          *,
-          author:profiles(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setSearchQuery('');
@@ -268,7 +259,6 @@ const Explore = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-7xl mx-auto px-4 py-6 md:py-12">
-        {/* Search Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -287,7 +277,6 @@ const Explore = () => {
               Learn, earn, and connect with fellow students on your campus
             </p>
             <div className="relative max-w-2xl mx-auto px-2">
-              {/* Decorative elements - hidden on small screens */}
               <div className="absolute -top-10 -left-10 w-20 h-20 bg-primary/20 rounded-full blur-xl opacity-60 hidden md:block dark:bg-primary/10" />
               <div className="absolute -bottom-10 -right-10 w-20 h-20 bg-primary/20 rounded-full blur-xl opacity-60 hidden md:block dark:bg-primary/10" />
 
@@ -304,7 +293,6 @@ const Explore = () => {
             </div>
           </div>
 
-          {/* Search Results Dropdown */}
           {showSearchResults && searchResults.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -403,7 +391,6 @@ const Explore = () => {
 
             <TabsContent value="posts" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
-                {/* Main Content - Thoughts */}
                 <div className="lg:col-span-2 space-y-6 md:space-y-8">
                   <div className="flex items-center justify-between">
                     <motion.div
@@ -468,9 +455,7 @@ const Explore = () => {
                   )}
                 </div>
 
-                {/* Sidebar */}
                 <div className="space-y-6 md:space-y-8">
-                  {/* Mobile horizontal scrolling users for small screens */}
                   <div className="lg:hidden">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-1">
@@ -549,7 +534,6 @@ const Explore = () => {
                     )}
                   </div>
 
-                  {/* Desktop sidebar - only visible on large screens */}
                   <div className="hidden lg:block lg:sticky lg:top-24">
                     <motion.div
                       initial={{ opacity: 0, x: 20 }}
@@ -594,7 +578,6 @@ const Explore = () => {
                               transition={{ delay: index * 0.05 }}
                               className="group relative overflow-hidden flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-muted/50 transition-all duration-300"
                             >
-                              {/* Decorative elements */}
                               <div className="absolute -right-6 -bottom-6 w-12 h-12 bg-primary/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 dark:bg-primary/5"></div>
                               <div className="absolute -left-6 -top-6 w-12 h-12 bg-primary/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 dark:bg-primary/5"></div>
 
@@ -661,7 +644,6 @@ const Explore = () => {
                       )}
                     </motion.div>
 
-                    {/* Additional sidebar content - Topics */}
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -689,7 +671,6 @@ const Explore = () => {
                     </motion.div>
                   </div>
 
-                  {/* Mobile Topics - Horizontal scrolling for small screens */}
                   <div className="lg:hidden">
                     <div className="flex items-center gap-1 mb-3">
                       <Tag size={16} className="text-primary" />

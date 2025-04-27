@@ -28,7 +28,7 @@ const Freelancing = () => {
         .from("projects")
         .select(`
           *,
-          author:profiles(id, username, full_name, avatar_url)
+          author:profiles(id, username, full_name, avatar_url, created_at, updated_at)
         `)
         .order("created_at", { ascending: false });
 
@@ -45,7 +45,8 @@ const Freelancing = () => {
       return data.map(project => ({
         ...project,
         budget: project.min_budget || 0,
-        category: project.job_type || "other"
+        category: project.job_type || "other",
+        status: (project.status || 'open') as "open" | "closed" | "in_progress"
       })) as Project[];
     },
   });
@@ -74,7 +75,8 @@ const Freelancing = () => {
       return {
         ...data,
         budget: data.min_budget || 0,
-        category: data.job_type || "other"
+        category: data.job_type || "other",
+        status: (data.status || 'open') as "open" | "closed" | "in_progress"
       } as Project;
     },
     onSuccess: () => {

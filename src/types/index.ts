@@ -80,7 +80,11 @@ export interface Project extends ProjectExtension {
   allow_whatsapp_apply?: boolean;
   applications_count?: number | { count: number }[];
   milestones_count?: number | { count: number }[];
-  category?: string; // Added category property
+  attachment_url?: string;
+  _count?: {
+    applications?: number;
+    milestones?: number;
+  };
 }
 
 export interface Comment {
@@ -142,6 +146,20 @@ export interface ProjectApplication {
   education?: string;
   phone_number?: string;
   viewed_at?: string;
+}
+
+// Add CallLog interface that was missing
+export interface CallLog {
+  id: string;
+  caller_id: string;
+  receiver_id: string;
+  start_time: string;
+  end_time?: string;
+  duration?: number;
+  status: 'ongoing' | 'completed' | 'missed' | 'rejected';
+  call_type: 'audio' | 'video';
+  caller?: Profile;
+  receiver?: Profile;
 }
 
 // Add any other types your application needs

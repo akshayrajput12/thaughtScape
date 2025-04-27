@@ -18,7 +18,7 @@ import {
   ChevronRight,
   User
 } from "lucide-react";
-import type { Project, ProjectApplication } from "@/types";
+import type { Project, ProjectApplication, Profile } from "@/types";
 import { ProjectApplicationCard } from "@/components/freelancing/ProjectApplicationCard";
 import { NewProjectDialog } from "@/pages/freelancing/components/NewProjectDialog";
 
@@ -45,7 +45,9 @@ export const ProjectsList = () => {
             id,
             username,
             full_name,
-            avatar_url
+            avatar_url,
+            created_at,
+            updated_at
           ),
           client:profiles(
             id,
@@ -72,7 +74,8 @@ export const ProjectsList = () => {
         budget: project.min_budget,
         category: project.job_type || "other", // Add category field based on job_type
         applications_count: project.applications_count || 0,
-        milestones_count: project.milestones_count || 0
+        milestones_count: project.milestones_count || 0,
+        status: (project.status || 'open') as "open" | "closed" | "in_progress"
       })) as Project[];
 
       setProjects(projectsWithCounts);
