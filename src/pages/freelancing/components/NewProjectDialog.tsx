@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import type { Project } from "@/types";
+
+interface NewProjectDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onProjectCreated: (project: Project) => void;
+}
 
 const projectSchema = z.object({
   title: z.string().min(5, { message: "Title must be at least 5 characters." }),
@@ -43,7 +50,7 @@ export const NewProjectDialog = ({ isOpen, onOpenChange, onProjectCreated }: New
       max_budget: undefined,
       job_type: "",
       deadline: "",
-      required_skills: "",
+      required_skills: [],
       company_name: "",
       experience_level: "",
       location: ""

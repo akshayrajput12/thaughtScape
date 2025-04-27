@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -40,7 +39,7 @@ export const NewProjectModal = ({ isOpen, onOpenChange, onSubmit, isLoading }: N
       budget: undefined,
       category: "",
       deadline: "",
-      required_skills: "",
+      required_skills: [],
     },
   });
 
@@ -52,7 +51,7 @@ export const NewProjectModal = ({ isOpen, onOpenChange, onSubmit, isLoading }: N
       budget: values.budget,
       category: values.category,
       deadline: values.deadline ? new Date(values.deadline).toISOString() : undefined,
-      required_skills: values.required_skills,
+      required_skills: values.required_skills || [],
       status: "open",
       author_id: "" // This will be set on the server side based on the authenticated user
     };
@@ -190,4 +189,3 @@ export const NewProjectModal = ({ isOpen, onOpenChange, onSubmit, isLoading }: N
     </Dialog>
   );
 };
-
