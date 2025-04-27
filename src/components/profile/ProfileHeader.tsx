@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  MoreHorizontal, 
-  ExternalLink, 
-  MessageSquare, 
-  Instagram, 
-  Twitter, 
-  Linkedin, 
-  Link as LinkIcon, 
-  Camera, 
-  BriefcaseIcon 
+import {
+  MoreHorizontal,
+  ExternalLink,
+  MessageSquare,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Link as LinkIcon,
+  Camera,
+  BriefcaseIcon,
+  ShieldCheck
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -82,7 +83,16 @@ export function ProfileHeader({
         <div className="flex-1 text-center md:text-left space-y-2">
           <div className="flex flex-wrap justify-center md:justify-between gap-2 items-center">
             <div>
-              <h1 className="text-2xl font-bold">{profile.full_name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold">{profile.full_name}</h1>
+                {/* Show admin badge if user is an admin */}
+                {profile.is_admin && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 border border-purple-200">
+                    <ShieldCheck className="h-3 w-3 mr-1" />
+                    Admin
+                  </span>
+                )}
+              </div>
               <div className="text-muted-foreground">@{profile.username}</div>
               {profile.college && (
                 <div className="text-sm text-muted-foreground mt-1">
@@ -90,21 +100,21 @@ export function ProfileHeader({
                 </div>
               )}
             </div>
-            
+
             <div className="flex flex-wrap gap-2">
               {!isEditing && !isOwnProfile && !isBlockedByUser && (
                 <>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={onFollowToggle}
                     disabled={isBlocked}
                     className={isFollowing ? "border-primary text-primary hover:bg-primary/10" : ""}
                   >
                     {isFollowing ? 'Following' : 'Follow'}
                   </Button>
-                  
-                  <Button 
-                    variant="outline" 
+
+                  <Button
+                    variant="outline"
                     onClick={onMessage}
                     disabled={isBlocked || isBlockedByUser}
                     className="gap-1.5"
@@ -112,7 +122,7 @@ export function ProfileHeader({
                     <MessageSquare className="h-4 w-4" />
                     Message
                   </Button>
-                  
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
@@ -129,7 +139,7 @@ export function ProfileHeader({
                           Unblock User
                         </DropdownMenuItem>
                       )}
-                      
+
                       {isAdmin && (
                         <>
                           <DropdownMenuSeparator />
@@ -145,61 +155,74 @@ export function ProfileHeader({
                   </DropdownMenu>
                 </>
               )}
-              
+
               {!isEditing && isOwnProfile && (
-                <Button onClick={onEditClick} variant="outline" className="gap-1.5">
-                  Edit Profile
-                </Button>
+                <>
+                  <Button onClick={onEditClick} variant="outline" className="gap-1.5">
+                    Edit Profile
+                  </Button>
+
+                  {isAdmin && (
+                    <Button
+                      onClick={() => navigate('/admin')}
+                      variant="default"
+                      className="gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      Admin Dashboard
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
-          
+
           {profile.bio && (
             <p className="text-sm max-w-prose whitespace-pre-line">
               {profile.bio}
             </p>
           )}
-          
+
           {hasSocialLinks && (
             <div className="mt-3">
               <div className="flex flex-wrap items-center gap-3">
                 {profile.instagram_url && (
-                  <a 
-                    href={profile.instagram_url} 
-                    target="_blank" 
+                  <a
+                    href={profile.instagram_url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Instagram className="h-5 w-5" />
                   </a>
                 )}
-                
+
                 {profile.twitter_url && (
-                  <a 
-                    href={profile.twitter_url} 
-                    target="_blank" 
+                  <a
+                    href={profile.twitter_url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Twitter className="h-5 w-5" />
                   </a>
                 )}
-                
+
                 {profile.linkedin_url && (
-                  <a 
-                    href={profile.linkedin_url} 
-                    target="_blank" 
+                  <a
+                    href={profile.linkedin_url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Linkedin className="h-5 w-5" />
                   </a>
                 )}
-                
+
                 {profile.portfolio_url && (
-                  <a 
-                    href={profile.portfolio_url} 
-                    target="_blank" 
+                  <a
+                    href={profile.portfolio_url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-foreground transition-colors"
                     title="Portfolio"

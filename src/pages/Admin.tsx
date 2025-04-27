@@ -31,17 +31,17 @@ function AdminDashboard() {
     queryKey: ["isAdmin", user?.id],
     queryFn: async () => {
       if (!user?.id) return false;
-      
+
       const { data, error } = await supabase
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
         .single();
-      
+
       if (error) {
         throw error;
       }
-      
+
       return data?.is_admin || false;
     },
     enabled: !!user?.id,
@@ -57,7 +57,7 @@ function AdminDashboard() {
           author:profiles(id, username, full_name, avatar_url)
         `)
         .order("created_at", { ascending: false });
-      
+
       if (error) throw error;
       return data as Project[];
     },
@@ -108,11 +108,11 @@ function AdminDashboard() {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get("tab");
     const userId = params.get("user");
-    
+
     if (tabParam) {
       setActiveTab(tabParam);
     }
-    
+
     if (userId) {
       setActiveTab("users");
     }
@@ -131,7 +131,7 @@ function AdminDashboard() {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    
+
     const params = new URLSearchParams(location.search);
     params.set("tab", value);
     navigate({
@@ -159,9 +159,9 @@ function AdminDashboard() {
           <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
           <p className="text-muted-foreground">Manage users, content, and settings</p>
         </div>
-        
-        <div className="border-b">
-          <Tabs value={activeTab} onValueChange={handleTabChange}>
+
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+          <div className="border-b">
             <TabsList className="w-full justify-start">
               <TabsTrigger value="users">Users</TabsTrigger>
               <TabsTrigger value="poems">Thoughts</TabsTrigger>
@@ -169,37 +169,37 @@ function AdminDashboard() {
               <TabsTrigger value="stats">Stats</TabsTrigger>
               <TabsTrigger value="project-management">Project Management</TabsTrigger>
             </TabsList>
-          </Tabs>
-        </div>
-        
-        <TabsContent value="users" className="m-0">
-          <UsersList />
-        </TabsContent>
-        
-        <TabsContent value="poems" className="m-0">
-          <PoemsList />
-        </TabsContent>
-        
-        <TabsContent value="projects" className="m-0">
-          <ProjectsList />
-        </TabsContent>
-        
-        <TabsContent value="stats" className="m-0">
-          <UserStats 
-            followersCount={statsData.followersCount}
-            followingCount={statsData.followingCount}
-            postsCount={statsData.postsCount}
-            usersCount={statsData.usersCount}
-          />
-        </TabsContent>
-        
-        <TabsContent value="project-management" className="m-0">
-          <ProjectManagement 
-            projects={projects || []} 
-            isLoading={projectsLoading} 
-            onRefresh={refetchProjects}
-          />
-        </TabsContent>
+          </div>
+
+          <TabsContent value="users" className="m-0">
+            <UsersList />
+          </TabsContent>
+
+          <TabsContent value="poems" className="m-0">
+            <PoemsList />
+          </TabsContent>
+
+          <TabsContent value="projects" className="m-0">
+            <ProjectsList />
+          </TabsContent>
+
+          <TabsContent value="stats" className="m-0">
+            <UserStats
+              followersCount={statsData.followersCount}
+              followingCount={statsData.followingCount}
+              postsCount={statsData.postsCount}
+              usersCount={statsData.usersCount}
+            />
+          </TabsContent>
+
+          <TabsContent value="project-management" className="m-0">
+            <ProjectManagement
+              projects={projects || []}
+              isLoading={projectsLoading}
+              onRefresh={refetchProjects}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
