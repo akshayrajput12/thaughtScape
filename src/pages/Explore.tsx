@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, UserPlus, UserMinus, Users, Tag, Badge, Filter } from "lucide-react";
@@ -621,25 +622,28 @@ const Explore = () => {
                                     <span className="truncate">{user.followers_count || 0} followers</span>
                                   </div>
                                 </div>
-                                <Button
-                                  onClick={() => handleFollow(user.id)}
-                                  variant={user.is_following ? "destructive" : "default"}
-                                  size="sm"
-                                  className="relative z-10"
-                                >
-                                  {user.is_following ? (
-                                    <>
-                                      <UserMinus size={12} className="mr-1" />
-                                      <span>Unfollow</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <UserPlus size={12} className="mr-1" />
-                                      <span>Follow</span>
-                                    </>
-                                  )}
-                                </Button>
-                              </motion.div>
+                              </div>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleFollow(user.id);
+                                }}
+                                variant={user.is_following ? "destructive" : "default"}
+                                size="sm"
+                                className="relative z-10"
+                              >
+                                {user.is_following ? (
+                                  <>
+                                    <UserMinus size={12} className="mr-1" />
+                                    <span>Unfollow</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserPlus size={12} className="mr-1" />
+                                    <span>Follow</span>
+                                  </>
+                                )}
+                              </Button>
                             </motion.div>
                           ))}
                         </div>
