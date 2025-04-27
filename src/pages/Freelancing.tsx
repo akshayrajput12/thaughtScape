@@ -44,7 +44,7 @@ const Freelancing = () => {
     },
   });
 
-  const { mutate: createProject, isPending: isCreating } = useMutation({
+  const { mutate: createProject, isPending } = useMutation({
     mutationFn: async (newProject: Omit<Project, 'id' | 'created_at' | 'author'>) => {
       if (!user) {
         throw new Error("User not authenticated");
@@ -164,7 +164,7 @@ const Freelancing = () => {
         isOpen={isNewProjectModalOpen}
         onOpenChange={setIsNewProjectModalOpen}
         onSubmit={createProject}
-        isLoading={isCreating}
+        isLoading={isPending}
       />
     </div>
   );

@@ -42,10 +42,19 @@ export const NewProjectModal = ({ isOpen, onOpenChange, onSubmit, isLoading }: N
   });
 
   const handleSubmit = (values: z.infer<typeof projectSchema>) => {
-    onSubmit({
-      ...values,
+    // Create an object that conforms to the Project type
+    const projectData: Omit<Project, 'id' | 'created_at' | 'author'> = {
+      title: values.title,
+      description: values.description,
+      budget: values.budget,
+      category: values.category,
       deadline: values.deadline ? new Date(values.deadline).toISOString() : undefined,
-    });
+      required_skills: values.required_skills,
+      status: "open",
+      author_id: "" // This will be set on the server side based on the authenticated user
+    };
+    
+    onSubmit(projectData);
   };
 
   return (
