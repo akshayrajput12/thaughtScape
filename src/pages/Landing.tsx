@@ -7,18 +7,22 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Thought, Project } from "@/types";
 import { PoemCard } from "@/components/PoemCard";
-import { ProjectCard } from "@/pages/freelancing/components/ProjectCard";
+import { EnhancedProjectCard } from "@/pages/freelancing/components/EnhancedProjectCard";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, Briefcase, ArrowRight } from "lucide-react";
+import { Heart, Briefcase, ArrowRight, Award, MessageSquare } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import SEO from "@/components/SEO";
 
 const Landing = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [topPosts, setTopPosts] = useState<Thought[]>([]);
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
+  const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingProjects, setLoadingProjects] = useState(true);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
   const [userApplications, setUserApplications] = useState<string[]>([]);
 
   const handleCallToAction = () => {
@@ -45,12 +49,25 @@ const Landing = () => {
           // First, get all posts with their author information
           const postsWithAuthors = await Promise.all(
             data.map(async (post) => {
+              // Get author data
               const { data: authorData } = await supabase
                 .from('profiles')
                 .select('id, username, full_name, avatar_url, created_at, updated_at')
                 .eq('id', post.author_id)
                 .single();
-              
+
+              // Get likes count
+              const { count: likesCount } = await supabase
+                .from('thought_likes')
+                .select('*', { count: 'exact', head: true })
+                .eq('thought_id', post.id);
+
+              // Get comments count
+              const { count: commentsCount } = await supabase
+                .from('thought_comments')
+                .select('*', { count: 'exact', head: true })
+                .eq('thought_id', post.id);
+
               return {
                 ...post,
                 author: authorData || {
@@ -58,11 +75,15 @@ const Landing = () => {
                   username: 'unknown',
                   created_at: post.created_at,
                   updated_at: post.created_at
+                },
+                _count: {
+                  likes: likesCount || 0,
+                  comments: commentsCount || 0
                 }
               } as Thought;
             })
           );
-          
+
           setTopPosts(postsWithAuthors);
         } else {
           setTopPosts([]);
@@ -92,9 +113,11 @@ const Landing = () => {
               whatsapp_number,
               created_at,
               updated_at
-            )
+            ),
+            applications:project_applications(count)
           `)
           .eq('status', 'open')
+          .eq('is_featured', false)
           .order('created_at', { ascending: false })
           .limit(6);
 
@@ -104,9 +127,14 @@ const Landing = () => {
         if (data) {
           const typedProjects = data.map(project => ({
             ...project,
+            budget: project.min_budget,
+            _count: {
+              applications: project.applications?.[0]?.count || 0,
+              comments: 0
+            },
             status: project.status as "open" | "closed" | "in_progress"
           })) as Project[];
-          
+
           setRecentProjects(typedProjects);
         } else {
           setRecentProjects([]);
@@ -116,6 +144,57 @@ const Landing = () => {
         setRecentProjects([]);
       } finally {
         setLoadingProjects(false);
+      }
+    };
+
+    const fetchFeaturedProjects = async () => {
+      try {
+        setLoadingFeatured(true);
+
+        // Fetch featured projects
+        const { data, error } = await supabase
+          .from('projects')
+          .select(`
+            *,
+            author:profiles!projects_author_id_fkey(
+              id,
+              username,
+              full_name,
+              avatar_url,
+              whatsapp_number,
+              created_at,
+              updated_at
+            ),
+            applications:project_applications(count)
+          `)
+          .eq('status', 'open')
+          .eq('is_featured', true)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error) throw error;
+
+        // Ensure the status is properly cast to the expected type
+        if (data) {
+          const typedProjects = data.map(project => ({
+            ...project,
+            budget: project.min_budget,
+            _count: {
+              applications: project.applications?.[0]?.count || 0,
+              comments: 0
+            },
+            status: project.status as "open" | "closed" | "in_progress"
+          })) as Project[];
+
+          setFeaturedProjects(typedProjects);
+        } else {
+          setFeaturedProjects([]);
+        }
+      } catch (error) {
+        console.error("Error fetching featured projects:", error);
+        setFeaturedProjects([]);
+      } finally {
+        setLoadingFeatured(false);
       }
     };
 
@@ -138,6 +217,7 @@ const Landing = () => {
 
     fetchTopPosts();
     fetchRecentProjects();
+    fetchFeaturedProjects();
     fetchUserApplications();
   }, [user?.id]);
 
@@ -151,6 +231,13 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      {/* SEO */}
+      <SEO
+        title="CampusCash - Learn, Earn, and Connect on Campus"
+        description="CampusCash is the ultimate platform for college students to find jobs, freelance opportunities, share thoughts, and connect with peers on campus."
+        keywords="campus jobs, college freelancing, student marketplace, campus networking, student gigs, college jobs, campus cash, student opportunities"
+      />
+
       <Hero onActionClick={handleCallToAction} isLoggedIn={isAuthenticated} />
 
       {/* Top Posts Section */}
@@ -190,8 +277,11 @@ const Landing = () => {
                 </div>
                 <Skeleton className="h-20 sm:h-24 w-full" />
                 <div className="flex justify-between mt-4">
-                  <Skeleton className="h-6 sm:h-8 w-16 sm:w-20 rounded-full" />
-                  <Skeleton className="h-6 sm:h-8 w-16 sm:w-20 rounded-full" />
+                  <div className="flex gap-3">
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                  </div>
+                  <Skeleton className="h-6 w-16 rounded-full" />
                 </div>
               </div>
             ))}
@@ -210,6 +300,18 @@ const Landing = () => {
                   poem={thought}
                   currentUserId={user?.id || null}
                 />
+
+                {/* Show likes and comments count */}
+                <div className="flex items-center justify-end gap-4 mt-2 px-4 pb-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Heart className="h-4 w-4 text-pink-500" />
+                    <span>{thought._count?.likes || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageSquare className="h-4 w-4 text-blue-500" />
+                    <span>{thought._count?.comments || 0}</span>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -219,6 +321,79 @@ const Landing = () => {
           </div>
         )}
       </section>
+
+      {/* Featured Jobs Section */}
+      {featuredProjects.length > 0 && (
+        <section className="py-8 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-gradient-to-b from-white to-amber-50/30">
+          <div className="mb-6 sm:mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center"
+            >
+              <div className="w-1.5 h-8 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full mr-3"></div>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-amber-900 bg-clip-text text-transparent">
+                Featured Opportunities
+              </h2>
+              <Badge variant="outline" className="ml-3 bg-amber-50 text-amber-700 border-amber-200">
+                <Award className="h-3 w-3 mr-1" /> Featured
+              </Badge>
+            </motion.div>
+
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/freelancing')}
+              className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 flex items-center gap-1 text-sm sm:text-base"
+            >
+              <span>View All</span>
+              <ArrowRight size={16} />
+            </Button>
+          </div>
+
+          {loadingFeatured ? (
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="p-4 sm:p-6 bg-white rounded-xl shadow-sm animate-pulse">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                    <Skeleton className="h-6 w-24 rounded-full" />
+                  </div>
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-5/6 mb-2" />
+                  <Skeleton className="h-4 w-4/5 mb-4" />
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                    <Skeleton className="h-6 w-24 rounded-full" />
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {featuredProjects.map((project, index) => (
+                <motion.div
+                  key={project.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <EnhancedProjectCard
+                    project={project}
+                    hasApplied={userApplications.includes(project.id)}
+                    onApply={handleApplyToProject}
+                    featured={true}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Recent Projects Section */}
       <section className="py-8 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-gradient-to-b from-white to-blue-50/30">
@@ -248,9 +423,22 @@ const Landing = () => {
           <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="p-4 sm:p-6 bg-white rounded-xl shadow-sm animate-pulse">
-                <Skeleton className="h-5 sm:h-6 w-2/3 mb-3 sm:mb-4" />
-                <Skeleton className="h-3 sm:h-4 w-full mb-2" />
-                <Skeleton className="h-3 sm:h-4 w-5/6" />
+                <div className="flex items-center gap-3 mb-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                </div>
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-5/6 mb-2" />
+                <Skeleton className="h-4 w-4/5 mb-4" />
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                </div>
               </div>
             ))}
           </div>
@@ -263,10 +451,11 @@ const Landing = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <ProjectCard
+                <EnhancedProjectCard
                   project={project}
                   hasApplied={userApplications.includes(project.id)}
                   onApply={handleApplyToProject}
+                  featured={false}
                 />
               </motion.div>
             ))}

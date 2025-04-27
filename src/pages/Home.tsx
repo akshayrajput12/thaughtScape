@@ -1,8 +1,8 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Thought, Profile } from "@/types";
-import { Loader2, UserPlus, UserMinus } from "lucide-react";
+import { Thought, Profile, Project } from "@/types";
+import { Loader2, UserPlus, UserMinus, Briefcase, MessageSquare, Bell, Sparkles } from "lucide-react";
 import { PoemCard } from "@/components/PoemCard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +13,10 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import JobListItem from "@/components/explore/JobListItem";
+import SEO from "@/components/SEO";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -21,8 +25,11 @@ const Home = () => {
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("feed");
+  const [userApplications, setUserApplications] = useState<string[]>([]);
 
-  const { data: thoughts, isLoading } = useQuery({
+  // Fetch thoughts/posts
+  const { data: thoughts, isLoading: isLoadingThoughts } = useQuery({
     queryKey: ['thoughts'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -39,12 +46,81 @@ const Home = () => {
           )
         `)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(10);
 
       if (error) throw error;
       return data as unknown as Thought[];
     }
   });
+
+  // Fetch projects/jobs
+  const { data: projects, isLoading: isLoadingProjects } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          author:profiles!projects_author_id_fkey(
+            id,
+            username,
+            full_name,
+            avatar_url,
+            whatsapp_number,
+            created_at,
+            updated_at
+          ),
+          applications:project_applications(count)
+        `)
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+
+      // Ensure the status is properly cast to the expected type
+      if (data) {
+        const typedProjects = data.map(project => ({
+          ...project,
+          budget: project.min_budget,
+          _count: {
+            applications: project.applications?.[0]?.count || 0,
+            comments: 0
+          },
+          status: project.status as "open" | "closed" | "in_progress"
+        }));
+
+        return typedProjects as Project[];
+      }
+
+      return [] as Project[];
+    }
+  });
+
+  // Fetch user applications
+  useEffect(() => {
+    const fetchUserApplications = async () => {
+      if (!user?.id) {
+        setUserApplications([]);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('project_applications')
+          .select('project_id')
+          .eq('applicant_id', user.id);
+
+        if (error) throw error;
+
+        setUserApplications(data.map(app => app.project_id));
+      } catch (error) {
+        console.error("Error fetching user applications:", error);
+      }
+    };
+
+    fetchUserApplications();
+  }, [user?.id]);
 
   useEffect(() => {
     const fetchSuggestedUsers = async () => {
@@ -90,6 +166,15 @@ const Home = () => {
 
     fetchSuggestedUsers();
   }, [user?.id]);
+
+  const handleApplyToProject = (project: Project) => {
+    if (!user) {
+      navigate('/auth', { state: { from: '/home' } });
+      return;
+    }
+
+    navigate(`/project/${project.id}`);
+  };
 
   const handleFollow = async (userId: string) => {
     if (!user) {
@@ -180,6 +265,8 @@ const Home = () => {
     return null;
   }
 
+  const isLoading = isLoadingThoughts || isLoadingProjects;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -190,28 +277,124 @@ const Home = () => {
 
   return (
     <ProtectedRoute>
+      {/* Page-specific SEO */}
+      <SEO
+        title="Home | CampusCash"
+        description="Your personalized feed of campus posts, job opportunities, and connections."
+      />
+
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Feed - Center Column */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Posts Feed */}
-              <div className="space-y-6">
-                {thoughts?.map((thought, index) => (
-                  <motion.div
-                    key={thought.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <PoemCard
-                      poem={thought}
-                      currentUserId={user?.id}
-                      isAdmin={false}
-                    />
-                  </motion.div>
-                ))}
-              </div>
+              {/* Welcome Message */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-4 flex items-center gap-4"
+              >
+                <div className="bg-gradient-to-r from-primary to-secondary p-3 rounded-full">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="font-medium text-lg">Welcome back, {user?.user_metadata?.full_name?.split(' ')[0] || 'there'}!</h2>
+                  <p className="text-muted-foreground text-sm">Check out the latest posts and job opportunities</p>
+                </div>
+              </motion.div>
+
+              {/* Tabs for Feed and Jobs */}
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="feed" className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>Feed</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="jobs" className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4" />
+                    <span>Jobs</span>
+                    {projects && projects.length > 0 && (
+                      <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1 flex items-center justify-center">
+                        {projects.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="feed" className="space-y-6">
+                  {thoughts?.length === 0 ? (
+                    <div className="text-center py-12 bg-card rounded-xl border border-border">
+                      <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                      <h3 className="text-xl font-medium text-foreground mb-2">No posts yet</h3>
+                      <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                        Follow more users to see their posts in your feed, or explore the latest thoughts from the community.
+                      </p>
+                      <Button onClick={() => navigate('/explore')}>
+                        Explore Posts
+                      </Button>
+                    </div>
+                  ) : (
+                    thoughts?.map((thought, index) => (
+                      <motion.div
+                        key={thought.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <PoemCard
+                          poem={thought}
+                          currentUserId={user?.id}
+                          isAdmin={false}
+                        />
+                      </motion.div>
+                    ))
+                  )}
+                </TabsContent>
+
+                <TabsContent value="jobs" className="space-y-6">
+                  {projects?.length === 0 ? (
+                    <div className="text-center py-12 bg-card rounded-xl border border-border">
+                      <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                      <h3 className="text-xl font-medium text-foreground mb-2">No jobs available</h3>
+                      <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                        There are no job opportunities available at the moment. Check back later or explore all jobs.
+                      </p>
+                      <Button onClick={() => navigate('/freelancing')}>
+                        View All Jobs
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {projects?.map((project, index) => (
+                        <motion.div
+                          key={project.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="bg-card hover:bg-card/80 border border-border hover:border-primary/20 rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
+                        >
+                          <JobListItem
+                            project={project}
+                            hasApplied={userApplications.includes(project.id)}
+                            onApply={handleApplyToProject}
+                            featured={project.is_featured}
+                          />
+                        </motion.div>
+                      ))}
+
+                      <div className="flex justify-center mt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => navigate('/freelancing')}
+                          className="w-full"
+                        >
+                          View All Jobs
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
 
             {/* Right Sidebar */}

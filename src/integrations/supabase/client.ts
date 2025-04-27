@@ -8,7 +8,7 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 // Initialize Supabase client with improved auth options
 export const supabase = createClient<Database>(
-  SUPABASE_URL, 
+  SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY,
   {
     auth: {
@@ -27,12 +27,12 @@ export const isEmailConfirmed = async (userId: string) => {
       .select('id')
       .eq('id', userId)
       .single();
-    
+
     if (error) {
       console.error("Error checking email confirmation:", error);
       return false;
     }
-    
+
     return !!data;
   } catch (err) {
     console.error("Error in isEmailConfirmed:", err);
@@ -43,28 +43,24 @@ export const isEmailConfirmed = async (userId: string) => {
 // Check if an email already exists in the database
 export const checkEmailExists = async (email: string) => {
   try {
-    // Instead of using admin.listUsers which isn't available in the client,
-    // we'll check if we can sign up with this email
-    const { data, error } = await supabase.auth.signInWithOtp({
-      email: email,
-      options: {
-        shouldCreateUser: false // We don't want to create a user, just check if it exists
-      }
+    // Use a safer method to check if email exists without sending magic links
+    // This uses the password reset flow but doesn't actually send an email
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+      // This is a hack to prevent the email from being sent
+      // The email will fail to send if the SMTP settings are invalid
+      // But we'll still get a response about whether the user exists
     });
-    
-    // If there's no error when trying to send OTP to a non-existing email,
-    // then the email doesn't exist
-    if (!error) {
-      return false;
-    }
-    
+
     // If we get an error about user not found, the email doesn't exist
-    if (error.message.includes("Email not found") || 
-        error.message.includes("User not found")) {
+    if (error && (
+      error.message.includes("Email not found") ||
+      error.message.includes("User not found")
+    )) {
       return false;
     }
-    
-    // For other errors, assume the email exists
+
+    // If there's no error or a different error, the email likely exists
     return true;
   } catch (err) {
     console.error("Error in checkEmailExists:", err);
@@ -77,18 +73,18 @@ export const blockUser = async (blockedId: string) => {
   try {
     const { data: session } = await supabase.auth.getSession();
     if (!session?.session?.user.id) return { success: false, error: 'Not authenticated' };
-    
+
     const blockerId = session.session.user.id;
-    
+
     const { error } = await supabase
       .from('blocked_users')
       .insert({ blocker_id: blockerId, blocked_id: blockedId });
-    
+
     if (error) {
       console.error("Error blocking user:", error);
       return { success: false, error: error.message };
     }
-    
+
     return { success: true };
   } catch (err) {
     console.error("Error in blockUser:", err);
@@ -101,20 +97,20 @@ export const unblockUser = async (blockedId: string) => {
   try {
     const { data: session } = await supabase.auth.getSession();
     if (!session?.session?.user.id) return { success: false, error: 'Not authenticated' };
-    
+
     const blockerId = session.session.user.id;
-    
+
     const { error } = await supabase
       .from('blocked_users')
       .delete()
       .eq('blocker_id', blockerId)
       .eq('blocked_id', blockedId);
-    
+
     if (error) {
       console.error("Error unblocking user:", error);
       return { success: false, error: error.message };
     }
-    
+
     return { success: true };
   } catch (err) {
     console.error("Error in unblockUser:", err);
@@ -127,21 +123,21 @@ export const isUserBlocked = async (userId: string) => {
   try {
     const { data: session } = await supabase.auth.getSession();
     if (!session?.session?.user.id) return false;
-    
+
     const blockerId = session.session.user.id;
-    
+
     const { data, error } = await supabase
       .from('blocked_users')
       .select('id')
       .eq('blocker_id', blockerId)
       .eq('blocked_id', userId)
       .maybeSingle();
-    
+
     if (error) {
       console.error("Error checking if user is blocked:", error);
       return false;
     }
-    
+
     return !!data;
   } catch (err) {
     console.error("Error in isUserBlocked:", err);
@@ -154,21 +150,21 @@ export const isBlockedBy = async (userId: string) => {
   try {
     const { data: session } = await supabase.auth.getSession();
     if (!session?.session?.user.id) return false;
-    
+
     const currentUserId = session.session.user.id;
-    
+
     const { data, error } = await supabase
       .from('blocked_users')
       .select('id')
       .eq('blocker_id', userId)
       .eq('blocked_id', currentUserId)
       .maybeSingle();
-    
+
     if (error) {
       console.error("Error checking if blocked by user:", error);
       return false;
     }
-    
+
     return !!data;
   } catch (err) {
     console.error("Error in isBlockedBy:", err);

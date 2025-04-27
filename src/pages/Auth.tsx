@@ -1,13 +1,12 @@
 
 import { useState, useEffect } from 'react';
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SignUpErrorHandler } from '@/components/auth/SignUpErrorHandler';
 import { VerificationReminder } from '@/components/auth/VerificationReminder';
+import { CustomSignIn } from '@/components/auth/CustomSignIn';
+import { CustomSignUp } from '@/components/auth/CustomSignUp';
 import { MessageCircle } from 'lucide-react';
 
 const AuthPage = () => {
@@ -120,38 +119,12 @@ const AuthPage = () => {
               </TabsList>
 
               <TabsContent value="sign_in" className="space-y-4">
-                <Auth
-                  supabaseClient={supabase}
-                  appearance={{
-                    theme: ThemeSupa,
-                    variables: {
-                      default: {
-                        colors: {
-                          brand: '#6366f1',
-                          brandAccent: '#4f46e5',
-                        },
-                      },
-                    },
-                    className: {
-                      container: 'auth-container',
-                      button: 'auth-button w-full py-2 rounded-md',
-                      input: 'auth-input rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500',
-                      label: 'auth-label block text-sm font-medium text-gray-700 mb-1',
-                      anchor: 'text-sm text-indigo-600 hover:text-indigo-500',
-                    },
-                  }}
-                  localization={{
-                    variables: {
-                      sign_in: {
-                        email_label: 'Email address',
-                        password_label: 'Password',
-                      },
-                    },
-                  }}
-                  providers={[]}
-                  view="sign_in"
-                  onlyThirdPartyProviders={false}
+                {/* Use our custom sign-in component instead of Auth UI */}
+                <CustomSignIn
                   redirectTo={window.location.origin}
+                  onSignIn={() => {
+                    // Handle successful sign-in if needed
+                  }}
                 />
                 <div className="text-right">
                   <a href="#" className="text-sm text-indigo-600 hover:text-indigo-500">
@@ -161,38 +134,13 @@ const AuthPage = () => {
               </TabsContent>
 
               <TabsContent value="sign_up" className="space-y-4">
-                <Auth
-                  supabaseClient={supabase}
-                  appearance={{
-                    theme: ThemeSupa,
-                    variables: {
-                      default: {
-                        colors: {
-                          brand: '#6366f1',
-                          brandAccent: '#4f46e5',
-                        },
-                      },
-                    },
-                    className: {
-                      container: 'auth-container',
-                      button: 'auth-button w-full py-2 rounded-md',
-                      input: 'auth-input rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500',
-                      label: 'auth-label block text-sm font-medium text-gray-700 mb-1',
-                      anchor: 'text-sm text-indigo-600 hover:text-indigo-500',
-                    },
-                  }}
-                  localization={{
-                    variables: {
-                      sign_up: {
-                        email_label: 'Email address',
-                        password_label: 'Create password',
-                      },
-                    },
-                  }}
-                  providers={[]}
-                  view="sign_up"
-                  onlyThirdPartyProviders={false}
+                {/* Use our custom sign-up component */}
+                <CustomSignUp
                   redirectTo={window.location.origin}
+                  onSignUp={() => {
+                    // Handle successful sign-up if needed
+                    setShowVerificationMessage(true);
+                  }}
                 />
               </TabsContent>
             </Tabs>
