@@ -236,7 +236,7 @@ const Explore = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  const filteredThoughts = thoughts.filter(thought => {
+  const filteredThoughts = thoughts?.filter(thought => {
     if (!searchQuery) return true;
     return (
       thought.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -449,7 +449,7 @@ const Explore = () => {
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      {filteredThoughts.map((thought, index) => (
+                      {filteredThoughts?.map((thought, index) => (
                         <motion.div
                           key={thought.id}
                           initial={{ opacity: 0, y: 20 }}

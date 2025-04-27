@@ -11,7 +11,7 @@ import {
   Link as LinkIcon, 
   Camera, 
   BriefcaseIcon,
-  Dashboard 
+  LayoutDashboard 
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -159,7 +159,7 @@ export function ProfileHeader({
                   </Button>
                   {isAdmin && (
                     <Button onClick={navigateToAdmin} variant="outline" className="gap-1.5">
-                      <Dashboard className="h-4 w-4" />
+                      <LayoutDashboard className="h-4 w-4" />
                       Admin Dashboard
                     </Button>
                   )}

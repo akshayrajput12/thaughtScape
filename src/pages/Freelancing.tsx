@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -43,7 +44,7 @@ const Freelancing = () => {
     },
   });
 
-  const { mutate: createProject, isLoading: isCreating } = useMutation({
+  const { mutate: createProject, isPending: isCreating } = useMutation({
     mutationFn: async (newProject: Omit<Project, 'id' | 'created_at' | 'author'>) => {
       if (!user) {
         throw new Error("User not authenticated");
