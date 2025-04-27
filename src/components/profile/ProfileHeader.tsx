@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -9,7 +10,8 @@ import {
   Linkedin, 
   Link as LinkIcon, 
   Camera, 
-  BriefcaseIcon 
+  BriefcaseIcon,
+  Dashboard 
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -62,6 +64,10 @@ export function ProfileHeader({
 
   const toggleSocialLinks = () => {
     setShowSocialLinks(!showSocialLinks);
+  };
+
+  const navigateToAdmin = () => {
+    navigate('/admin');
   };
 
   const hasSocialLinks = profile.instagram_url || profile.twitter_url || profile.linkedin_url || profile.portfolio_url;
@@ -147,9 +153,17 @@ export function ProfileHeader({
               )}
               
               {!isEditing && isOwnProfile && (
-                <Button onClick={onEditClick} variant="outline" className="gap-1.5">
-                  Edit Profile
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={onEditClick} variant="outline" className="gap-1.5">
+                    Edit Profile
+                  </Button>
+                  {isAdmin && (
+                    <Button onClick={navigateToAdmin} variant="outline" className="gap-1.5">
+                      <Dashboard className="h-4 w-4" />
+                      Admin Dashboard
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           </div>

@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, UserPlus, UserMinus, Users, Tag, Badge } from "lucide-react";
+import { Search, UserPlus, UserMinus, Users, Tag, Badge, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PoemCard } from "@/components/PoemCard";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,8 @@ import type { Profile, Thought } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EnhancedProjectsList } from "@/components/freelancing/components/EnhancedProjectsList";
 
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -230,6 +231,39 @@ const Explore = () => {
            false;
   };
 
+  const [activeTab, setActiveTab] = useState("posts");
+  const [showFilters, setShowFilters] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
+  const filteredThoughts = thoughts.filter(thought => {
+    if (!searchQuery) return true;
+    return (
+      thought.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      thought.author?.username?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
+
+  const { data: projects = [], isLoading: projectsLoading } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          author:profiles(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setSearchQuery('');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-7xl mx-auto px-4 py-6 md:py-12">
@@ -329,314 +363,369 @@ const Explore = () => {
           )}
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
-          {/* Main Content - Thoughts */}
-          <div className="lg:col-span-2 space-y-6 md:space-y-8 order-2 lg:order-1">
-            <div className="flex items-center justify-between">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex items-center"
+        <div className="mt-8">
+          <Tabs defaultValue="posts" className="w-full" onValueChange={handleTabChange}>
+            <div className="flex items-center justify-between mb-6">
+              <TabsList>
+                <TabsTrigger value="posts">Posts</TabsTrigger>
+                <TabsTrigger value="jobs">Jobs</TabsTrigger>
+              </TabsList>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => setShowFilters(!showFilters)}
               >
-                <div className="w-1 md:w-1.5 h-6 md:h-8 bg-primary rounded-full mr-2 md:mr-3"></div>
-                <h2 className="text-xl md:text-2xl font-serif font-bold text-foreground">
-                  Campus Buzz
-                </h2>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-muted-foreground"
-              >
-                <Tag size={14} className="md:h-4 md:w-4" />
-                <span className="hidden sm:inline">Popular now</span>
-                <span className="sm:hidden">Popular</span>
-              </motion.div>
+                <Filter className="h-4 w-4" />
+                Filters
+              </Button>
             </div>
 
-            {thoughtsLoading ? (
-              <div className="space-y-4 md:space-y-8">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg border border-border">
-                    <div className="flex items-center space-x-3 md:space-x-4 mb-3 md:mb-4">
-                      <Skeleton className="h-10 w-10 md:h-12 md:w-12 rounded-full" />
-                      <div className="space-y-1 md:space-y-2">
-                        <Skeleton className="h-3 md:h-4 w-24 md:w-32" />
-                        <Skeleton className="h-2 md:h-3 w-16 md:w-24" />
-                      </div>
-                    </div>
-                    <Skeleton className="h-16 md:h-24 w-full" />
-                    <div className="flex justify-between mt-3 md:mt-4">
-                      <Skeleton className="h-6 md:h-8 w-16 md:w-20 rounded-full" />
-                      <Skeleton className="h-6 md:h-8 w-16 md:w-20 rounded-full" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {thoughts.map((thought, index) => (
-                  <motion.div
-                    key={thought.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="transform hover:-translate-y-1 transition-all duration-300"
+            {showFilters && (
+              <div className="mb-6 p-4 bg-card rounded-lg border border-border">
+                <div className="flex flex-wrap gap-4">
+                  <select
+                    className="px-3 py-2 rounded-md border border-border bg-background"
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
                   >
-                    <PoemCard
-                      poem={thought}
-                      currentUserId={user?.id || null}
-                      onDelete={handleDelete}
-                    />
-                  </motion.div>
-                ))}
+                    <option value="all">All Categories</option>
+                    <option value="technology">Technology</option>
+                    <option value="design">Design</option>
+                    <option value="writing">Writing</option>
+                    <option value="marketing">Marketing</option>
+                  </select>
+                </div>
               </div>
             )}
-          </div>
 
-          {/* Sidebar - Suggested Users */}
-          <div className="space-y-6 md:space-y-8 order-1 lg:order-2">
-            {/* Mobile horizontal scrolling users for small screens */}
-            <div className="lg:hidden">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-1">
-                  <Users size={16} className="text-primary" />
-                  <h3 className="text-base font-serif font-semibold text-foreground">
-                    People to Follow
-                  </h3>
-                </div>
-                <span className="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                  {suggestedUsers.length}
-                </span>
-              </div>
-
-              {suggestedUsersLoading ? (
-                <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-hide">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="flex-shrink-0 w-40 bg-card rounded-xl p-4 shadow-md border border-border">
-                      <div className="flex flex-col items-center text-center space-y-3">
-                        <Skeleton className="h-16 w-16 rounded-full" />
-                        <div className="space-y-1 w-full">
-                          <Skeleton className="h-3 w-20 mx-auto" />
-                          <Skeleton className="h-2 w-16 mx-auto" />
-                        </div>
-                        <Skeleton className="h-8 w-full rounded-full" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-hide">
-                  {suggestedUsers.map((user: Profile, index) => (
+            <TabsContent value="posts" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
+                {/* Main Content - Thoughts */}
+                <div className="lg:col-span-2 space-y-6 md:space-y-8">
+                  <div className="flex items-center justify-between">
                     <motion.div
-                      key={user.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex-shrink-0 w-40 bg-card rounded-xl p-4 shadow-md border border-border hover:shadow-lg transition-all duration-300"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex items-center"
                     >
-                      <div className="flex flex-col items-center text-center space-y-3">
-                        <div
-                          className="cursor-pointer"
-                          onClick={() => navigate(`/profile/${user.id}`)}
-                        >
-                          <div className="relative">
-                            <Avatar className="w-16 h-16">
-                              <AvatarImage src={user.avatar_url || ""} alt={user.username} />
-                              <AvatarFallback>{user.username?.[0]?.toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            {user.is_following && (
-                              <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-1 rounded-full shadow-sm">
-                                <Badge size={8} />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="w-full">
-                          <p className="font-medium text-foreground truncate text-sm">
-                            {user.username}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {user.followers_count || 0} followers
-                          </p>
-                        </div>
-                        <Button
-                          onClick={() => handleFollow(user.id)}
-                          variant={user.is_following ? "destructive" : "default"}
-                          size="sm"
-                          className="w-full"
-                        >
-                          {user.is_following ? "Unfollow" : "Follow"}
-                        </Button>
-                      </div>
+                      <div className="w-1 md:w-1.5 h-6 md:h-8 bg-primary rounded-full mr-2 md:mr-3"></div>
+                      <h2 className="text-xl md:text-2xl font-serif font-bold text-foreground">
+                        Campus Buzz
+                      </h2>
                     </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {/* Desktop sidebar - only visible on large screens */}
-            <div className="hidden lg:block lg:sticky lg:top-24">
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="bg-card rounded-2xl shadow-xl p-6 border border-border overflow-hidden"
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Users size={18} className="text-primary" />
-                      <h3 className="text-lg font-serif font-semibold text-foreground">
-                        People to Follow
-                      </h3>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Discover creative minds</p>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-muted-foreground"
+                    >
+                      <Tag size={14} className="md:h-4 md:w-4" />
+                      <span className="hidden sm:inline">Popular now</span>
+                      <span className="sm:hidden">Popular</span>
+                    </motion.div>
                   </div>
-                  <span className="text-xs font-medium bg-primary text-primary-foreground px-3 py-1 rounded-full">
-                    {suggestedUsers.length}
-                  </span>
-                </div>
 
-                {suggestedUsersLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="flex items-center space-x-4 p-2">
-                        <Skeleton className="h-12 w-12 rounded-full" />
-                        <div className="space-y-2 flex-1">
-                          <Skeleton className="h-3 w-24" />
-                          <Skeleton className="h-2 w-16" />
-                        </div>
-                        <Skeleton className="h-8 w-20 rounded-full" />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {suggestedUsers.map((user: Profile, index) => (
-                      <motion.div
-                        key={user.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="group relative overflow-hidden flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-muted/50 transition-all duration-300"
-                      >
-                        {/* Decorative elements */}
-                        <div className="absolute -right-6 -bottom-6 w-12 h-12 bg-primary/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 dark:bg-primary/5"></div>
-                        <div className="absolute -left-6 -top-6 w-12 h-12 bg-primary/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 dark:bg-primary/5"></div>
-
-                        <div
-                          className="flex items-center gap-3 cursor-pointer relative z-10 min-w-0 flex-1"
-                          onClick={() => navigate(`/profile/${user.id}`)}
-                        >
-                          <div className="relative overflow-hidden rounded-full flex-shrink-0">
-                            <Avatar className="w-12 h-12">
-                              <AvatarImage src={user.avatar_url || ""} alt={user.username} />
-                              <AvatarFallback>{user.username?.[0]?.toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            {user.is_following && (
-                              <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-1 rounded-full shadow-sm">
-                                <Badge size={8} />
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
-                              {user.username}
-                            </p>
-                            <div className="flex items-center text-xs text-muted-foreground">
-                              <span className="inline-block w-1.5 h-1.5 bg-primary rounded-full mr-1"></span>
-                              <span className="truncate">{user.followers_count || 0} followers</span>
+                  {thoughtsLoading ? (
+                    <div className="space-y-4 md:space-y-8">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg border border-border">
+                          <div className="flex items-center space-x-3 md:space-x-4 mb-3 md:mb-4">
+                            <Skeleton className="h-10 w-10 md:h-12 md:w-12 rounded-full" />
+                            <div className="space-y-1 md:space-y-2">
+                              <Skeleton className="h-3 md:h-4 w-24 md:w-32" />
+                              <Skeleton className="h-2 md:h-3 w-16 md:w-24" />
                             </div>
                           </div>
+                          <Skeleton className="h-16 md:h-24 w-full" />
+                          <div className="flex justify-between mt-3 md:mt-4">
+                            <Skeleton className="h-6 md:h-8 w-16 md:w-20 rounded-full" />
+                            <Skeleton className="h-6 md:h-8 w-16 md:w-20 rounded-full" />
+                          </div>
                         </div>
-                        <Button
-                          onClick={() => handleFollow(user.id)}
-                          variant={user.is_following ? "destructive" : "default"}
-                          size="sm"
-                          className="relative z-10"
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {filteredThoughts.map((thought, index) => (
+                        <motion.div
+                          key={thought.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="transform hover:-translate-y-1 transition-all duration-300"
                         >
-                          {user.is_following ? (
-                            <>
-                              <UserMinus size={12} className="mr-1" />
-                              <span>Unfollow</span>
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus size={12} className="mr-1" />
-                              <span>Follow</span>
-                            </>
-                          )}
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-
-                {!suggestedUsersLoading && suggestedUsers.length > 0 && (
-                  <div className="mt-6 pt-4 border-t border-border text-center">
-                    <Button variant="link" className="text-primary">
-                      <span>Discover more people</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Button>
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Additional sidebar content - Topics */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-card rounded-2xl shadow-xl p-6 border border-border mt-6"
-              >
-                <h3 className="text-lg font-serif font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Tag size={18} className="text-primary" />
-                  Popular Topics
-                </h3>
-
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {['Poetry', 'Fiction', 'Philosophy', 'Science', 'Art', 'Music', 'Technology'].map((topic, index) => (
-                    <motion.span
-                      key={topic}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="px-3 py-1.5 bg-muted text-foreground text-sm font-medium rounded-full cursor-pointer hover:bg-primary/10 transition-colors"
-                    >
-                      {topic}
-                    </motion.span>
-                  ))}
+                          <PoemCard
+                            poem={thought}
+                            currentUserId={user?.id || null}
+                            onDelete={handleDelete}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </motion.div>
-            </div>
 
-            {/* Mobile Topics - Horizontal scrolling for small screens */}
-            <div className="lg:hidden">
-              <div className="flex items-center gap-1 mb-3">
-                <Tag size={16} className="text-primary" />
-                <h3 className="text-base font-serif font-semibold text-foreground">
-                  Popular Topics
-                </h3>
-              </div>
+                {/* Sidebar */}
+                <div className="space-y-6 md:space-y-8">
+                  {/* Mobile horizontal scrolling users for small screens */}
+                  <div className="lg:hidden">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-1">
+                        <Users size={16} className="text-primary" />
+                        <h3 className="text-base font-serif font-semibold text-foreground">
+                          People to Follow
+                        </h3>
+                      </div>
+                      <span className="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                        {suggestedUsers.length}
+                      </span>
+                    </div>
 
-              <div className="flex overflow-x-auto pb-2 space-x-2 scrollbar-hide">
-                {['Poetry', 'Fiction', 'Philosophy', 'Science', 'Art', 'Music', 'Technology'].map((topic, index) => (
-                  <motion.span
-                    key={topic}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="flex-shrink-0 px-3 py-1.5 bg-muted text-foreground text-sm font-medium rounded-full cursor-pointer hover:bg-primary/10 transition-colors whitespace-nowrap"
-                  >
-                    {topic}
-                  </motion.span>
-                ))}
+                    {suggestedUsersLoading ? (
+                      <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-hide">
+                        {[...Array(4)].map((_, i) => (
+                          <div key={i} className="flex-shrink-0 w-40 bg-card rounded-xl p-4 shadow-md border border-border">
+                            <div className="flex flex-col items-center text-center space-y-3">
+                              <Skeleton className="h-16 w-16 rounded-full" />
+                              <div className="space-y-1 w-full">
+                                <Skeleton className="h-3 w-20 mx-auto" />
+                                <Skeleton className="h-2 w-16 mx-auto" />
+                              </div>
+                              <Skeleton className="h-8 w-full rounded-full" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-hide">
+                        {suggestedUsers.map((user: Profile, index) => (
+                          <motion.div
+                            key={user.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="flex-shrink-0 w-40 bg-card rounded-xl p-4 shadow-md border border-border hover:shadow-lg transition-all duration-300"
+                          >
+                            <div className="flex flex-col items-center text-center space-y-3">
+                              <div
+                                className="cursor-pointer"
+                                onClick={() => navigate(`/profile/${user.id}`)}
+                              >
+                                <div className="relative">
+                                  <Avatar className="w-16 h-16">
+                                    <AvatarImage src={user.avatar_url || ""} alt={user.username} />
+                                    <AvatarFallback>{user.username?.[0]?.toUpperCase()}</AvatarFallback>
+                                  </Avatar>
+                                  {user.is_following && (
+                                    <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-1 rounded-full shadow-sm">
+                                      <Badge size={8} />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="w-full">
+                                <p className="font-medium text-foreground truncate text-sm">
+                                  {user.username}
+                                </p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {user.followers_count || 0} followers
+                                </p>
+                              </div>
+                              <Button
+                                onClick={() => handleFollow(user.id)}
+                                variant={user.is_following ? "destructive" : "default"}
+                                size="sm"
+                                className="w-full"
+                              >
+                                {user.is_following ? "Unfollow" : "Follow"}
+                              </Button>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Desktop sidebar - only visible on large screens */}
+                  <div className="hidden lg:block lg:sticky lg:top-24">
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="bg-card rounded-2xl shadow-xl p-6 border border-border overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between mb-6">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Users size={18} className="text-primary" />
+                            <h3 className="text-lg font-serif font-semibold text-foreground">
+                              People to Follow
+                            </h3>
+                          </div>
+                          <p className="text-xs text-muted-foreground">Discover creative minds</p>
+                        </div>
+                        <span className="text-xs font-medium bg-primary text-primary-foreground px-3 py-1 rounded-full">
+                          {suggestedUsers.length}
+                        </span>
+                      </div>
+
+                      {suggestedUsersLoading ? (
+                        <div className="space-y-4">
+                          {[...Array(3)].map((_, i) => (
+                            <div key={i} className="flex items-center space-x-4 p-2">
+                              <Skeleton className="h-12 w-12 rounded-full" />
+                              <div className="space-y-2 flex-1">
+                                <Skeleton className="h-3 w-24" />
+                                <Skeleton className="h-2 w-16" />
+                              </div>
+                              <Skeleton className="h-8 w-20 rounded-full" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {suggestedUsers.map((user: Profile, index) => (
+                            <motion.div
+                              key={user.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.05 }}
+                              className="group relative overflow-hidden flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-muted/50 transition-all duration-300"
+                            >
+                              {/* Decorative elements */}
+                              <div className="absolute -right-6 -bottom-6 w-12 h-12 bg-primary/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 dark:bg-primary/5"></div>
+                              <div className="absolute -left-6 -top-6 w-12 h-12 bg-primary/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 dark:bg-primary/5"></div>
+
+                              <div
+                                className="flex items-center gap-3 cursor-pointer relative z-10 min-w-0 flex-1"
+                                onClick={() => navigate(`/profile/${user.id}`)}
+                              >
+                                <div className="relative overflow-hidden rounded-full flex-shrink-0">
+                                  <Avatar className="w-12 h-12">
+                                    <AvatarImage src={user.avatar_url || ""} alt={user.username} />
+                                    <AvatarFallback>{user.username?.[0]?.toUpperCase()}</AvatarFallback>
+                                  </Avatar>
+                                  {user.is_following && (
+                                    <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-1 rounded-full shadow-sm">
+                                      <Badge size={8} />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                                    {user.username}
+                                  </p>
+                                  <div className="flex items-center text-xs text-muted-foreground">
+                                    <span className="inline-block w-1.5 h-1.5 bg-primary rounded-full mr-1"></span>
+                                    <span className="truncate">{user.followers_count || 0} followers</span>
+                                  </div>
+                                </div>
+                                <Button
+                                  onClick={() => handleFollow(user.id)}
+                                  variant={user.is_following ? "destructive" : "default"}
+                                  size="sm"
+                                  className="relative z-10"
+                                >
+                                  {user.is_following ? (
+                                    <>
+                                      <UserMinus size={12} className="mr-1" />
+                                      <span>Unfollow</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserPlus size={12} className="mr-1" />
+                                      <span>Follow</span>
+                                    </>
+                                  )}
+                                </Button>
+                              </motion.div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+
+                      {!suggestedUsersLoading && suggestedUsers.length > 0 && (
+                        <div className="mt-6 pt-4 border-t border-border text-center">
+                          <Button variant="link" className="text-primary">
+                            <span>Discover more people</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </Button>
+                        </div>
+                      )}
+                    </motion.div>
+
+                    {/* Additional sidebar content - Topics */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="bg-card rounded-2xl shadow-xl p-6 border border-border mt-6"
+                    >
+                      <h3 className="text-lg font-serif font-semibold text-foreground mb-4 flex items-center gap-2">
+                        <Tag size={18} className="text-primary" />
+                        Popular Topics
+                      </h3>
+
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {['Poetry', 'Fiction', 'Philosophy', 'Science', 'Art', 'Music', 'Technology'].map((topic, index) => (
+                          <motion.span
+                            key={topic}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="px-3 py-1.5 bg-muted text-foreground text-sm font-medium rounded-full cursor-pointer hover:bg-primary/10 transition-colors"
+                          >
+                            {topic}
+                          </motion.span>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  {/* Mobile Topics - Horizontal scrolling for small screens */}
+                  <div className="lg:hidden">
+                    <div className="flex items-center gap-1 mb-3">
+                      <Tag size={16} className="text-primary" />
+                      <h3 className="text-base font-serif font-semibold text-foreground">
+                        Popular Topics
+                      </h3>
+                    </div>
+
+                    <div className="flex overflow-x-auto pb-2 space-x-2 scrollbar-hide">
+                      {['Poetry', 'Fiction', 'Philosophy', 'Science', 'Art', 'Music', 'Technology'].map((topic, index) => (
+                        <motion.span
+                          key={topic}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="flex-shrink-0 px-3 py-1.5 bg-muted text-foreground text-sm font-medium rounded-full cursor-pointer hover:bg-primary/10 transition-colors whitespace-nowrap"
+                        >
+                          {topic}
+                        </motion.span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="jobs" className="space-y-6">
+              <EnhancedProjectsList
+                projects={projects.filter(project => {
+                  if (categoryFilter !== 'all') {
+                    return project.category === categoryFilter;
+                  }
+                  return true;
+                })}
+                isLoading={projectsLoading}
+                showApplyButton={true}
+                onProjectClick={(id) => navigate(`/projects/${id}`)}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
