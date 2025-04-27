@@ -127,6 +127,10 @@ const Landing = () => {
         if (data) {
           const typedProjects = data.map(project => ({
             ...project,
+            // Keep both min_budget and max_budget for proper budget display
+            min_budget: project.min_budget,
+            max_budget: project.max_budget,
+            // For backward compatibility
             budget: project.min_budget,
             _count: {
               applications: project.applications?.[0]?.count || 0,
@@ -178,6 +182,10 @@ const Landing = () => {
         if (data) {
           const typedProjects = data.map(project => ({
             ...project,
+            // Keep both min_budget and max_budget for proper budget display
+            min_budget: project.min_budget,
+            max_budget: project.max_budget,
+            // For backward compatibility
             budget: project.min_budget,
             _count: {
               applications: project.applications?.[0]?.count || 0,

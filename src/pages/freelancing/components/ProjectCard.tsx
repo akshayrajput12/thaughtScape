@@ -65,6 +65,13 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
     });
   };
 
+  const formatBudget = (min?: number, max?: number) => {
+    if (!min && !max) return "₹Not specified";
+    if (min && !max) return `₹${min.toLocaleString('en-IN')}+`;
+    if (!min && max) return `Up to ₹${max.toLocaleString('en-IN')}`;
+    return `₹${min?.toLocaleString('en-IN')} - ₹${max?.toLocaleString('en-IN')}`;
+  };
+
   const renderSocialLinks = () => {
     const socialLinks = [
       {
@@ -139,7 +146,7 @@ export const ProjectCard = ({ project, hasApplied, onApply }: ProjectCardProps) 
           <div className="flex items-center gap-2 text-gray-600">
             <IndianRupee className="w-4 h-4" />
             <span className="text-sm truncate">
-              Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}
+              Budget: {formatBudget(project.min_budget, project.max_budget)}
             </span>
           </div>
         </div>

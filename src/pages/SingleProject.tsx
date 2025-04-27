@@ -29,6 +29,8 @@ const SingleProject = () => {
 
       try {
         setLoading(true);
+
+        // Use maybeSingle instead of single to prevent 406 errors when no rows are found
         const { data, error } = await supabase
           .from("projects")
           .select(`
@@ -46,12 +48,22 @@ const SingleProject = () => {
             comments:project_applications(count)
           `)
           .eq('id', id)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 
+        // If no data is found, return early
+        if (!data) {
+          setLoading(false);
+          return;
+        }
+
         const projectData = {
           ...data,
+          // Keep both min_budget and max_budget for proper budget display
+          min_budget: data.min_budget,
+          max_budget: data.max_budget,
+          // For backward compatibility
           budget: data.min_budget,
           _count: {
             comments: data.comments?.[0]?.count || 0,
@@ -147,6 +159,13 @@ const SingleProject = () => {
     toast({
       description: "Link copied to clipboard",
     });
+  };
+
+  const formatBudget = (min?: number, max?: number) => {
+    if (!min && !max) return "₹Not specified";
+    if (min && !max) return `₹${min.toLocaleString('en-IN')}+`;
+    if (!min && max) return `Up to ₹${max.toLocaleString('en-IN')}`;
+    return `₹${min?.toLocaleString('en-IN')} - ₹${max?.toLocaleString('en-IN')}`;
   };
 
   if (loading) {
@@ -245,7 +264,7 @@ const SingleProject = () => {
               <div className="flex items-center gap-2 text-gray-600">
                 <IndianRupee className="w-4 h-4" />
                 <span className="text-sm">
-                  Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}
+                  Budget: {formatBudget(project.min_budget, project.max_budget)}
                 </span>
               </div>
             </div>

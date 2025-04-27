@@ -42,14 +42,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  IndianRupee, 
-  User, 
-  CheckCircle2, 
-  Calendar, 
-  Menu, 
-  ChevronRight, 
-  Pencil, 
+import {
+  IndianRupee,
+  User,
+  CheckCircle2,
+  Calendar,
+  Menu,
+  ChevronRight,
+  Pencil,
   Trash,
   AlertCircle,
   MessageSquare,
@@ -102,11 +102,15 @@ export const Freelancing = () => {
           comments:project_applications(count)
         `)
         .order("created_at", { ascending: false });
-      
+
       if (error) throw error;
 
       return data.map(project => ({
         ...project,
+        // Keep both min_budget and max_budget for proper budget display
+        min_budget: project.min_budget,
+        max_budget: project.max_budget,
+        // For backward compatibility
         budget: project.min_budget,
         _count: {
           comments: project.comments?.[0]?.count || 0,
@@ -135,16 +139,16 @@ export const Freelancing = () => {
     queryKey: ["receivedApplications", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      
+
       const { data: userProjects } = await supabase
         .from("projects")
         .select("id")
         .eq("author_id", user.id);
-      
+
       if (!userProjects || userProjects.length === 0) return [];
-      
+
       const projectIds = userProjects.map(project => project.id);
-      
+
       const { data, error } = await supabase
         .from("project_applications")
         .select(`
@@ -162,7 +166,7 @@ export const Freelancing = () => {
           )
         `)
         .in("project_id", projectIds);
-      
+
       if (data?.length) {
         await supabase
           .from("project_applications")
@@ -172,12 +176,16 @@ export const Freelancing = () => {
       }
 
       if (error) throw error;
-      
+
       return data.map(app => ({
         ...app,
         status: app.status as "pending" | "accepted" | "rejected",
         project: {
           ...app.project,
+          // Keep both min_budget and max_budget for proper budget display
+          min_budget: app.project.min_budget,
+          max_budget: app.project.max_budget,
+          // For backward compatibility
           budget: app.project.min_budget,
           status: app.project.status as "open" | "closed" | "in_progress"
         }
@@ -194,9 +202,9 @@ export const Freelancing = () => {
           .update({ whatsapp_number: newProject.whatsapp_number })
           .eq("id", user.id);
       }
-      
+
       let skillsArray: string[] = [];
-      
+
       if (Array.isArray(newProject.required_skills)) {
         skillsArray = newProject.required_skills;
       } else if (typeof newProject.required_skills === 'string') {
@@ -205,7 +213,7 @@ export const Freelancing = () => {
           skillsArray = skillsText.split(',').map(s => s.trim());
         }
       }
-      
+
       const { data, error } = await supabase
         .from("projects")
         .insert({
@@ -221,7 +229,7 @@ export const Freelancing = () => {
         })
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },
@@ -245,16 +253,16 @@ export const Freelancing = () => {
   const updateProjectMutation = useMutation({
     mutationFn: async (updatedProject: Partial<Project> & { id: string, allow_whatsapp_apply?: boolean, allow_normal_apply?: boolean, whatsapp_number?: string }) => {
       const { id, budget, whatsapp_number, required_skills, ...projectData } = updatedProject;
-      
+
       if (whatsapp_number && user?.id) {
         await supabase
           .from("profiles")
           .update({ whatsapp_number: whatsapp_number })
           .eq("id", user.id);
       }
-      
+
       let skillsArray: string[] | undefined;
-      
+
       if (required_skills !== undefined) {
         if (Array.isArray(required_skills)) {
           skillsArray = required_skills;
@@ -269,7 +277,7 @@ export const Freelancing = () => {
           skillsArray = [];
         }
       }
-      
+
       const { data, error } = await supabase
         .from("projects")
         .update({
@@ -328,18 +336,18 @@ export const Freelancing = () => {
   });
 
   const applyProjectMutation = useMutation({
-    mutationFn: async ({ 
-      projectId, 
-      message, 
-      phoneNumber, 
-      experience, 
-      portfolio 
-    }: { 
-      projectId: string; 
-      message: string; 
+    mutationFn: async ({
+      projectId,
+      message,
+      phoneNumber,
+      experience,
+      portfolio
+    }: {
+      projectId: string;
+      message: string;
       phoneNumber: string;
       experience?: string;
-      portfolio?: string; 
+      portfolio?: string;
     }) => {
       const { data, error } = await supabase
         .from("project_applications")
@@ -384,18 +392,18 @@ export const Freelancing = () => {
         .eq("id", applicationId)
         .select()
         .single();
-      
+
       if (error) throw error;
-      
+
       if (status === "accepted" && projectId) {
         const { error: projectError } = await supabase
           .from("projects")
           .update({ status: "in_progress" })
           .eq("id", projectId);
-        
+
         if (projectError) throw projectError;
       }
-      
+
       return data;
     },
     onSuccess: () => {
@@ -421,9 +429,9 @@ export const Freelancing = () => {
         .from("project_applications")
         .update({ status: "accepted" })
         .eq("id", applicationId);
-      
+
       if (error) throw error;
-      
+
       return { success: true, message: "Application accepted successfully" };
     },
     onSuccess: () => {
@@ -449,9 +457,9 @@ export const Freelancing = () => {
         .from("project_applications")
         .update({ status: "rejected" })
         .eq("id", applicationId);
-      
+
       if (error) throw error;
-      
+
       return { success: true, message: "Application rejected successfully" };
     },
     onSuccess: () => {
@@ -526,7 +534,7 @@ export const Freelancing = () => {
 
   const handleApplyToProject = () => {
     if (!selectedProject) return;
-    
+
     applyProjectMutation.mutate({
       projectId: selectedProject.id,
       message: applicationMessage,
@@ -555,7 +563,7 @@ export const Freelancing = () => {
 
       if (userProjects && userProjects.length > 0) {
         const projectIds = userProjects.map(p => p.id);
-        
+
         await supabase
           .from("project_applications")
           .update({ viewed_at: new Date().toISOString() })
@@ -563,7 +571,7 @@ export const Freelancing = () => {
           .in("project_id", projectIds);
       }
     };
-    
+
     markApplicationsAsViewed();
   }, [user?.id]);
 
@@ -578,26 +586,26 @@ export const Freelancing = () => {
 
   const renderProjectSkills = (project: Project) => {
     if (!project.required_skills) return null;
-    
+
     if (Array.isArray(project.required_skills)) {
       return project.required_skills.map((skill, index) => (
         <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
           {skill}
         </span>
       ));
-    } 
-    
+    }
+
     if (typeof project.required_skills === 'string') {
       const skillsText = project.required_skills as string;
       if (skillsText.trim() === '') return null;
-      
+
       return skillsText.split(',').map((skill, index) => (
         <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
           {skill.trim()}
         </span>
       ));
     }
-    
+
     return null;
   };
 
@@ -639,7 +647,7 @@ export const Freelancing = () => {
               Apply Now
             </Button>
           )}
-          
+
           {project.author?.whatsapp_number && project.allow_whatsapp_apply !== false && (
             <Button
               variant="outline"
@@ -701,17 +709,17 @@ export const Freelancing = () => {
           </h3>
           {user?.id === project.author_id && (
             <div className="flex gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-8 w-8"
                 onClick={() => handleEditProject(project)}
               >
                 <Pencil className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-8 w-8 text-red-500"
                 onClick={() => handleDeleteProject(project)}
               >
@@ -732,7 +740,7 @@ export const Freelancing = () => {
             Deadline: {project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
           </span>
         </div>
-        
+
         <div className="flex items-center gap-2 text-gray-600">
           <IndianRupee className="w-4 h-4" />
           <span className="text-sm">Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
@@ -742,7 +750,7 @@ export const Freelancing = () => {
           <User className="w-4 h-4" />
           <span className="text-sm">{project.author?.full_name || project.author?.username}</span>
         </div>
-        
+
         {renderProjectSkills(project)}
       </div>
 
@@ -758,7 +766,7 @@ export const Freelancing = () => {
           )}>
             {project.status?.toUpperCase()}
           </span>
-          
+
           {renderProjectActions(project)}
         </div>
       </div>
@@ -782,8 +790,8 @@ export const Freelancing = () => {
                   <SheetTitle>Navigation</SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col gap-4 py-6">
-                  <Button 
-                    variant={activeTab === "browse" ? "default" : "ghost"} 
+                  <Button
+                    variant={activeTab === "browse" ? "default" : "ghost"}
                     className="justify-start gap-2"
                     onClick={() => handleTabChange("browse")}
                   >
@@ -881,7 +889,7 @@ export const Freelancing = () => {
 
           <TabsContent value="received" className="space-y-6">
             <h2 className="text-2xl font-serif font-bold text-gray-900">Received Applications</h2>
-            
+
             {isLoadingReceivedApplications ? (
               <div className="grid gap-6 md:grid-cols-2">
                 {[1, 2, 3, 4].map((i) => (
@@ -1006,7 +1014,7 @@ export const Freelancing = () => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={() => selectedProject && deleteProjectMutation.mutate(selectedProject.id)}
                 className="bg-red-500 hover:bg-red-600"
               >
