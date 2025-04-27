@@ -36,9 +36,9 @@ export const ThoughtCard = ({
   isAdmin = false
 }: ThoughtCardProps) => {
   const authorName = thought.author?.full_name || thought.author?.username || 'Unknown';
-  const likes = thought._count?.likes || 0;
+  const likes = thought._count?.likes || thought.likes_count || 0;
   const bookmarks = thought._count?.bookmarks || 0;
-  const comments = thought._count?.comments || 0;
+  const comments = thought._count?.comments || thought.comments_count || 0;
   
   return (
     <Card className="h-full flex flex-col overflow-hidden transition-shadow hover:shadow-md">

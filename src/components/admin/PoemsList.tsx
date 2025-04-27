@@ -41,7 +41,19 @@ export const PoemsList = () => {
         return;
       }
 
-      setThoughts(thoughtsData);
+      // Map the response data to the Thought type
+      const mappedThoughts = thoughtsData.map((thought) => ({
+        ...thought,
+        likes_count: thought.likes?.[0]?.count || 0,
+        comments_count: thought.comments?.[0]?.count || 0,
+        _count: {
+          likes: thought.likes?.[0]?.count || 0,
+          bookmarks: thought.bookmarks?.[0]?.count || 0,
+          comments: thought.comments?.[0]?.count || 0
+        }
+      })) as Thought[];
+
+      setThoughts(mappedThoughts);
     };
 
     fetchThoughts();

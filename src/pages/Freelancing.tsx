@@ -40,7 +40,13 @@ const Freelancing = () => {
         });
         throw error;
       }
-      return data as Project[];
+      
+      // Map the data to include the required category field
+      return data.map(project => ({
+        ...project,
+        budget: project.min_budget || 0,
+        category: project.job_type || "other"
+      })) as Project[];
     },
   });
 
@@ -52,14 +58,24 @@ const Freelancing = () => {
 
       const { data, error } = await supabase
         .from("projects")
-        .insert({ ...newProject, author_id: user.id })
+        .insert({ 
+          ...newProject,
+          author_id: user.id,
+          job_type: newProject.category // Store category in job_type field
+        })
         .select()
         .single();
 
       if (error) {
         throw error;
       }
-      return data as Project;
+      
+      // Map the response to include the required category field
+      return {
+        ...data,
+        budget: data.min_budget || 0,
+        category: data.job_type || "other"
+      } as Project;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });

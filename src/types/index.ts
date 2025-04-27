@@ -37,8 +37,8 @@ export interface Thought {
   content: string;
   created_at: string;
   updated_at: string;
-  likes_count: number;
-  comments_count: number;
+  likes_count?: number;
+  comments_count?: number;
   author?: Profile;
   is_liked?: boolean;
   // Adding missing properties
@@ -48,6 +48,11 @@ export interface Thought {
   likes?: { count: number }[];
   bookmarks?: { count: number }[];
   comments?: { count: number }[];
+  _count?: {
+    likes: number;
+    bookmarks: number;
+    comments: number;
+  };
 }
 
 export interface Project extends ProjectExtension {
@@ -55,7 +60,7 @@ export interface Project extends ProjectExtension {
   title: string;
   description: string;
   author_id: string;
-  budget: number;
+  budget?: number;
   min_budget?: number;
   max_budget?: number;
   deadline?: string;
@@ -75,6 +80,7 @@ export interface Project extends ProjectExtension {
   allow_whatsapp_apply?: boolean;
   applications_count?: number | { count: number }[];
   milestones_count?: number | { count: number }[];
+  category?: string; // Added category property
 }
 
 export interface Comment {

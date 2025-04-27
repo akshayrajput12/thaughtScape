@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ export const ProjectsList = () => {
       const projectsWithCounts = projectsData?.map(project => ({
         ...project,
         budget: project.min_budget,
+        category: project.job_type || "other", // Add category field based on job_type
         applications_count: project.applications_count || 0,
         milestones_count: project.milestones_count || 0
       })) as Project[];
