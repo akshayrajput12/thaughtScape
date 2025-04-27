@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Project } from "@/types";
 import { Input } from "@/components/ui/input";
@@ -111,7 +110,7 @@ export const EnhancedProjectsList = ({
     return (
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="p-5 bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-pulse">
+          <div key={i} className="p-5 bg-background rounded-xl shadow-sm animate-pulse">
             <div className="flex items-center gap-3 mb-4">
               <Skeleton className="h-10 w-10 rounded-full" />
               <div>

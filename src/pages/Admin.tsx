@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   Briefcase, 
   Calendar, 
@@ -14,14 +14,13 @@ import {
   Eye,
   Plus,
   RefreshCw,
-  ChevronRight,
   User
 } from "lucide-react";
 import type { Project, ProjectApplication, Profile } from "@/types";
 import { ProjectApplicationCard } from "@/components/freelancing/ProjectApplicationCard";
-import { NewProjectDialog } from "@/pages/freelancing/components/NewProjectDialog";
+import { NewProjectModal } from "@/components/freelancing/components/NewProjectModal";
 
-export const ProjectsList = () => {
+const Admin = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [applications, setApplications] = useState<ProjectApplication[]>([]);
@@ -459,7 +458,7 @@ export const ProjectsList = () => {
         ))}
       </div>
       
-      <NewProjectDialog 
+      <NewProjectModal 
         isOpen={showNewProjectDialog}
         onOpenChange={setShowNewProjectDialog}
         onProjectCreated={handleProjectCreated}
@@ -467,3 +466,5 @@ export const ProjectsList = () => {
     </div>
   );
 };
+
+export default Admin;

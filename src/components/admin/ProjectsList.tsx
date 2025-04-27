@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   Briefcase, 
   Calendar, 
@@ -15,12 +14,11 @@ import {
   Eye,
   Plus,
   RefreshCw,
-  ChevronRight,
   User
 } from "lucide-react";
-import type { Project, ProjectApplication, Profile } from "@/types";
+import type { Project, ProjectApplication } from "@/types";
 import { ProjectApplicationCard } from "@/components/freelancing/ProjectApplicationCard";
-import { NewProjectDialog } from "@/pages/freelancing/components/NewProjectDialog";
+import { NewProjectModal } from "@/components/freelancing/components/NewProjectModal";
 
 export const ProjectsList = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -460,10 +458,26 @@ export const ProjectsList = () => {
         ))}
       </div>
       
-      <NewProjectDialog 
+      <NewProjectModal 
         isOpen={showNewProjectDialog}
         onOpenChange={setShowNewProjectDialog}
-        onProjectCreated={handleProjectCreated}
+        onSubmit={(projectData) => {
+          const newProject = {
+            ...projectData,
+            id: crypto.randomUUID(),
+            created_at: new Date().toISOString(),
+            author: {
+              id: "system",
+              username: "Admin",
+              full_name: "System Admin",
+              avatar_url: "",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }
+          } as Project;
+          handleProjectCreated(newProject);
+        }}
+        isLoading={false}
       />
     </div>
   );

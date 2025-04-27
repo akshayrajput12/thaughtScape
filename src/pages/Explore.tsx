@@ -415,7 +415,7 @@ const Explore = () => {
                     </motion.div>
                   </div>
 
-                  {thoughtsLoading ? (
+                  {thoughts.length === 0 ? (
                     <div className="space-y-4 md:space-y-8">
                       {[...Array(3)].map((_, i) => (
                         <div key={i} className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg border border-border">
@@ -436,7 +436,7 @@ const Explore = () => {
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      {filteredThoughts?.map((thought, index) => (
+                      {thoughts.map((thought, index) => (
                         <motion.div
                           key={thought.id}
                           initial={{ opacity: 0, y: 20 }}
