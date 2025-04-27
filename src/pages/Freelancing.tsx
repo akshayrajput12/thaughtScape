@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom"; // Add this import for navigation
 import {
   Tabs,
   TabsContent,
@@ -72,6 +74,7 @@ export const Freelancing = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate(); // Initialize the navigate function
   const isMobile = useMobile();
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isEditProjectDialogOpen, setIsEditProjectDialogOpen] = useState(false);
