@@ -22,10 +22,14 @@ export const EnhancedProjectCard = ({ project, hasApplied = false, onApply, feat
     : 'recently';
     
   // Get the application count
-  const applicationsCount = project.applications_count || project._count?.applications || 0;
+  const applicationsCount = typeof project.applications_count === 'number' 
+    ? project.applications_count 
+    : project._count?.applications || 0;
   
   // Get the milestones count
-  const milestonesCount = project.milestones_count || project._count?.milestones || 0;
+  const milestonesCount = typeof project.milestones_count === 'number'
+    ? project.milestones_count
+    : project._count?.milestones || 0;
 
   return (
     <Card className={`overflow-hidden transition-all hover:shadow-md ${featured ? 'border-2 border-primary' : ''}`}>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -461,7 +462,23 @@ const Admin = () => {
       <NewProjectModal 
         isOpen={showNewProjectDialog}
         onOpenChange={setShowNewProjectDialog}
-        onProjectCreated={handleProjectCreated}
+        onSubmit={(projectData) => {
+          const newProject = {
+            ...projectData,
+            id: crypto.randomUUID(),
+            created_at: new Date().toISOString(),
+            author: {
+              id: "system",
+              username: "Admin",
+              full_name: "System Admin",
+              avatar_url: "",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }
+          } as Project;
+          handleProjectCreated(newProject);
+        }}
+        isLoading={false}
       />
     </div>
   );

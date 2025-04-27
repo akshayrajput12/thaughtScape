@@ -25,7 +25,9 @@ const projectSchema = z.object({
   budget: z.coerce.number().positive({ message: "Budget must be positive." }),
   category: z.string().min(1, { message: "Please select a category." }),
   deadline: z.string().optional(),
-  required_skills: z.string().transform(val => val.split(',').map(skill => skill.trim()).filter(Boolean)),
+  required_skills: z.string().transform(val => 
+    val.split(',').map(skill => skill.trim()).filter(Boolean)
+  ),
 });
 
 export const NewProjectModal = ({ isOpen, onOpenChange, onSubmit, isLoading }: NewProjectModalProps) => {
