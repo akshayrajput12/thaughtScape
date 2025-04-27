@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,12 +13,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import type { Project } from "@/types";
 
-interface NewProjectDialogProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onProjectCreated: (project: Project) => void;
-}
-
 const projectSchema = z.object({
   title: z.string().min(5, { message: "Title must be at least 5 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
@@ -27,7 +20,10 @@ const projectSchema = z.object({
   max_budget: z.coerce.number().positive({ message: "Budget must be positive." }).optional(),
   job_type: z.string().min(1, { message: "Please select a category." }),
   deadline: z.string().optional(),
-  required_skills: z.string().transform(val => val.split(',').map(skill => skill.trim()).filter(Boolean)),
+  required_skills: z.union([
+    z.string().transform(val => val.split(',').map(skill => skill.trim()).filter(Boolean)),
+    z.array(z.string())
+  ]).optional(),
   company_name: z.string().optional(),
   experience_level: z.string().optional(),
   location: z.string().optional()
@@ -67,7 +63,6 @@ export const NewProjectDialog = ({ isOpen, onOpenChange, onProjectCreated }: New
     try {
       setIsSubmitting(true);
 
-      // Create the project object with the correct properties
       const projectData = {
         title: values.title,
         description: values.description,
@@ -83,7 +78,6 @@ export const NewProjectDialog = ({ isOpen, onOpenChange, onProjectCreated }: New
         status: 'open'
       };
 
-      // Insert the project into the database
       const { data, error } = await supabase
         .from('projects')
         .insert(projectData)
@@ -102,7 +96,6 @@ export const NewProjectDialog = ({ isOpen, onOpenChange, onProjectCreated }: New
 
       if (error) throw error;
 
-      // Format the returned data to match the Project type
       if (data) {
         const formattedProject: Project = {
           ...data,
@@ -123,7 +116,6 @@ export const NewProjectDialog = ({ isOpen, onOpenChange, onProjectCreated }: New
         description: "Project created successfully",
       });
       
-      // Close the dialog and reset the form
       onOpenChange(false);
       form.reset();
     } catch (error) {
