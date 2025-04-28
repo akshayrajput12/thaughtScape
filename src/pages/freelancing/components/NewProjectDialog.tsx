@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -252,43 +251,18 @@ export const NewProjectDialog = ({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className={`${isMobile ? 'max-w-[95%]' : 'sm:max-w-[550px]'} max-h-[85vh] overflow-y-auto dark:bg-gray-800`}>
         <DialogHeader>
-          <DialogTitle className="text-xl dark:text-white">Post a New Job</DialogTitle>
+          <DialogTitle className="text-xl font-serif dark:text-white">Create New Post</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="title" className="dark:text-gray-300">Job Title *</Label>
+            <Label htmlFor="title" className="dark:text-gray-300">Title *</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Frontend Developer"
+              placeholder="Enter post title"
               required
-              className="dark:bg-gray-700 dark:text-white"
-            />
-          </div>
-
-          {isAdmin && (
-            <div className="space-y-2">
-              <Label htmlFor="jobPosterName" className="dark:text-gray-300">Job Poster Name</Label>
-              <Input
-                id="jobPosterName"
-                value={jobPosterName}
-                onChange={(e) => setJobPosterName(e.target.value)}
-                placeholder="Name of person posting the job"
-                className="dark:bg-gray-700 dark:text-white"
-              />
-              <p className="text-xs text-muted-foreground dark:text-gray-400">As an admin, you can set any name as the job poster</p>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="companyName" className="dark:text-gray-300">Company Name</Label>
-            <Input
-              id="companyName"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="e.g. Tech Solutions Inc."
               className="dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -299,20 +273,20 @@ export const NewProjectDialog = ({
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the job requirements, responsibilities, and qualifications in detail"
+              placeholder="Write your post content here..."
               rows={5}
               required
-              className="dark:bg-gray-700 dark:text-white"
+              className="dark:bg-gray-700 dark:text-white resize-none"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="skills" className="dark:text-gray-300">Required Skills *</Label>
+            <Label htmlFor="skills" className="dark:text-gray-300">Tags *</Label>
             <Input
               id="skills"
               value={requiredSkills}
               onChange={(e) => setRequiredSkills(e.target.value)}
-              placeholder="e.g. React, Node.js, UI/UX (comma separated)"
+              placeholder="Add tags (comma separated)"
               required
               className="dark:bg-gray-700 dark:text-white"
             />
@@ -491,7 +465,7 @@ export const NewProjectDialog = ({
             <Label htmlFor="is_featured" className="cursor-pointer dark:text-gray-300">Mark as featured job</Label>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4 pb-6 md:pb-0">
+          <div className="flex justify-end space-x-3 pt-4">
             <Button
               type="button"
               variant="outline"
@@ -503,9 +477,9 @@ export const NewProjectDialog = ({
             <Button
               type="submit"
               disabled={effectiveIsSubmitting}
-              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white"
+              className="bg-gradient-to-r from-[#9b87f5] to-[#6E59A5] hover:from-[#8B5CF6] hover:to-[#7E69AB] text-white"
             >
-              {effectiveIsSubmitting ? "Posting..." : "Post Job"}
+              {effectiveIsSubmitting ? "Posting..." : "Post"}
             </Button>
           </div>
         </form>
@@ -513,4 +487,3 @@ export const NewProjectDialog = ({
     </Dialog>
   );
 };
-
