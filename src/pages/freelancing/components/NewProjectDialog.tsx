@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import type { Project } from "@/types";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -37,6 +39,7 @@ type NewProjectDialogProps = {
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: z.infer<typeof formSchema>) => void;
   isSubmitting: boolean;
+  onProjectCreated?: (project: Project) => void; // Added the missing prop
 };
 
 export const NewProjectDialog = ({
@@ -58,9 +61,6 @@ export const NewProjectDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      {/* <DialogTrigger asChild>
-        <Button variant="outline">Create Project</Button>
-      </DialogTrigger> */}
       <DialogContent className="max-w-2xl dark:bg-gray-800">
         <DialogHeader>
           <DialogTitle className="dark:text-white">Create New Project</DialogTitle>

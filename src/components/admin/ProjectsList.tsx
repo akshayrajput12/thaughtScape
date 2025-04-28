@@ -458,7 +458,10 @@ export const ProjectsList = () => {
       <NewProjectDialog 
         isOpen={showNewProjectDialog}
         onOpenChange={setShowNewProjectDialog}
-        onProjectCreated={handleProjectCreated}
+        onSubmit={values => {
+          handleProjectCreated({ ...values, id: '', created_at: new Date().toISOString(), author: null } as Project);
+        }}
+        isSubmitting={isLoading}
       />
     </div>
   );
