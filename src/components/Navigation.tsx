@@ -333,6 +333,15 @@ const Navigation = () => {
                   </span>
                 )}
               </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSignOut}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                title="Logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">

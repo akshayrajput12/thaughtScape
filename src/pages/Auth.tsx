@@ -43,7 +43,7 @@ const AuthPage = () => {
 
   // If authenticated, redirect to home
   if (isAuthenticated && !loading) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   const handleTabChange = (value: string) => {
