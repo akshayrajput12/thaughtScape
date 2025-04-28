@@ -166,3 +166,19 @@ export interface CallLog {
   caller?: Profile;
   receiver?: Profile;
 }
+
+export interface Advertisement {
+  id: string;
+  title: string;
+  description: string;
+  images: string[];
+  main_image_index: number;
+  link_url?: string;
+  created_at: string;
+  updated_at: string;
+  author_id: string;
+  is_active: boolean;
+  display_location: ('home' | 'explore' | 'popup')[];
+  category?: string;
+  author?: Profile;
+}

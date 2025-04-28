@@ -1,11 +1,8 @@
-import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
-  Calendar,
   IndianRupee,
   User,
   MessageSquare,
-  Link as LinkIcon,
   Briefcase,
   MapPin,
   ExternalLink,
@@ -14,7 +11,11 @@ import {
   Copy,
   CheckCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Pencil,
+  Trash,
+  FileText,
+  Download
 } from "lucide-react";
 import { format } from "date-fns";
 import clsx from "clsx";
@@ -30,6 +31,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 // Expandable Description Component
 const ExpandableDescription = ({ description }: { description: string }) => {
@@ -45,19 +48,24 @@ const ExpandableDescription = ({ description }: { description: string }) => {
       </p>
       {description.length > 150 && (
         <Button
-          variant="ghost"
+          variant={expanded ? "ghost" : "secondary"}
           size="sm"
-          className="mt-1 h-7 text-xs text-primary hover:text-primary/80 px-2"
+          className={clsx(
+            "mt-2 h-8 text-xs px-4 font-medium shadow-sm",
+            expanded
+              ? "text-muted-foreground hover:text-foreground"
+              : "bg-gradient-to-r from-blue-500/90 to-indigo-500/90 hover:from-blue-600 hover:to-indigo-600 text-white dark:from-blue-600/90 dark:to-indigo-600/90"
+          )}
           onClick={() => setExpanded(!expanded)}
         >
           {expanded ? (
             <>
-              <ChevronUp className="h-3.5 w-3.5 mr-1" />
+              <ChevronUp className="h-3.5 w-3.5 mr-1.5" />
               Show Less
             </>
           ) : (
             <>
-              <ChevronDown className="h-3.5 w-3.5 mr-1" />
+              <ChevronDown className="h-3.5 w-3.5 mr-1.5" />
               Read More
             </>
           )}
@@ -72,17 +80,22 @@ interface JobListItemProps {
   hasApplied: boolean;
   onApply: (project: Project) => void;
   featured?: boolean;
+  onEdit?: (project: Project) => void;
+  onDelete?: (project: Project) => void;
 }
 
 export const JobListItem = ({
   project,
   hasApplied,
   onApply,
-  featured = false
+  featured = false,
+  onEdit,
+  onDelete
 }: JobListItemProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const navigate = useNavigate();
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "No deadline";
@@ -132,6 +145,7 @@ export const JobListItem = ({
         description: "Please sign in to apply for this job",
         variant: "destructive",
       });
+      navigate('/auth', { state: { from: window.location.pathname } });
       return;
     }
 
@@ -154,6 +168,7 @@ export const JobListItem = ({
         description: "Please sign in to apply for this job",
         variant: "destructive",
       });
+      navigate('/auth', { state: { from: window.location.pathname } });
       return;
     }
 
@@ -188,9 +203,31 @@ export const JobListItem = ({
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-              {project.title}
-            </h3>
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                {project.title}
+              </h3>
+              {user?.id === project.author_id && onEdit && onDelete && (
+                <div className="flex gap-1 ml-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => onEdit(project)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-red-500"
+                    onClick={() => onDelete(project)}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
             <div className="flex flex-wrap items-center text-sm text-muted-foreground gap-2 mt-1">
               <span className="flex items-center">
                 {project.company_name ? (
@@ -201,7 +238,7 @@ export const JobListItem = ({
                 ) : (
                   <>
                     <User className="h-3.5 w-3.5 mr-1 text-primary/70" />
-                    {project.author?.username || 'Anonymous'}
+                    {project.job_poster_name || project.author?.full_name || project.author?.username || 'Anonymous'}
                   </>
                 )}
               </span>
@@ -215,7 +252,7 @@ export const JobListItem = ({
 
               <span className="flex items-center">
                 <Clock className="h-3.5 w-3.5 mr-1 text-primary/70" />
-                {formatDate(project.deadline)}
+                {formatDate(project.application_deadline)}
               </span>
             </div>
           </div>
@@ -240,16 +277,54 @@ export const JobListItem = ({
         <ExpandableDescription description={project.description} />
       </div>
 
+      {/* Attachment URL */}
+      {project.attachment_url && (
+        <div className="mt-4">
+          <a
+            href={project.attachment_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center px-3 py-2 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors shadow-sm border border-blue-200 dark:border-blue-800"
+          >
+            <FileText className="h-4 w-4 mr-2 text-blue-600 dark:text-blue-400" />
+            <span className="font-medium">View attached document</span>
+            <ExternalLink className="h-3.5 w-3.5 ml-2 text-blue-600 dark:text-blue-400" />
+          </a>
+        </div>
+      )}
+
       {/* Skills */}
       {project.required_skills && (
         <div className="mt-4 flex flex-wrap gap-1.5">
-          {(Array.isArray(project.required_skills)
-            ? project.required_skills
-            : [project.required_skills]).map((skill, index) => (
-            <Badge key={index} variant="outline" className="text-xs py-0.5">
-              {skill}
+          {(() => {
+            let skills: string[] = [];
+
+            if (Array.isArray(project.required_skills)) {
+              skills = project.required_skills as string[];
+            } else if (typeof project.required_skills === 'string') {
+              skills = (project.required_skills as string).split(',').map((s: string) => s.trim());
+            } else if (project.required_skills) {
+              skills = [String(project.required_skills)];
+            }
+
+            return skills.map((skill, index) => (
+              <Badge key={index} variant="outline" className="text-xs py-0.5">
+                {skill}
+              </Badge>
+            ));
+          })()}
+
+          {project.job_type && (
+            <Badge variant="secondary" className="text-xs py-0.5 bg-blue-100 text-blue-800 hover:bg-blue-200">
+              {project.job_type}
             </Badge>
-          ))}
+          )}
+
+          {project.experience_level && (
+            <Badge variant="secondary" className="text-xs py-0.5 bg-green-100 text-green-800 hover:bg-green-200">
+              {project.experience_level}
+            </Badge>
+          )}
         </div>
       )}
 
@@ -280,6 +355,17 @@ export const JobListItem = ({
 
           <span className="text-xs text-muted-foreground">
             Posted {format(new Date(project.created_at), "MMM d")}
+          </span>
+
+          <span className={clsx(
+            "px-3 py-1 rounded-full text-xs font-medium",
+            {
+              "bg-green-100 text-green-800": project.status === "open",
+              "bg-yellow-100 text-yellow-800": project.status === "in_progress",
+              "bg-gray-100 text-gray-800": project.status === "closed"
+            }
+          )}>
+            {project.status?.toUpperCase()}
           </span>
         </div>
 

@@ -9,10 +9,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/AuthProvider";
-import type { Thought } from "@/types";
+import type { Thought, Advertisement } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import JobsTab from "@/components/explore/JobsTab";
+import { AdvertisementCard } from "@/components/advertisements/AdvertisementCard";
 
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,6 +45,33 @@ const Explore = () => {
         throw error;
       }
       return data || [];
+    }
+  });
+
+  // Fetch advertisements
+  const { data: advertisements = [], isLoading: adsLoading } = useQuery({
+    queryKey: ['explore-advertisements'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('advertisements')
+        .select(`
+          *,
+          author:profiles!advertisements_author_id_fkey(
+            id,
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('is_active', true)
+        .contains('display_location', ['explore'])
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching advertisements:", error);
+        return [];
+      }
+      return data as Advertisement[];
     }
   });
 
@@ -130,6 +158,16 @@ const Explore = () => {
             </TabsList>
 
             <TabsContent value="thoughts" className="space-y-6">
+              {/* Display explore advertisements at the top of the thoughts tab */}
+              {!adsLoading && advertisements.length > 0 && (
+                <div className="mb-6">
+                  <AdvertisementCard
+                    advertisement={advertisements[0]}
+                    className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5"
+                  />
+                </div>
+              )}
+
               {thoughtsLoading ? (
                 <div className="space-y-4 md:space-y-8">
                   {[...Array(3)].map((_, i) => (
@@ -139,8 +177,8 @@ const Explore = () => {
               ) : (
                 <div className="space-y-6">
                   {thoughts
-                    .filter(thought => 
-                      !searchQuery || 
+                    .filter(thought =>
+                      !searchQuery ||
                       thought.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                       thought.author?.username?.toLowerCase().includes(searchQuery.toLowerCase())
                     )
@@ -156,6 +194,19 @@ const Explore = () => {
                           currentUserId={user?.id || null}
                           onDelete={handleDelete}
                         />
+
+                        {/* Insert an advertisement after every 4 posts if available */}
+                        {index > 0 &&
+                         index % 4 === 0 &&
+                         advertisements.length > 1 &&
+                         advertisements[Math.min(Math.floor(index / 4), advertisements.length - 1)] && (
+                          <div className="my-6">
+                            <AdvertisementCard
+                              advertisement={advertisements[Math.min(Math.floor(index / 4), advertisements.length - 1)]}
+                              variant="compact"
+                            />
+                          </div>
+                        )}
                       </motion.div>
                     ))}
                 </div>
@@ -163,7 +214,8 @@ const Explore = () => {
             </TabsContent>
 
             <TabsContent value="jobs">
-              <JobsTab />
+              {/* Pass advertisements to JobsTab */}
+              <JobsTab advertisements={advertisements} />
             </TabsContent>
           </Tabs>
         </motion.div>

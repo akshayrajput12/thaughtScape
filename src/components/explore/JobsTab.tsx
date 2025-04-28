@@ -16,11 +16,16 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Search, SlidersHorizontal, X, ChevronDown, Clock, Briefcase } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import type { Project } from "@/types";
+import type { Project, Advertisement } from "@/types";
 import { ApplicationDialog } from "@/pages/freelancing/components/ApplicationDialog";
 import JobListItem from "./JobListItem";
+import { AdvertisementCard } from "@/components/advertisements/AdvertisementCard";
 
-const JobsTab = () => {
+interface JobsTabProps {
+  advertisements?: Advertisement[];
+}
+
+const JobsTab = ({ advertisements = [] }: JobsTabProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userApplications, setUserApplications] = useState<string[]>([]);
@@ -358,6 +363,16 @@ const JobsTab = () => {
         </div>
       )}
 
+      {/* Display explore advertisements at the top of the jobs tab */}
+      {advertisements.length > 0 && !isLoading && (
+        <div className="mb-6">
+          <AdvertisementCard
+            advertisement={advertisements[0]}
+            className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5"
+          />
+        </div>
+      )}
+
       {/* Projects list - vertical layout */}
       {isLoading ? (
         <div className="space-y-6">
@@ -409,6 +424,19 @@ const JobsTab = () => {
                 onApply={handleApplyToProject}
                 featured={project.is_featured}
               />
+
+              {/* Insert an advertisement after every 3 jobs if available */}
+              {index > 0 &&
+               index % 3 === 0 &&
+               advertisements.length > 1 &&
+               advertisements[Math.min(Math.floor(index / 3), advertisements.length - 1)] && (
+                <div className="mt-6 mb-2">
+                  <AdvertisementCard
+                    advertisement={advertisements[Math.min(Math.floor(index / 3), advertisements.length - 1)]}
+                    variant="compact"
+                  />
+                </div>
+              )}
             </motion.div>
           ))}
         </motion.div>

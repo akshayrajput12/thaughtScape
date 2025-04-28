@@ -33,7 +33,6 @@ export const NewProjectDialog = ({
   const [requiredSkills, setRequiredSkills] = useState("");
   const [minBudget, setMinBudget] = useState("");
   const [maxBudget, setMaxBudget] = useState("");
-  const [deadline, setDeadline] = useState("");
   const [localIsSubmitting, setLocalIsSubmitting] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [jobPosterName, setJobPosterName] = useState("");
@@ -46,6 +45,8 @@ export const NewProjectDialog = ({
   const [isFeatured, setIsFeatured] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userFullName, setUserFullName] = useState("");
+  const [attachmentUrl, setAttachmentUrl] = useState("");
+  const [applicationDeadline, setApplicationDeadline] = useState("");
   const isMobile = useMobile();
 
   const effectiveIsSubmitting = isSubmitting || localIsSubmitting;
@@ -66,12 +67,15 @@ export const NewProjectDialog = ({
         location,
         job_type: jobType,
         experience_level: experienceLevel,
-        deadline: deadline || undefined,
+        application_deadline: applicationDeadline || undefined,
         application_methods: applicationMethods,
         application_method: applicationMethods.length > 0 ? applicationMethods[0] : 'inbuilt',
         application_link: applicationMethods.includes('direct') ? applicationLink :
                           applicationMethods.includes('whatsapp') ? `https://wa.me/${whatsappNumber.replace(/\D/g, '')}` : '',
-        is_featured: isFeatured
+        attachment_url: attachmentUrl,
+        is_featured: isFeatured,
+        allow_whatsapp_apply: applicationMethods.includes('whatsapp'),
+        allow_normal_apply: applicationMethods.includes('inbuilt')
       });
       return;
     }
@@ -148,12 +152,15 @@ export const NewProjectDialog = ({
           location,
           job_type: jobType,
           experience_level: experienceLevel,
-          deadline: deadline || null,
+          application_deadline: applicationDeadline ? new Date(applicationDeadline).toISOString() : null,
           application_methods: applicationMethods,
           application_method: applicationMethods.length > 0 ? applicationMethods[0] : 'inbuilt',
           application_link: applicationMethods.includes('direct') ? applicationLink :
                             applicationMethods.includes('whatsapp') ? `https://wa.me/${whatsappNumber.replace(/\D/g, '')}` : '',
-          is_featured: isFeatured
+          attachment_url: attachmentUrl || null,
+          is_featured: isFeatured,
+          allow_whatsapp_apply: applicationMethods.includes('whatsapp'),
+          allow_normal_apply: applicationMethods.includes('inbuilt')
         })
         .select(`
           *,
@@ -180,12 +187,13 @@ export const NewProjectDialog = ({
       setMinBudget("");
       setMaxBudget("");
       setWhatsappNumber("");
-      setDeadline("");
+      setApplicationDeadline("");
       setCompanyName("");
       setLocation("");
       setJobType("");
       setExperienceLevel("");
       setApplicationLink("");
+      setAttachmentUrl("");
       setApplicationMethods(["inbuilt"]);
       setIsFeatured(false);
 
@@ -281,12 +289,12 @@ export const NewProjectDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="skills" className="dark:text-gray-300">Tags *</Label>
+            <Label htmlFor="skills" className="dark:text-gray-300">Skills *</Label>
             <Input
               id="skills"
               value={requiredSkills}
               onChange={(e) => setRequiredSkills(e.target.value)}
-              placeholder="Add tags (comma separated)"
+              placeholder="Add skills (comma separated)"
               required
               className="dark:bg-gray-700 dark:text-white"
             />
@@ -317,6 +325,18 @@ export const NewProjectDialog = ({
                 className="dark:bg-gray-700 dark:text-white"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="companyName" className="dark:text-gray-300">Company Name *</Label>
+            <Input
+              id="companyName"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Enter company name"
+              required
+              className="dark:bg-gray-700 dark:text-white"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -364,12 +384,13 @@ export const NewProjectDialog = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="deadline" className="dark:text-gray-300">Project Deadline</Label>
+              <Label htmlFor="application_deadline" className="dark:text-gray-300">Application Deadline *</Label>
               <Input
-                id="deadline"
+                id="application_deadline"
                 type="date"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
+                value={applicationDeadline}
+                onChange={(e) => setApplicationDeadline(e.target.value)}
+                required
                 className="dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -455,6 +476,20 @@ export const NewProjectDialog = ({
               <p className="text-xs text-muted-foreground dark:text-gray-400">This will be saved to your profile for future projects</p>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="attachment_url" className="dark:text-gray-300">Attachment URL</Label>
+            <Input
+              id="attachment_url"
+              value={attachmentUrl}
+              onChange={(e) => setAttachmentUrl(e.target.value)}
+              placeholder="e.g. https://example.com/job-details.pdf"
+              className="dark:bg-gray-700 dark:text-white"
+            />
+            <p className="text-xs text-muted-foreground dark:text-gray-400">Link to additional job details or documents</p>
+          </div>
+
+
 
           <div className="flex items-center space-x-2">
             <Checkbox

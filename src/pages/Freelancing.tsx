@@ -17,8 +17,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Sheet,
@@ -43,32 +41,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  IndianRupee,
-  User,
-  CheckCircle2,
-  Calendar,
   Menu,
   ChevronRight,
-  Pencil,
-  Trash,
-  AlertCircle,
-  MessageSquare,
-  Phone,
   Briefcase,
-  CheckCircle,
-  Clock,
-  Flag
+  FileText,
+  MessageSquare,
+  Search,
+  X,
+  ArrowUpDown,
+  SlidersHorizontal
 } from "lucide-react";
-import clsx from "clsx";
 import type { Project, ProjectApplication } from "@/types";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { format } from "date-fns";
 import { ProjectApplicationCard } from "@/components/freelancing/ProjectApplicationCard";
 import { useMobile } from "@/hooks/use-mobile";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import JobListItem from "./freelancing/components/JobListItem";
 import { NewProjectDialog } from "@/pages/freelancing/components/NewProjectDialog";
 import { ApplicationDialog } from "@/pages/freelancing/components/ApplicationDialog";
-import { useForm } from "react-hook-form";
+
 
 export const Freelancing = () => {
   const { user } = useAuth();
@@ -82,13 +74,10 @@ export const Freelancing = () => {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [experience, setExperience] = useState("");
-  const [portfolio, setPortfolio] = useState("");
   const [activeTab, setActiveTab] = useState("browse");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [allowWhatsappApply, setAllowWhatsappApply] = useState(true);
-  const [allowNormalApply, setAllowNormalApply] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState<"newest" | "budget-high" | "budget-low" | "deadline">("newest");
 
   const { data: projects = [], isLoading: isLoadingProjects } = useQuery({
     queryKey: ["projects"],
@@ -220,12 +209,24 @@ export const Freelancing = () => {
           title: newProject.title,
           description: newProject.description,
           required_skills: skillsArray,
-          min_budget: newProject.budget,
+          min_budget: newProject.min_budget || newProject.budget,
+          max_budget: newProject.max_budget,
           deadline: newProject.deadline,
           author_id: newProject.author_id,
           status: newProject.status,
+          job_poster_name: newProject.job_poster_name,
+          company_name: newProject.company_name,
+          location: newProject.location,
+          job_type: newProject.job_type,
+          experience_level: newProject.experience_level,
+          application_deadline: newProject.application_deadline,
+          application_link: newProject.application_link,
+          attachment_url: newProject.attachment_url,
+          application_methods: newProject.application_methods,
+          application_method: newProject.application_method,
           allow_whatsapp_apply: newProject.allow_whatsapp_apply,
-          allow_normal_apply: newProject.allow_normal_apply
+          allow_normal_apply: newProject.allow_normal_apply,
+          is_featured: newProject.is_featured
         })
         .select()
         .single();
@@ -283,7 +284,19 @@ export const Freelancing = () => {
         .update({
           ...projectData,
           min_budget: budget,
-          required_skills: skillsArray
+          max_budget: updatedProject.max_budget,
+          required_skills: skillsArray,
+          company_name: updatedProject.company_name,
+          location: updatedProject.location,
+          job_type: updatedProject.job_type,
+          experience_level: updatedProject.experience_level,
+          application_deadline: updatedProject.application_deadline,
+          application_link: updatedProject.application_link,
+          attachment_url: updatedProject.attachment_url,
+          job_poster_name: updatedProject.job_poster_name,
+          application_methods: updatedProject.application_methods,
+          application_method: updatedProject.application_method,
+          is_featured: updatedProject.is_featured
         })
         .eq("id", id)
         .select()
@@ -423,61 +436,7 @@ export const Freelancing = () => {
     },
   });
 
-  const acceptApplicationMutation = useMutation({
-    mutationFn: async (applicationId: string) => {
-      const { error } = await supabase
-        .from("project_applications")
-        .update({ status: "accepted" })
-        .eq("id", applicationId);
 
-      if (error) throw error;
-
-      return { success: true, message: "Application accepted successfully" };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications"] });
-      toast({
-        title: "Success",
-        description: "Application accepted successfully",
-      });
-    },
-    onError: (error) => {
-      console.error('Error accepting application:', error);
-      toast({
-        title: "Error",
-        description: "Failed to accept application",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const rejectApplicationMutation = useMutation({
-    mutationFn: async (applicationId: string) => {
-      const { error } = await supabase
-        .from("project_applications")
-        .update({ status: "rejected" })
-        .eq("id", applicationId);
-
-      if (error) throw error;
-
-      return { success: true, message: "Application rejected successfully" };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications"] });
-      toast({
-        title: "Success",
-        description: "Application rejected successfully",
-      });
-    },
-    onError: (error) => {
-      console.error('Error rejecting application:', error);
-      toast({
-        title: "Error",
-        description: "Failed to reject application",
-        variant: "destructive",
-      });
-    }
-  });
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -507,13 +466,7 @@ export const Freelancing = () => {
     }
   };
 
-  const handleAcceptApplication = (applicationId: string) => {
-    acceptApplicationMutation.mutate(applicationId);
-  };
 
-  const handleRejectApplication = (applicationId: string) => {
-    rejectApplicationMutation.mutate(applicationId);
-  };
 
   const handleCreateProject = (newProject: any) => {
     if (!user?.id) {
@@ -538,19 +491,13 @@ export const Freelancing = () => {
     applyProjectMutation.mutate({
       projectId: selectedProject.id,
       message: applicationMessage,
-      phoneNumber: phoneNumber,
-      experience: experience,
-      portfolio: portfolio,
+      phoneNumber: "",
+      experience: "",
+      portfolio: "",
     });
   };
 
-  const handleProjectCreated = (project: Project) => {
-    toast({
-      title: "Success",
-      description: "Project created successfully!",
-    });
-    queryClient.invalidateQueries({ queryKey: ["projects"] });
-  };
+
 
   useEffect(() => {
     if (!user?.id) return;
@@ -579,205 +526,92 @@ export const Freelancing = () => {
     return userApplications.some(app => app.project_id === projectId);
   };
 
-  const getApplicationStatus = (projectId: string) => {
-    const application = userApplications.find(app => app.project_id === projectId);
-    return application?.status || null;
+  const getFilteredAndSortedProjects = () => {
+    // First filter by search term
+    const filtered = projects.filter(project => {
+      if (!searchTerm) return true;
+
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        project.title?.toLowerCase().includes(searchLower) ||
+        project.description?.toLowerCase().includes(searchLower) ||
+        project.company_name?.toLowerCase().includes(searchLower) ||
+        project.location?.toLowerCase().includes(searchLower) ||
+        project.job_type?.toLowerCase().includes(searchLower) ||
+        (Array.isArray(project.required_skills)
+          ? project.required_skills.some(skill => skill.toLowerCase().includes(searchLower))
+          : String(project.required_skills || "").toLowerCase().includes(searchLower))
+      );
+    });
+
+    // Then sort based on selected option
+    return filtered.sort((a, b) => {
+      switch (sortOption) {
+        case "newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "budget-high":
+          const maxBudgetA = a.max_budget || a.min_budget || a.budget || 0;
+          const maxBudgetB = b.max_budget || b.min_budget || b.budget || 0;
+          return maxBudgetB - maxBudgetA;
+        case "budget-low":
+          const minBudgetA = a.min_budget || a.budget || 0;
+          const minBudgetB = b.min_budget || b.budget || 0;
+          return minBudgetA - minBudgetB;
+        case "deadline":
+          if (!a.application_deadline && !b.application_deadline) return 0;
+          if (!a.application_deadline) return 1;
+          if (!b.application_deadline) return -1;
+          return new Date(a.application_deadline).getTime() - new Date(b.application_deadline).getTime();
+        default:
+          return 0;
+      }
+    });
   };
 
-  const renderProjectSkills = (project: Project) => {
-    if (!project.required_skills) return null;
 
-    if (Array.isArray(project.required_skills)) {
-      return project.required_skills.map((skill, index) => (
-        <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-          {skill}
-        </span>
-      ));
-    }
 
-    if (typeof project.required_skills === 'string') {
-      const skillsText = project.required_skills as string;
-      if (skillsText.trim() === '') return null;
 
-      return skillsText.split(',').map((skill, index) => (
-        <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-          {skill.trim()}
-        </span>
-      ));
-    }
 
-    return null;
-  };
 
-  const renderProjectActions = (project: Project) => {
-    if (project.status === "in_progress" && hasApplied(project.id) && getApplicationStatus(project.id) === "accepted") {
-      return (
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-green-600 border-green-600"
-        >
-          <CheckCircle2 className="w-4 h-4 mr-1" />
-          Awarded
-        </Button>
-      );
-    }
 
-    if (project.status === "open" && project.author_id !== user?.id && !hasApplied(project.id)) {
-      return (
-        <div className="flex flex-wrap gap-2">
-          {project.allow_normal_apply !== false && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                if (!user) {
-                  toast({
-                    title: "Authentication Required",
-                    description: "Please sign in to apply for this project",
-                    variant: "destructive",
-                  });
-                  navigate('/auth', { state: { from: `/freelancing` } });
-                  return;
-                }
-                setSelectedProject(project);
-                setIsApplicationDialogOpen(true);
-              }}
-            >
-              Apply Now
-            </Button>
-          )}
 
-          {project.author?.whatsapp_number && project.allow_whatsapp_apply !== false && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (!user) {
-                  toast({
-                    title: "Authentication Required",
-                    description: "Please sign in to contact via WhatsApp",
-                    variant: "destructive",
-                  });
-                  navigate('/auth', { state: { from: `/freelancing` } });
-                  return;
-                }
-                const message = encodeURIComponent(
-                  `Hi, I'm interested in your project "${project.title}". I found it on the freelancing platform.`
-                );
-                window.open(
-                  `https://wa.me/${project.author.whatsapp_number}?text=${message}`,
-                  '_blank'
-                );
-              }}
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Apply via WhatsApp
-            </Button>
-          )}
-        </div>
-      );
-    }
-
-    if (hasApplied(project.id)) {
-      return (
-        <span className={clsx(
-          "px-3 py-1 rounded-full text-xs capitalize font-medium",
-          {
-            "bg-blue-100 text-blue-800": getApplicationStatus(project.id) === "pending",
-            "bg-green-100 text-green-800": getApplicationStatus(project.id) === "accepted",
-            "bg-red-100 text-red-800": getApplicationStatus(project.id) === "rejected"
-          }
-        )}>
-          {getApplicationStatus(project.id) || "Applied"}
-        </span>
-      );
-    }
-
-    return null;
-  };
 
   const renderProjectCard = (project: Project) => (
     <div
       key={project.id}
-      className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 space-y-4 border border-gray-100"
+      className="bg-card hover:bg-card/80 border border-border hover:border-primary/20 rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
     >
-      <div className="space-y-2">
-        <div className="flex justify-between items-start">
-          <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
-            {project.title}
-          </h3>
-          {user?.id === project.author_id && (
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => handleEditProject(project)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-red-500"
-                onClick={() => handleDeleteProject(project)}
-              >
-                <Trash className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </div>
-        <p className="text-sm text-gray-600 line-clamp-3">
-          {project.description}
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 text-gray-600">
-          <Calendar className="w-4 h-4" />
-          <span className="text-sm">
-            Deadline: {project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 text-gray-600">
-          <IndianRupee className="w-4 h-4" />
-          <span className="text-sm">Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
-        </div>
-
-        <div className="flex items-center gap-2 text-gray-600">
-          <User className="w-4 h-4" />
-          <span className="text-sm">{project.author?.full_name || project.author?.username}</span>
-        </div>
-
-        {renderProjectSkills(project)}
-      </div>
-
-      <div className="pt-4 flex flex-wrap gap-2 border-t border-gray-100">
-        <div className="w-full flex flex-wrap justify-between items-center">
-          <span className={clsx(
-            "px-3 py-1 rounded-full text-xs font-medium",
-            {
-              "bg-green-100 text-green-800": project.status === "open",
-              "bg-yellow-100 text-yellow-800": project.status === "in_progress",
-              "bg-gray-100 text-gray-800": project.status === "closed"
-            }
-          )}>
-            {project.status?.toUpperCase()}
-          </span>
-
-          {renderProjectActions(project)}
-        </div>
-      </div>
+      <JobListItem
+        project={project}
+        hasApplied={hasApplied(project.id)}
+        onApply={(project) => {
+          if (!user) {
+            toast({
+              title: "Authentication Required",
+              description: "Please sign in to apply for this project",
+              variant: "destructive",
+            });
+            navigate('/auth', { state: { from: `/freelancing` } });
+            return;
+          }
+          setSelectedProject(project);
+          setIsApplicationDialogOpen(true);
+        }}
+        featured={project.is_featured}
+        onEdit={handleEditProject}
+        onDelete={handleDeleteProject}
+      />
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-indigo-950/30 py-12 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Freelancing Hub</h1>
+          <div className="flex items-center">
+            <div className="w-1.5 h-10 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full mr-3"></div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">Freelancing Hub</h1>
+          </div>
           {isMobile && (
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -822,47 +656,160 @@ export const Freelancing = () => {
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
           {!isMobile && (
-            <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-3 gap-4">
-              <TabsTrigger value="browse" className="text-lg">Browse Projects</TabsTrigger>
-              <TabsTrigger value="applied" className="text-lg">Applied Projects</TabsTrigger>
-              <TabsTrigger value="received" className="text-lg">Received Applications</TabsTrigger>
+            <TabsList className="grid w-full md:w-auto grid-cols-1 md:grid-cols-3 gap-4 p-1 bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-md">
+              <TabsTrigger value="browse" className="text-lg font-medium">Browse Projects</TabsTrigger>
+              <TabsTrigger value="applied" className="text-lg font-medium">Applied Projects</TabsTrigger>
+              <TabsTrigger value="received" className="text-lg font-medium">Received Applications</TabsTrigger>
             </TabsList>
           )}
 
           <TabsContent value="browse" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-3xl font-serif font-bold text-gray-900">Available Projects</h2>
-              <Button onClick={() => setIsNewProjectModalOpen(true)}>Post a Project</Button>
+              <div className="flex items-center">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">Available Projects</h2>
+                <div className="ml-3 px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs font-medium rounded-full">
+                  {getFilteredAndSortedProjects().length || 0} Projects
+                </div>
+              </div>
+              <Button
+                onClick={() => setIsNewProjectModalOpen(true)}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
+              >
+                Post a Project
+              </Button>
+            </div>
+
+            {/* Search and Sort Controls */}
+            <div className="bg-white dark:bg-gray-800/50 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 mt-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search by title, description, skills..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 bg-background"
+                  />
+                  {searchTerm && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
+                      onClick={() => setSearchTerm("")}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+
+                <div className="w-full md:w-64">
+                  <Select value={sortOption} onValueChange={(value) => setSortOption(value as any)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest First</SelectItem>
+                      <SelectItem value="budget-high">Highest Budget</SelectItem>
+                      <SelectItem value="budget-low">Lowest Budget</SelectItem>
+                      <SelectItem value="deadline">Deadline (Soonest)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
 
             {isLoadingProjects ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="p-6 bg-white rounded-xl shadow-sm animate-pulse">
-                    <Skeleton className="h-6 w-2/3 mb-4" />
+                  <div key={i} className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-pulse border border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    </div>
                     <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-4 w-5/6" />
+                    <Skeleton className="h-4 w-5/6 mb-2" />
+                    <Skeleton className="h-4 w-4/5 mb-4" />
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {projects.map((project) => (
-                  renderProjectCard(project)
-                ))}
-              </div>
+              <>
+                {(() => {
+                  const filteredProjects = getFilteredAndSortedProjects();
+
+                  if (filteredProjects.length === 0) {
+                    return (
+                      <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <div className="mx-auto mb-4 bg-blue-50 dark:bg-blue-900/20 w-16 h-16 rounded-full flex items-center justify-center">
+                          <FileText className="h-8 w-8 text-blue-500 dark:text-blue-400" />
+                        </div>
+                        <h3 className="text-lg font-medium mb-2 dark:text-white">
+                          {searchTerm ? "No matching projects found" : "No Projects Available"}
+                        </h3>
+                        <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                          {searchTerm
+                            ? `No projects match your search for "${searchTerm}". Try different keywords or clear the search.`
+                            : "There are no projects available at the moment. Check back later or post your own project!"}
+                        </p>
+                        {searchTerm && (
+                          <Button
+                            variant="outline"
+                            className="mt-4"
+                            onClick={() => setSearchTerm("")}
+                          >
+                            Clear Search
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                      {filteredProjects.map((project) => (
+                        renderProjectCard(project)
+                      ))}
+                    </div>
+                  );
+                })()}
+              </>
             )}
           </TabsContent>
 
           <TabsContent value="applied" className="space-y-6">
-            <h2 className="text-2xl font-serif font-bold text-gray-900">Applied Projects</h2>
+            <div className="flex items-center">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">Applied Projects</h2>
+              <div className="ml-3 px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs font-medium rounded-full">
+                {projects.filter((project) => hasApplied(project.id)).length || 0} Applications
+              </div>
+            </div>
             {isLoadingUserApplications ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="p-6 bg-white rounded-xl shadow-sm animate-pulse">
-                    <Skeleton className="h-6 w-2/3 mb-4" />
+                  <div key={i} className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-pulse border border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    </div>
                     <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-4 w-5/6" />
+                    <Skeleton className="h-4 w-5/6 mb-2" />
+                    <Skeleton className="h-4 w-4/5 mb-4" />
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -871,8 +818,12 @@ export const Freelancing = () => {
                 {projects
                   .filter((project) => hasApplied(project.id))
                   .length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-                    <p className="text-gray-500">You haven't applied to any projects yet.</p>
+                  <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div className="mx-auto mb-4 bg-blue-50 dark:bg-blue-900/20 w-16 h-16 rounded-full flex items-center justify-center">
+                      <Briefcase className="h-8 w-8 text-blue-500 dark:text-blue-400" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-2 dark:text-white">No Applications Yet</h3>
+                    <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">You haven't applied to any projects yet. Browse available projects and start applying!</p>
                   </div>
                 ) : (
                   <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -888,24 +839,44 @@ export const Freelancing = () => {
           </TabsContent>
 
           <TabsContent value="received" className="space-y-6">
-            <h2 className="text-2xl font-serif font-bold text-gray-900">Received Applications</h2>
+            <div className="flex items-center">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">Received Applications</h2>
+              <div className="ml-3 px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs font-medium rounded-full">
+                {receivedApplications.length || 0} Applications
+              </div>
+            </div>
 
             {isLoadingReceivedApplications ? (
               <div className="grid gap-6 md:grid-cols-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="p-6 bg-white rounded-xl shadow-sm animate-pulse">
-                    <Skeleton className="h-10 w-10 rounded-full mb-4" />
-                    <Skeleton className="h-6 w-2/3 mb-4" />
+                  <div key={i} className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-pulse border border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                      <Skeleton className="h-8 w-20 rounded-md" />
+                    </div>
                     <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-4 w-5/6" />
+                    <Skeleton className="h-4 w-5/6 mb-2" />
+                    <Skeleton className="h-4 w-4/5 mb-4" />
+                    <div className="flex justify-end gap-2">
+                      <Skeleton className="h-9 w-24 rounded-md" />
+                      <Skeleton className="h-9 w-24 rounded-md" />
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
               <>
                 {receivedApplications.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-                    <p className="text-gray-500">You haven't received any applications yet.</p>
+                  <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div className="mx-auto mb-4 bg-blue-50 dark:bg-blue-900/20 w-16 h-16 rounded-full flex items-center justify-center">
+                      <MessageSquare className="h-8 w-8 text-blue-500 dark:text-blue-400" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-2 dark:text-white">No Applications Received</h3>
+                    <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">You haven't received any applications yet. Post attractive projects to get more applications!</p>
                   </div>
                 ) : (
                   <div className="grid gap-6 md:grid-cols-2">
@@ -943,10 +914,25 @@ export const Freelancing = () => {
                       .split(",")
                       .map((skill) => skill.trim());
                     const budget = Number(formData.get("budget"));
-                    const deadline = String(formData.get("deadline"));
+                    const maxBudget = formData.get("max_budget") ? Number(formData.get("max_budget")) : null;
+                    const applicationDeadline = String(formData.get("application_deadline") || "");
                     const whatsappNumber = String(formData.get("whatsapp_number") || "");
                     const allowWhatsapp = !!formData.get("allow_whatsapp_apply");
                     const allowNormal = !!formData.get("allow_normal_apply");
+                    const isFeatured = !!formData.get("is_featured");
+                    const companyName = String(formData.get("company_name") || "");
+                    const location = String(formData.get("location") || "");
+                    const jobType = String(formData.get("job_type") || "");
+                    const experienceLevel = String(formData.get("experience_level") || "");
+                    const applicationLink = String(formData.get("application_link") || "");
+                    const attachmentUrl = String(formData.get("attachment_url") || "");
+                    const jobPosterName = String(formData.get("job_poster_name") || "");
+
+                    // Handle application methods
+                    const applicationMethods: ('direct' | 'inbuilt' | 'whatsapp')[] = [];
+                    if (formData.get("application_method_inbuilt")) applicationMethods.push('inbuilt');
+                    if (formData.get("application_method_direct")) applicationMethods.push('direct');
+                    if (formData.get("application_method_whatsapp")) applicationMethods.push('whatsapp');
 
                     updateProjectMutation.mutate({
                       id: selectedProject.id,
@@ -954,10 +940,21 @@ export const Freelancing = () => {
                       description,
                       required_skills: skills,
                       budget,
-                      deadline: deadline || undefined,
+                      max_budget: maxBudget,
+                      application_deadline: applicationDeadline ? new Date(applicationDeadline).toISOString() : undefined,
                       whatsapp_number: whatsappNumber,
                       allow_whatsapp_apply: allowWhatsapp,
-                      allow_normal_apply: allowNormal
+                      allow_normal_apply: allowNormal,
+                      is_featured: isFeatured,
+                      company_name: companyName,
+                      location: location,
+                      job_type: jobType,
+                      experience_level: experienceLevel,
+                      application_link: applicationLink,
+                      attachment_url: attachmentUrl,
+                      job_poster_name: jobPosterName,
+                      application_methods: applicationMethods.length > 0 ? applicationMethods : undefined,
+                      application_method: applicationMethods.length > 0 ? applicationMethods[0] : undefined
                     });
                   }}
                   className="space-y-6 p-2"
@@ -971,32 +968,162 @@ export const Freelancing = () => {
                     <Textarea id="description" name="description" defaultValue={selectedProject?.description} />
                   </div>
                   <div>
-                    <Label htmlFor="skills">Required Skills</Label>
-                    <Input id="skills" name="skills" defaultValue={
-                      Array.isArray(selectedProject?.required_skills)
-                        ? selectedProject?.required_skills?.join(",")
-                        : selectedProject?.required_skills || ""
-                    } />
+                    <Label htmlFor="skills">Skills</Label>
+                    <Input
+                      id="skills"
+                      name="skills"
+                      placeholder="Add skills (comma separated)"
+                      defaultValue={
+                        Array.isArray(selectedProject?.required_skills)
+                          ? selectedProject?.required_skills?.join(",")
+                          : selectedProject?.required_skills || ""
+                      }
+                    />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="budget">Min Budget</Label>
+                      <Input id="budget" name="budget" type="number" defaultValue={selectedProject?.min_budget || selectedProject?.budget} />
+                    </div>
+                    <div>
+                      <Label htmlFor="max_budget">Max Budget</Label>
+                      <Input id="max_budget" name="max_budget" type="number" defaultValue={selectedProject?.max_budget} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="company_name">Company Name</Label>
+                      <Input id="company_name" name="company_name" defaultValue={selectedProject?.company_name} />
+                    </div>
+                    <div>
+                      <Label htmlFor="location">Location</Label>
+                      <Input id="location" name="location" defaultValue={selectedProject?.location} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="job_type">Job Type</Label>
+                      <select
+                        id="job_type"
+                        name="job_type"
+                        defaultValue={selectedProject?.job_type || ""}
+                        className="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                      >
+                        <option value="">Select Job Type</option>
+                        {["Full-time", "Part-time", "Contract", "Freelance", "Internship"].map(type => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="experience_level">Experience Level</Label>
+                      <select
+                        id="experience_level"
+                        name="experience_level"
+                        defaultValue={selectedProject?.experience_level || ""}
+                        className="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                      >
+                        <option value="">Select Experience Level</option>
+                        {["Entry Level", "Junior", "Mid-Level", "Senior", "Lead", "Manager", "Executive"].map(level => (
+                          <option key={level} value={level}>{level}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="job_poster_name">Job Poster Name</Label>
+                      <Input id="job_poster_name" name="job_poster_name" defaultValue={selectedProject?.job_poster_name} />
+                    </div>
+                    <div>
+                      <Label htmlFor="application_deadline">Application Deadline *</Label>
+                      <Input
+                        id="application_deadline"
+                        name="application_deadline"
+                        type="date"
+                        defaultValue={selectedProject?.application_deadline}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Label>Application Methods</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="application_method_inbuilt"
+                          name="application_method_inbuilt"
+                          checked={selectedProject?.application_methods?.includes('inbuilt')}
+                        />
+                        <Label htmlFor="application_method_inbuilt" className="cursor-pointer">Inbuilt App Apply (Web App Form)</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="application_method_direct"
+                          name="application_method_direct"
+                          checked={selectedProject?.application_methods?.includes('direct')}
+                        />
+                        <Label htmlFor="application_method_direct" className="cursor-pointer">Direct Apply (External Link Redirect)</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="application_method_whatsapp"
+                          name="application_method_whatsapp"
+                          checked={selectedProject?.application_methods?.includes('whatsapp')}
+                        />
+                        <Label htmlFor="application_method_whatsapp" className="cursor-pointer">WhatsApp Apply</Label>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Select one or more application methods</p>
+                  </div>
+
                   <div>
-                    <Label htmlFor="budget">Budget</Label>
-                    <Input id="budget" name="budget" type="number" defaultValue={selectedProject?.budget} />
+                    <Label htmlFor="application_link">Application Link</Label>
+                    <Input id="application_link" name="application_link" defaultValue={selectedProject?.application_link} />
+                    <p className="text-xs text-muted-foreground mt-1">Required for Direct Apply method</p>
                   </div>
-                  <div>
-                    <Label htmlFor="deadline">Deadline</Label>
-                    <Input id="deadline" name="deadline" type="date" defaultValue={selectedProject?.deadline} />
-                  </div>
+
                   <div>
                     <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
                     <Input id="whatsapp_number" name="whatsapp_number" defaultValue={selectedProject?.author?.whatsapp_number} />
+                    <p className="text-xs text-muted-foreground mt-1">Required for WhatsApp Apply method</p>
                   </div>
+
                   <div>
+                    <Label htmlFor="attachment_url">Attachment URL</Label>
+                    <Input id="attachment_url" name="attachment_url" defaultValue={selectedProject?.attachment_url} />
+                    <p className="text-xs text-muted-foreground mt-1">Link to additional job details or documents</p>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
                     <Checkbox id="allow_whatsapp_apply" name="allow_whatsapp_apply" checked={selectedProject?.allow_whatsapp_apply} />
                     <Label htmlFor="allow_whatsapp_apply">Allow WhatsApp Apply</Label>
                   </div>
-                  <div>
+
+                  <div className="flex items-center space-x-2">
                     <Checkbox id="allow_normal_apply" name="allow_normal_apply" checked={selectedProject?.allow_normal_apply} />
                     <Label htmlFor="allow_normal_apply">Allow Normal Apply</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="is_featured" name="is_featured" checked={selectedProject?.is_featured} />
+                    <Label htmlFor="is_featured">Mark as featured job</Label>
+                  </div>
+
+                  <div className="flex justify-end mt-6 pt-4 border-t">
+                    <Button
+                      type="submit"
+                      className="bg-primary hover:bg-primary/90"
+                      disabled={updateProjectMutation.isPending}
+                    >
+                      {updateProjectMutation.isPending ? "Saving..." : "Save Changes"}
+                    </Button>
                   </div>
                 </form>
               </ScrollArea>
@@ -1027,7 +1154,7 @@ export const Freelancing = () => {
         <NewProjectDialog
           isOpen={isNewProjectModalOpen}
           onOpenChange={setIsNewProjectModalOpen}
-          onProjectCreated={handleProjectCreated}
+          onProjectCreated={() => queryClient.invalidateQueries({ queryKey: ["projects"] })}
           onSubmit={handleCreateProject}
           isSubmitting={createProjectMutation.isPending}
         />

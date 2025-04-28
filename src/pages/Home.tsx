@@ -1,7 +1,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Thought, Profile, Project } from "@/types";
+import { Thought, Profile, Project, Advertisement } from "@/types";
 import { Loader2, UserPlus, UserMinus, Briefcase, MessageSquare, Bell, Sparkles } from "lucide-react";
 import { PoemCard } from "@/components/PoemCard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -17,6 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import JobListItem from "@/components/explore/JobListItem";
 import SEO from "@/components/SEO";
+import { AdvertisementCard } from "@/components/advertisements/AdvertisementCard";
+import { AdvertisementPopup } from "@/components/advertisements/AdvertisementPopup";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -27,6 +29,8 @@ const Home = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("feed");
   const [userApplications, setUserApplications] = useState<string[]>([]);
+  const [showAdPopup, setShowAdPopup] = useState(false);
+  const [popupAd, setPopupAd] = useState<Advertisement | null>(null);
 
   // Fetch thoughts/posts
   const { data: thoughts, isLoading: isLoadingThoughts } = useQuery({
@@ -98,6 +102,29 @@ const Home = () => {
       }
 
       return [] as Project[];
+    }
+  });
+
+  // Fetch advertisements
+  const { data: advertisements, isLoading: isLoadingAds } = useQuery({
+    queryKey: ['advertisements'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('advertisements')
+        .select(`
+          *,
+          author:profiles!advertisements_author_id_fkey(
+            id,
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Advertisement[];
     }
   });
 
@@ -269,7 +296,29 @@ const Home = () => {
     return null;
   }
 
-  const isLoading = isLoadingThoughts || isLoadingProjects;
+  // Handle popup advertisement
+  useEffect(() => {
+    if (advertisements && advertisements.length > 0) {
+      // Find advertisements configured to show as popup
+      const popupAds = advertisements.filter(ad =>
+        ad.display_location.includes('popup')
+      );
+
+      if (popupAds.length > 0) {
+        // Select a random popup ad
+        const randomIndex = Math.floor(Math.random() * popupAds.length);
+        setPopupAd(popupAds[randomIndex]);
+        setShowAdPopup(true);
+      }
+    }
+  }, [advertisements]);
+
+  // Filter advertisements for home feed
+  const homeAds = advertisements?.filter(ad =>
+    ad.display_location.includes('home')
+  ) || [];
+
+  const isLoading = isLoadingThoughts || isLoadingProjects || isLoadingAds;
 
   if (isLoading) {
     return (
@@ -288,6 +337,14 @@ const Home = () => {
       />
 
       <div className="min-h-screen bg-background">
+        {/* Advertisement Popup */}
+        {popupAd && (
+          <AdvertisementPopup
+            advertisement={popupAd}
+            onClose={() => setShowAdPopup(false)}
+          />
+        )}
+
         <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Feed - Center Column */}
@@ -326,6 +383,16 @@ const Home = () => {
                 </TabsList>
 
                 <TabsContent value="feed" className="space-y-6">
+                  {/* Display home advertisements at the top of the feed */}
+                  {homeAds.length > 0 && (
+                    <div className="mb-6">
+                      <AdvertisementCard
+                        advertisement={homeAds[0]}
+                        className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5"
+                      />
+                    </div>
+                  )}
+
                   {thoughts?.length === 0 ? (
                     <div className="text-center py-12 bg-card rounded-xl border border-border">
                       <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
@@ -338,24 +405,49 @@ const Home = () => {
                       </Button>
                     </div>
                   ) : (
-                    thoughts?.map((thought, index) => (
-                      <motion.div
-                        key={thought.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                        <PoemCard
-                          poem={thought}
-                          currentUserId={user?.id}
-                          isAdmin={false}
-                        />
-                      </motion.div>
-                    ))
+                    <>
+                      {thoughts?.map((thought, index) => (
+                        <motion.div
+                          key={thought.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <PoemCard
+                            poem={thought}
+                            currentUserId={user?.id}
+                            isAdmin={false}
+                          />
+
+                          {/* Insert an advertisement after every 3 posts if available */}
+                          {index > 0 &&
+                           index % 3 === 0 &&
+                           homeAds.length > 1 &&
+                           homeAds[Math.min(Math.floor(index / 3), homeAds.length - 1)] && (
+                            <div className="my-6">
+                              <AdvertisementCard
+                                advertisement={homeAds[Math.min(Math.floor(index / 3), homeAds.length - 1)]}
+                                variant="compact"
+                              />
+                            </div>
+                          )}
+                        </motion.div>
+                      ))}
+                    </>
                   )}
                 </TabsContent>
 
                 <TabsContent value="jobs" className="space-y-6">
+                  {/* Display home advertisements at the top of the jobs tab */}
+                  {homeAds.length > 0 && (
+                    <div className="mb-6">
+                      <AdvertisementCard
+                        advertisement={homeAds[0]}
+                        className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5"
+                      />
+                    </div>
+                  )}
+
                   {projects?.length === 0 ? (
                     <div className="text-center py-12 bg-card rounded-xl border border-border">
                       <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
@@ -383,6 +475,19 @@ const Home = () => {
                             onApply={handleApplyToProject}
                             featured={project.is_featured}
                           />
+
+                          {/* Insert an advertisement after every 2 jobs if available */}
+                          {index > 0 &&
+                           index % 2 === 0 &&
+                           homeAds.length > 1 &&
+                           homeAds[Math.min(Math.floor(index / 2), homeAds.length - 1)] && (
+                            <div className="mt-4">
+                              <AdvertisementCard
+                                advertisement={homeAds[Math.min(Math.floor(index / 2), homeAds.length - 1)]}
+                                variant="compact"
+                              />
+                            </div>
+                          )}
                         </motion.div>
                       ))}
 

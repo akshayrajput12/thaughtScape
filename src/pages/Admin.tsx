@@ -6,6 +6,7 @@ import { PoemsList } from "@/components/admin/PoemsList";
 import { ProjectsList } from "@/components/admin/ProjectsList";
 import { UserStats } from "@/components/admin/UserStats";
 import { ProjectManagement } from "@/components/admin/ProjectManagement";
+import { AdvertisementsList } from "@/components/admin/AdvertisementsList";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -166,6 +167,7 @@ function AdminDashboard() {
               <TabsTrigger value="users">Users</TabsTrigger>
               <TabsTrigger value="poems">Thoughts</TabsTrigger>
               <TabsTrigger value="projects">Projects</TabsTrigger>
+              <TabsTrigger value="advertisements">Advertisements</TabsTrigger>
               <TabsTrigger value="stats">Stats</TabsTrigger>
               <TabsTrigger value="project-management">Project Management</TabsTrigger>
             </TabsList>
@@ -181,6 +183,10 @@ function AdminDashboard() {
 
           <TabsContent value="projects" className="m-0">
             <ProjectsList />
+          </TabsContent>
+
+          <TabsContent value="advertisements" className="m-0">
+            <AdvertisementsList />
           </TabsContent>
 
           <TabsContent value="stats" className="m-0">

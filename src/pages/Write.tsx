@@ -25,7 +25,7 @@ const Write = () => {
 
   // Common hashtags that might be suggested
   const commonHashtags = [
-    "poetry", "thoughts", "inspiration", "love", "life", 
+    "poetry", "thoughts", "inspiration", "love", "life",
     "motivation", "wisdom", "creativity", "philosophy", "mindfulness"
   ];
 
@@ -35,7 +35,7 @@ const Write = () => {
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return [];
-      
+
       const { data, error } = await supabase
         .from('follows')
         .select(`
@@ -83,15 +83,15 @@ const Write = () => {
     // Monitor textarea for @ and # characters
     const handleContentChange = () => {
       if (!textareaRef.current) return;
-      
+
       const cursorPosition = textareaRef.current.selectionStart;
       setTextareaSelectionStart(cursorPosition);
-      
+
       // Find the word being typed
       const textBeforeCursor = content.substring(0, cursorPosition);
       const words = textBeforeCursor.split(/\s/);
       const currentWord = words[words.length - 1];
-      
+
       if (currentWord.startsWith('#')) {
         setShowHashtagSuggestions(true);
         setShowUserSuggestions(false);
@@ -105,7 +105,7 @@ const Write = () => {
         setShowUserSuggestions(false);
       }
     };
-    
+
     handleContentChange();
   }, [content]);
 
@@ -159,7 +159,7 @@ const Write = () => {
         .from('profiles')
         .select('id, username')
         .in('username', mentions);
-      
+
       if (mentionedProfiles && mentionedProfiles.length > 0) {
         const notifications = mentionedProfiles.map(profile => ({
           type: 'mention',
@@ -167,7 +167,7 @@ const Write = () => {
           content: `You were mentioned in a thought by ${session.user.email}`,
           related_user_id: session.user.id
         }));
-        
+
         await supabase.from('notifications').insert(notifications);
       }
     }
@@ -185,19 +185,19 @@ const Write = () => {
     const cursorPosition = textareaSelectionStart;
     const textBeforeCursor = content.substring(0, cursorPosition);
     const textAfterCursor = content.substring(cursorPosition);
-    
+
     // Find the last word before cursor to replace
     const words = textBeforeCursor.split(/\s/);
     const lastWord = words[words.length - 1];
-    
+
     // Replace the current word (starting with # or @) with the suggestion
     const newTextBeforeCursor = textBeforeCursor.substring(0, cursorPosition - lastWord.length) + textToInsert;
     setContent(newTextBeforeCursor + " " + textAfterCursor);
-    
+
     // Hide suggestions
     setShowHashtagSuggestions(false);
     setShowUserSuggestions(false);
-    
+
     // Focus back on textarea
     setTimeout(() => {
       if (textareaRef.current) {
@@ -212,9 +212,9 @@ const Write = () => {
   const filteredHashtags = commonHashtags
     .filter(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
     .slice(0, 5);
-    
+
   const filteredUsers = followers
-    .filter(user => 
+    .filter(user =>
       user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (user.full_name && user.full_name.toLowerCase().includes(searchQuery.toLowerCase()))
     )
@@ -225,7 +225,7 @@ const Write = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-indigo-950/30">
       <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -236,16 +236,21 @@ const Write = () => {
             <motion.div
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="inline-block"
+              transition={{
+                duration: 0.5,
+                type: "spring",
+                stiffness: 200,
+                damping: 10
+              }}
+              className="inline-block bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 p-5 rounded-full shadow-md"
             >
-              <PenTool className="h-12 w-12 text-purple-500 mb-4" />
+              <PenTool className="h-12 w-12 text-blue-600 dark:text-blue-400" />
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-4xl font-serif font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent"
+              className="text-4xl font-bold mt-6 mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent"
             >
               Share Your Thought
             </motion.h1>
@@ -253,7 +258,7 @@ const Write = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="text-gray-600 max-w-xl mx-auto"
+              className="text-gray-600 dark:text-gray-300 max-w-xl mx-auto"
             >
               Express yourself freely and connect with others through your unique perspective
             </motion.p>
@@ -262,14 +267,14 @@ const Write = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="flex items-center justify-center gap-4 mt-4"
+              className="flex flex-wrap items-center justify-center gap-4 mt-6"
             >
-              <div className="flex items-center text-sm text-gray-500">
-                <Hash className="w-4 h-4 mr-1 text-blue-500" />
+              <div className="flex items-center text-sm px-3 py-2 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
+                <Hash className="w-4 h-4 mr-2 text-blue-500 dark:text-blue-400" />
                 <span>Use # for hashtags</span>
               </div>
-              <div className="flex items-center text-sm text-gray-500">
-                <AtSign className="w-4 h-4 mr-1 text-purple-500" />
+              <div className="flex items-center text-sm px-3 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800">
+                <AtSign className="w-4 h-4 mr-2 text-indigo-500 dark:text-indigo-400" />
                 <span>Use @ to mention users</span>
               </div>
             </motion.div>
@@ -280,7 +285,7 @@ const Write = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
             onSubmit={handleSubmit}
-            className="space-y-6 bg-white p-8 rounded-2xl shadow-lg border border-purple-100"
+            className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-blue-100 dark:border-gray-700 backdrop-blur-sm"
           >
             <div className="space-y-2">
               <Input
@@ -288,7 +293,7 @@ const Write = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                className="text-lg font-medium border-2 border-purple-100 focus:border-purple-300 focus:ring-purple-200 rounded-xl"
+                className="text-lg font-medium border-2 border-blue-100 dark:border-gray-700 focus:border-blue-300 dark:focus:border-blue-700 focus:ring-blue-200 dark:focus:ring-blue-800 rounded-xl bg-white dark:bg-gray-800 dark:text-white"
               />
             </div>
             <div className="space-y-2 relative">
@@ -298,58 +303,73 @@ const Write = () => {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 required
-                className="min-h-[300px] text-base border-2 border-purple-100 focus:border-purple-300 focus:ring-purple-200 rounded-xl resize-none"
+                className="min-h-[300px] text-base border-2 border-blue-100 dark:border-gray-700 focus:border-blue-300 dark:focus:border-blue-700 focus:ring-blue-200 dark:focus:ring-blue-800 rounded-xl resize-none bg-white dark:bg-gray-800 dark:text-white"
               />
-              
+
               {/* Hashtag suggestions */}
               {showHashtagSuggestions && filteredHashtags.length > 0 && (
-                <div className="absolute z-10 w-64 mt-1 overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg max-h-48">
+                <div className="absolute z-10 w-64 mt-1 overflow-auto bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 rounded-lg shadow-lg max-h-48">
                   <div className="py-1">
                     {filteredHashtags.map((tag, index) => (
-                      <div
+                      <motion.div
                         key={index}
-                        className="px-4 py-2 cursor-pointer hover:bg-gray-100 flex items-center"
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="px-4 py-2 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center"
                         onClick={() => insertTextAtCursor(`#${tag}`)}
                       >
-                        <Hash className="w-4 h-4 mr-2 text-blue-500" />
-                        <span>{tag}</span>
-                      </div>
+                        <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mr-2">
+                          <Hash className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <span className="dark:text-white">{tag}</span>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
               )}
-              
+
               {/* User suggestions */}
               {showUserSuggestions && filteredUsers.length > 0 && (
-                <div className="absolute z-10 w-64 mt-1 overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg max-h-48">
+                <div className="absolute z-10 w-72 mt-1 overflow-auto bg-white dark:bg-gray-800 border border-indigo-100 dark:border-gray-700 rounded-lg shadow-lg max-h-48">
                   <div className="py-1">
                     {filteredUsers.map((user, index) => (
-                      <div
+                      <motion.div
                         key={user.id}
-                        className="px-4 py-2 cursor-pointer hover:bg-gray-100 flex items-center"
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/30 flex items-center"
                         onClick={() => insertTextAtCursor(`@${user.username}`)}
                       >
-                        <AtSign className="w-4 h-4 mr-2 text-purple-500" />
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center mr-3">
+                          <AtSign className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        </div>
                         <div>
-                          <div className="font-medium">{user.username}</div>
+                          <div className="font-medium dark:text-white">{user.username}</div>
                           {user.full_name && (
-                            <div className="text-xs text-gray-500">{user.full_name}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{user.full_name}</div>
                           )}
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
               )}
             </div>
             <div className="flex justify-end">
-              <Button
-                type="submit"
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-6 rounded-xl text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 group"
+              <motion.div
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
               >
-                <span>Share Thought</span>
-                <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
+                <Button
+                  type="submit"
+                  className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 dark:from-blue-600 dark:to-indigo-700 dark:hover:from-blue-700 dark:hover:to-indigo-800 text-white px-8 py-6 rounded-xl text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 group"
+                >
+                  <span>Share Thought</span>
+                  <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </motion.div>
             </div>
           </motion.form>
 
@@ -357,12 +377,14 @@ const Write = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="mt-8 text-center text-sm text-gray-500"
+            className="mt-8 text-center"
           >
-            <p className="flex items-center justify-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-400" />
-              Your thoughts matter. Share them with the world.
-            </p>
+            <div className="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/10 dark:to-indigo-900/10 backdrop-blur-sm border border-blue-100/50 dark:border-blue-800/30">
+              <p className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                <Sparkles className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                Your thoughts matter. Share them with the world.
+              </p>
+            </div>
           </motion.div>
         </motion.div>
       </div>
