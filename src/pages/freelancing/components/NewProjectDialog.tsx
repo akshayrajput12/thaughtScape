@@ -130,6 +130,10 @@ export const NewProjectDialog = ({
                       placeholder="₹"
                       className="dark:bg-gray-700 dark:text-white"
                       {...field}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value ? parseFloat(value) : undefined);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

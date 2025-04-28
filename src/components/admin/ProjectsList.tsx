@@ -459,7 +459,20 @@ export const ProjectsList = () => {
         isOpen={showNewProjectDialog}
         onOpenChange={setShowNewProjectDialog}
         onSubmit={values => {
-          handleProjectCreated({ ...values, id: '', created_at: new Date().toISOString(), author: null } as Project);
+          const newProject: Project = {
+            id: '',
+            title: values.title,
+            description: values.description,
+            required_skills: values.required_skills ? values.required_skills.split(',').map(skill => skill.trim()) : [],
+            budget: values.budget,
+            deadline: values.deadline || '',
+            status: 'open',
+            author_id: '',  // This will be set by the backend
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            author: null
+          };
+          handleProjectCreated(newProject);
         }}
         isSubmitting={isLoading}
       />
