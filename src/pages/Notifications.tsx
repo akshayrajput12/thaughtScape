@@ -24,10 +24,10 @@ const Notifications = () => {
 
       if (!error && data) {
         // Ensure the notification type is one of the allowed values
-        const validNotifications = data.filter(notification => 
+        const validNotifications = data.filter(notification =>
           ['follow', 'like', 'comment', 'message'].includes(notification.type)
         ) as Notification[];
-        
+
         setNotifications(validNotifications);
       }
     };
@@ -72,10 +72,22 @@ const Notifications = () => {
               key={notification.id}
               notification={notification}
               onFollowBack={() => {
-                const updatedNotifications = notifications.map(n => 
+                // Mark notification as read when user interacts with it
+                const updatedNotifications = notifications.map(n =>
                   n.id === notification.id ? { ...n, is_read: true } : n
                 );
                 setNotifications(updatedNotifications);
+
+                // Update the notification read status in the database
+                supabase
+                  .from('notifications')
+                  .update({ is_read: true })
+                  .eq('id', notification.id)
+                  .then(({ error }) => {
+                    if (error) {
+                      console.error("Error updating notification read status:", error);
+                    }
+                  });
               }}
             />
           ))

@@ -7,6 +7,7 @@ import { User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Notification } from "@/types";
+import { useEffect, useState } from "react";
 
 interface NotificationItemProps {
   notification: Notification;
@@ -16,32 +17,74 @@ interface NotificationItemProps {
 export const NotificationItem = ({ notification, onFollowBack }: NotificationItemProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  // Check if the user is already following the other user
+  useEffect(() => {
+    const checkFollowStatus = async () => {
+      if (!notification.related_user_id) return;
+
+      const { data, error } = await supabase
+        .from('follows')
+        .select('*')
+        .eq('follower_id', notification.user_id)
+        .eq('following_id', notification.related_user_id)
+        .maybeSingle();
+
+      if (!error) {
+        setIsFollowing(!!data);
+      }
+    };
+
+    checkFollowStatus();
+  }, [notification.user_id, notification.related_user_id]);
 
   const handleFollowBack = async () => {
     if (!notification.related_user_id) return;
 
-    const { error } = await supabase
-      .from('follows')
-      .insert({
-        follower_id: notification.user_id,
-        following_id: notification.related_user_id
-      });
+    try {
+      if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', notification.user_id)
+          .eq('following_id', notification.related_user_id);
 
-    if (error) {
+        if (error) throw error;
+
+        setIsFollowing(false);
+        toast({
+          title: "Success",
+          description: "You have unfollowed this user",
+        });
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: notification.user_id,
+            following_id: notification.related_user_id
+          });
+
+        if (error) throw error;
+
+        setIsFollowing(true);
+        toast({
+          title: "Success",
+          description: "You are now following this user",
+        });
+      }
+
+      onFollowBack?.();
+    } catch (error) {
+      console.error("Error toggling follow status:", error);
       toast({
         title: "Error",
-        description: "Could not follow user",
+        description: isFollowing ? "Could not unfollow user" : "Could not follow user",
         variant: "destructive",
       });
-      return;
     }
-
-    toast({
-      title: "Success",
-      description: "You are now following this user",
-    });
-
-    onFollowBack?.();
   };
 
   const getNotificationContent = () => {
@@ -59,15 +102,16 @@ export const NotificationItem = ({ notification, onFollowBack }: NotificationIte
                 {' started following you'}
               </p>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant={isFollowing ? "outline" : "default"}
               size="sm"
+              className={isFollowing ? "border-primary text-primary hover:bg-primary/10" : ""}
               onClick={(e) => {
                 e.stopPropagation();
                 handleFollowBack();
               }}
             >
-              Follow Back
+              {isFollowing ? 'Following' : 'Follow Back'}
             </Button>
           </div>
         );
