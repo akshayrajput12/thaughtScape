@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -257,153 +256,181 @@ const FreelancingPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Freelancing Opportunities</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Freelancing Opportunities</h1>
 
-      {initialLoading ? (
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="p-4 sm:p-6 bg-white rounded-xl shadow-sm animate-pulse">
-              <Skeleton className="h-5 sm:h-6 w-2/3 mb-3 sm:mb-4" />
-              <Skeleton className="h-3 sm:h-4 w-full mb-2" />
-              <Skeleton className="h-3 sm:h-4 w-5/6" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <EnhancedProjectsList
-          projects={projects}
-          userApplications={userApplications}
-          onApply={handleApplyToProject}
-          isLoading={initialLoading}
-        />
-      )}
+        {initialLoading ? (
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="p-4 sm:p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-pulse">
+                <Skeleton className="h-5 sm:h-6 w-2/3 mb-3 sm:mb-4" />
+                <Skeleton className="h-3 sm:h-4 w-full mb-2" />
+                <Skeleton className="h-3 sm:h-4 w-5/6" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EnhancedProjectsList
+            projects={projects}
+            userApplications={userApplications}
+            onApply={handleApplyToProject}
+            isLoading={initialLoading}
+          />
+        )}
 
-      <Dialog open={isApplicationDialogOpen} onOpenChange={setIsApplicationDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Project Application</DialogTitle>
-            <DialogDescription>
-              Submit your application for this project.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmitApplication)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="message"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Message</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Why are you a good fit for this project?"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your phone number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="experience"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Experience (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe your relevant experience"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="portfolio"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Portfolio (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Link to your portfolio" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="education"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Education (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Your educational background"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="skills"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Skills (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="List your skills, separated by commas" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="expectedSalary"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Expected Salary (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your expected salary" type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button type="button" variant="secondary" onClick={() => setIsApplicationDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Submitting..." : "Submit Application"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={isApplicationDialogOpen} onOpenChange={setIsApplicationDialogOpen}>
+          <DialogContent className="max-w-2xl dark:bg-gray-800 dark:border-gray-700">
+            <DialogHeader>
+              <DialogTitle className="dark:text-white">Project Application</DialogTitle>
+              <DialogDescription className="dark:text-gray-400">
+                Submit your application for this project.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmitApplication)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="message"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="dark:text-gray-300">Message</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Why are you a good fit for this project?"
+                          className="resize-none dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="dark:text-gray-300">Phone Number (Optional)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your phone number" 
+                          className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="experience"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="dark:text-gray-300">Experience (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Describe your relevant experience"
+                          className="resize-none dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="portfolio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="dark:text-gray-300">Portfolio (Optional)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Link to your portfolio" 
+                          className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="education"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="dark:text-gray-300">Education (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Your educational background"
+                          className="resize-none dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="skills"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="dark:text-gray-300">Skills (Optional)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="List your skills, separated by commas" 
+                          className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="expectedSalary"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="dark:text-gray-300">Expected Salary (Optional)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your expected salary" 
+                          type="number" 
+                          className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    onClick={() => setIsApplicationDialogOpen(false)}
+                    className="dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Application"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 };

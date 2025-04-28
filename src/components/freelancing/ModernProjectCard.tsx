@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -140,7 +139,7 @@ export const ModernProjectCard = ({
 
   return (
     <Card className={clsx(
-      "overflow-hidden transition-all duration-300 group hover:shadow-md border-muted/70 relative h-full flex flex-col",
+      "overflow-hidden transition-all duration-300 group hover:shadow-md border-muted/70 relative h-full flex flex-col dark:bg-gray-800/50 dark:border-gray-700",
       featured && "ring-2 ring-primary/20 shadow-lg"
     )}>
       {/* Featured badge */}
@@ -160,7 +159,7 @@ export const ModernProjectCard = ({
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-secondary to-primary" />
       )}
 
-      <CardHeader className="p-4 pb-2 relative">
+      <CardHeader className="p-4 pb-2 relative dark:border-gray-700">
         <div className="flex justify-between items-start">
           <div className="flex items-start space-x-3">
             <div className="relative">
@@ -222,20 +221,20 @@ export const ModernProjectCard = ({
         </div>
       </CardHeader>
 
-      <CardContent className="p-4 pt-2 pb-0 flex-grow">
+      <CardContent className="p-4 pt-2 pb-0 flex-grow dark:text-gray-300">
         <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
           {project.description}
         </p>
 
         <div className="grid grid-cols-2 gap-2 mb-3">
-          <div className="flex items-center text-xs bg-muted/30 p-1.5 rounded dark:bg-muted/10">
+          <div className="flex items-center text-xs bg-muted/30 p-1.5 rounded dark:bg-gray-700/50">
             <IndianRupee className="h-3 w-3 text-primary mr-1" />
             <span className="truncate">
               {formatBudget(project.min_budget, project.max_budget)}
             </span>
           </div>
 
-          <div className="flex items-center text-xs bg-muted/30 p-1.5 rounded dark:bg-muted/10">
+          <div className="flex items-center text-xs bg-muted/30 p-1.5 rounded dark:bg-gray-700/50">
             <Calendar className="h-3 w-3 text-primary mr-1" />
             <span className="truncate">
               {formatDate(project.deadline)}
@@ -259,7 +258,7 @@ export const ModernProjectCard = ({
         )}
       </CardContent>
 
-      <CardFooter className="p-3 mt-auto flex justify-between items-center border-t border-border/50">
+      <CardFooter className="p-3 mt-auto flex justify-between items-center border-t border-border/50 dark:border-gray-700">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
