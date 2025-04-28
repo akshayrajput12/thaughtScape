@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -116,6 +117,27 @@ export const ModernProjectCard = ({
     return Math.max(0, skillsArray.length - 3);
   };
 
+  const handleApply = () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to apply for this job",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Handle different application methods
+    if (project.application_method === 'direct' && project.application_link) {
+      window.open(project.application_link, '_blank');
+    } else if (project.application_method === 'whatsapp' && project.application_link) {
+      window.open(`https://wa.me/${project.application_link}`, '_blank');
+    } else {
+      // Default to inbuilt application
+      onApply(project);
+    }
+  };
+
   return (
     <Card className={clsx(
       "overflow-hidden transition-all duration-300 group hover:shadow-md border-muted/70 relative h-full flex flex-col",
@@ -168,7 +190,7 @@ export const ModernProjectCard = ({
                   ) : (
                     <>
                       <User className="h-3 w-3 mr-1 text-primary/70" />
-                      {project.author?.username || 'Anonymous'}
+                      {project.job_poster_name || project.author?.username || 'Anonymous'}
                     </>
                   )}
                 </span>
@@ -188,9 +210,9 @@ export const ModernProjectCard = ({
               className={clsx(
                 "px-2 py-0.5 rounded-full text-xs font-medium",
                 {
-                  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300": project.status === "open",
-                  "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300": project.status === "in_progress",
-                  "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300": project.status === "closed"
+                  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/70 dark:text-emerald-300": project.status === "open",
+                  "bg-amber-100 text-amber-700 dark:bg-amber-900/70 dark:text-amber-300": project.status === "in_progress",
+                  "bg-slate-100 text-slate-700 dark:bg-slate-800/70 dark:text-slate-300": project.status === "closed"
                 }
               )}
             >
@@ -206,14 +228,14 @@ export const ModernProjectCard = ({
         </p>
 
         <div className="grid grid-cols-2 gap-2 mb-3">
-          <div className="flex items-center text-xs bg-muted/30 p-1.5 rounded">
+          <div className="flex items-center text-xs bg-muted/30 p-1.5 rounded dark:bg-muted/10">
             <IndianRupee className="h-3 w-3 text-primary mr-1" />
             <span className="truncate">
               {formatBudget(project.min_budget, project.max_budget)}
             </span>
           </div>
 
-          <div className="flex items-center text-xs bg-muted/30 p-1.5 rounded">
+          <div className="flex items-center text-xs bg-muted/30 p-1.5 rounded dark:bg-muted/10">
             <Calendar className="h-3 w-3 text-primary mr-1" />
             <span className="truncate">
               {formatDate(project.deadline)}
@@ -258,21 +280,33 @@ export const ModernProjectCard = ({
 
         {project.status === "open" && project.author_id !== user?.id && !hasApplied ? (
           <div className="flex gap-2">
-            {project.allow_normal_apply !== false && (
+            {(project.application_method === 'inbuilt' || !project.application_method) && (
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => onApply(project)}
+                onClick={handleApply}
               >
                 Apply
               </Button>
             )}
 
-            {project.author?.whatsapp_number && project.allow_whatsapp_apply !== false && (
+            {project.application_method === 'direct' && project.application_link && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => window.open(project.application_link, '_blank')}
+                className="gap-1"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Apply
+              </Button>
+            )}
+
+            {project.application_method === 'whatsapp' && project.application_link && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleWhatsAppApply}
+                onClick={() => window.open(`https://wa.me/${project.application_link}`, '_blank')}
                 className="gap-1"
               >
                 <MessageSquare className="h-3.5 w-3.5" />

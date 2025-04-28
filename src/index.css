@@ -54,7 +54,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border selection:bg-primary/10 selection:text-foreground;
   }
   body {
     @apply bg-background text-foreground;
@@ -62,6 +62,33 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Playfair Display', serif;
+  }
+
+  .dark {
+    @apply bg-[#121212] text-white;
+    color-scheme: dark;
+  }
+
+  .dark .card,
+  .dark .dropdown-menu,
+  .dark .popover-content {
+    @apply bg-[#1A1A1A] border-[#333] shadow-xl shadow-black/20;
+  }
+
+  .dark .border {
+    @apply border-[#333];
+  }
+
+  .dark .bg-muted {
+    @apply bg-[#222];
+  }
+
+  .dark .text-muted-foreground {
+    @apply text-gray-400;
+  }
+
+  .dark .hover\:bg-muted:hover {
+    @apply hover:bg-[#292929];
   }
 }
 
@@ -77,5 +104,21 @@
 
   .font-serif {
     font-family: 'Playfair Display', serif;
+  }
+
+  .glass-morphism {
+    @apply backdrop-blur-xl bg-white/5 border border-white/10;
+  }
+
+  .neo-blur {
+    @apply backdrop-blur-2xl bg-black/40 border border-white/10;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-br from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent;
+  }
+  
+  .text-gradient-primary {
+    @apply bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent;
   }
 }

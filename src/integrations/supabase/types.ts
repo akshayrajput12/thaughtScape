@@ -272,6 +272,7 @@ export type Database = {
           following_count: number | null
           full_name: string | null
           genres: string[] | null
+          github_url: string | null
           id: string
           instagram_url: string | null
           is_admin: boolean | null
@@ -301,6 +302,7 @@ export type Database = {
           following_count?: number | null
           full_name?: string | null
           genres?: string[] | null
+          github_url?: string | null
           id: string
           instagram_url?: string | null
           is_admin?: boolean | null
@@ -330,6 +332,7 @@ export type Database = {
           following_count?: number | null
           full_name?: string | null
           genres?: string[] | null
+          github_url?: string | null
           id?: string
           instagram_url?: string | null
           is_admin?: boolean | null
@@ -418,6 +421,12 @@ export type Database = {
           allow_whatsapp_apply: boolean | null
           application_deadline: string | null
           application_link: string | null
+          application_method:
+            | Database["public"]["Enums"]["application_method_type"]
+            | null
+          application_methods:
+            | Database["public"]["Enums"]["application_method_type"][]
+            | null
           attachment_url: string | null
           author_id: string
           company_name: string | null
@@ -427,6 +436,7 @@ export type Database = {
           experience_level: string | null
           id: string
           is_featured: boolean | null
+          job_poster_name: string | null
           job_type: string | null
           location: string | null
           max_budget: number | null
@@ -442,6 +452,12 @@ export type Database = {
           allow_whatsapp_apply?: boolean | null
           application_deadline?: string | null
           application_link?: string | null
+          application_method?:
+            | Database["public"]["Enums"]["application_method_type"]
+            | null
+          application_methods?:
+            | Database["public"]["Enums"]["application_method_type"][]
+            | null
           attachment_url?: string | null
           author_id: string
           company_name?: string | null
@@ -451,6 +467,7 @@ export type Database = {
           experience_level?: string | null
           id?: string
           is_featured?: boolean | null
+          job_poster_name?: string | null
           job_type?: string | null
           location?: string | null
           max_budget?: number | null
@@ -466,6 +483,12 @@ export type Database = {
           allow_whatsapp_apply?: boolean | null
           application_deadline?: string | null
           application_link?: string | null
+          application_method?:
+            | Database["public"]["Enums"]["application_method_type"]
+            | null
+          application_methods?:
+            | Database["public"]["Enums"]["application_method_type"][]
+            | null
           attachment_url?: string | null
           author_id?: string
           company_name?: string | null
@@ -475,6 +498,7 @@ export type Database = {
           experience_level?: string | null
           id?: string
           is_featured?: boolean | null
+          job_poster_name?: string | null
           job_type?: string | null
           location?: string | null
           max_budget?: number | null
@@ -655,6 +679,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_project_deadlines: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_messages: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -746,7 +774,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      application_method_type: "direct" | "inbuilt" | "whatsapp"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -861,6 +889,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      application_method_type: ["direct", "inbuilt", "whatsapp"],
+    },
   },
 } as const

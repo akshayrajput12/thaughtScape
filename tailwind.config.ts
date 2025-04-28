@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -27,18 +28,22 @@ export default {
         primary: {
           DEFAULT: "#E5DEFF",
           foreground: "#2D3748",
+          dark: "#9b87f5",
         },
         secondary: {
           DEFAULT: "#FDE1D3",
           foreground: "#2D3748",
+          dark: "#7E69AB",
         },
         accent: {
           DEFAULT: "#F7F7F9",
           foreground: "#2D3748",
+          dark: "#6E59A5",
         },
         muted: {
           DEFAULT: "#F1F0FB",
           foreground: "#6B7280",
+          dark: "#1A1F2C",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
@@ -65,9 +70,19 @@ export default {
             transform: "translateY(0)",
           },
         },
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.5s ease-out",
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
   },
