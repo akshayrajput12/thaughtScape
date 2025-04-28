@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -58,13 +57,13 @@ const Landing = () => {
 
               // Get likes count
               const { count: likesCount } = await supabase
-                .from('thought_likes')
+                .from('likes')
                 .select('*', { count: 'exact', head: true })
                 .eq('thought_id', post.id);
 
               // Get comments count
               const { count: commentsCount } = await supabase
-                .from('thought_comments')
+                .from('comments')
                 .select('*', { count: 'exact', head: true })
                 .eq('thought_id', post.id);
 
@@ -238,7 +237,7 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 dark:text-white">
       {/* SEO */}
       <SEO
         title="CampusCash - Learn, Earn, and Connect on Campus"
@@ -257,7 +256,7 @@ const Landing = () => {
             className="flex items-center"
           >
             <div className="w-1.5 h-8 bg-gradient-to-b from-pink-600 to-red-600 rounded-full mr-3"></div>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-pink-900 bg-clip-text text-transparent">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-pink-900 dark:from-gray-100 dark:to-pink-200 bg-clip-text text-transparent">
               Top Campus Content
             </h2>
           </motion.div>
@@ -265,7 +264,7 @@ const Landing = () => {
           <Button
             variant="ghost"
             onClick={() => navigate('/explore')}
-            className="text-pink-600 hover:text-pink-700 hover:bg-pink-50 flex items-center gap-1 text-sm sm:text-base"
+            className="text-pink-600 hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300 hover:bg-pink-50 dark:hover:bg-pink-900/20 flex items-center gap-1 text-sm sm:text-base"
           >
             <span>View All</span>
             <ArrowRight size={16} />
@@ -332,7 +331,7 @@ const Landing = () => {
 
       {/* Featured Jobs Section */}
       {featuredProjects.length > 0 && (
-        <section className="py-8 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-gradient-to-b from-white to-amber-50/30">
+        <section className="py-8 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-gradient-to-b from-white to-amber-50/30 dark:from-gray-800 dark:to-amber-900/10">
           <div className="mb-6 sm:mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -404,7 +403,7 @@ const Landing = () => {
       )}
 
       {/* Recent Projects Section */}
-      <section className="py-8 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-gradient-to-b from-white to-blue-50/30">
+      <section className="py-8 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-gradient-to-b from-white to-blue-50/30 dark:from-gray-800 dark:to-blue-900/10">
         <div className="mb-6 sm:mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
           <motion.div
             initial={{ opacity: 0, x: -20 }}

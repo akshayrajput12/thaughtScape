@@ -48,12 +48,37 @@ export function ThemeProvider({
       
       root.classList.add(systemTheme);
       setResolvedTheme(systemTheme);
+      
+      // Set the meta theme-color based on system preference
+      updateMetaThemeColor(systemTheme);
       return;
     }
     
     root.classList.add(theme);
     setResolvedTheme(theme);
+    
+    // Set the meta theme-color based on selected theme
+    updateMetaThemeColor(theme);
   }, [theme]);
+
+  // Function to update the meta theme-color
+  const updateMetaThemeColor = (currentTheme: string) => {
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    
+    if (!metaThemeColor) {
+      // If meta tag doesn't exist, create it
+      const metaTag = document.createElement('meta');
+      metaTag.name = 'theme-color';
+      metaTag.content = currentTheme === 'dark' ? '#121212' : '#ffffff';
+      document.head.appendChild(metaTag);
+    } else {
+      // Update existing meta tag
+      metaThemeColor.setAttribute(
+        'content',
+        currentTheme === 'dark' ? '#121212' : '#ffffff'
+      );
+    }
+  };
 
   // Listen for system theme changes
   useEffect(() => {
@@ -68,6 +93,9 @@ export function ThemeProvider({
       root.classList.remove("light", "dark");
       root.classList.add(newTheme);
       setResolvedTheme(newTheme);
+      
+      // Update meta theme-color when system preference changes
+      updateMetaThemeColor(newTheme);
     };
     
     mediaQuery.addEventListener("change", handleChange);
