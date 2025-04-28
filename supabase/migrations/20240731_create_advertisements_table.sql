@@ -83,16 +83,124 @@ BEGIN
   INSERT INTO storage.buckets (id, name, public)
   VALUES ('advertisement-images', 'advertisement-images', true)
   ON CONFLICT (id) DO NOTHING;
+
+  -- Ensure RLS is enabled on storage.objects
+  EXECUTE 'ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;';
+
+  -- Catch any errors if the command fails (e.g., if RLS is already enabled)
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'RLS might already be enabled on storage.objects: %', SQLERRM;
 END $$;
 
--- Set up storage policy to allow authenticated users to upload images
+-- Set up storage policies to allow authenticated admin users to upload images
+-- Use DO blocks to safely create policies if they don't exist
+
+-- Policy for public SELECT operation (anyone can view advertisement images)
 DO $$
 BEGIN
-  INSERT INTO storage.policies (name, definition, bucket_id)
-  VALUES (
-    'Advertisement Images Policy',
-    '(bucket_id = ''advertisement-images''::text) AND (auth.role() = ''authenticated''::text) AND EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true)',
-    'advertisement-images'
-  )
-  ON CONFLICT (name, bucket_id) DO NOTHING;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage'
+    AND tablename = 'objects'
+    AND policyname = 'Allow public to view advertisement images'
+  ) THEN
+    CREATE POLICY "Allow public to view advertisement images"
+    ON storage.objects
+    FOR SELECT
+    USING (
+      bucket_id = 'advertisement-images'
+    );
+  END IF;
+END $$;
+
+-- Policy for admin SELECT operation
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage'
+    AND tablename = 'objects'
+    AND policyname = 'Allow admin users to view advertisement images'
+  ) THEN
+    CREATE POLICY "Allow admin users to view advertisement images"
+    ON storage.objects
+    FOR SELECT
+    TO authenticated
+    USING (
+      bucket_id = 'advertisement-images' AND
+      EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE profiles.id = auth.uid() AND profiles.is_admin = true
+      )
+    );
+  END IF;
+END $$;
+
+-- Policy for INSERT operation
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage'
+    AND tablename = 'objects'
+    AND policyname = 'Allow admin users to upload advertisement images'
+  ) THEN
+    CREATE POLICY "Allow admin users to upload advertisement images"
+    ON storage.objects
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (
+      bucket_id = 'advertisement-images' AND
+      EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE profiles.id = auth.uid() AND profiles.is_admin = true
+      )
+    );
+  END IF;
+END $$;
+
+-- Policy for UPDATE operation
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage'
+    AND tablename = 'objects'
+    AND policyname = 'Allow admin users to update advertisement images'
+  ) THEN
+    CREATE POLICY "Allow admin users to update advertisement images"
+    ON storage.objects
+    FOR UPDATE
+    TO authenticated
+    USING (
+      bucket_id = 'advertisement-images' AND
+      EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE profiles.id = auth.uid() AND profiles.is_admin = true
+      )
+    );
+  END IF;
+END $$;
+
+-- Policy for DELETE operation
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage'
+    AND tablename = 'objects'
+    AND policyname = 'Allow admin users to delete advertisement images'
+  ) THEN
+    CREATE POLICY "Allow admin users to delete advertisement images"
+    ON storage.objects
+    FOR DELETE
+    TO authenticated
+    USING (
+      bucket_id = 'advertisement-images' AND
+      EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE profiles.id = auth.uid() AND profiles.is_admin = true
+      )
+    );
+  END IF;
 END $$;

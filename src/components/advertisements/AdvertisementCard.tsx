@@ -17,12 +17,12 @@ export function AdvertisementCard({
   className,
 }: AdvertisementCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(advertisement.main_image_index || 0);
-  
+
   // Ensure the current image index is valid
   const safeImageIndex = advertisement.images && advertisement.images.length > 0
     ? Math.min(currentImageIndex, advertisement.images.length - 1)
     : 0;
-  
+
   const currentImage = advertisement.images && advertisement.images.length > 0
     ? advertisement.images[safeImageIndex]
     : null;
@@ -50,7 +50,7 @@ export function AdvertisementCard({
     >
       {/* Sponsored badge */}
       <div className="absolute top-2 right-2 z-10">
-        <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-medium">
+        <span className="bg-primary/20 dark:bg-primary/30 text-primary dark:text-primary-foreground text-xs px-2 py-1 rounded-full font-medium shadow-sm">
           Sponsored
         </span>
       </div>
@@ -101,7 +101,7 @@ export function AdvertisementCard({
         {advertisement.link_url && (
           <Button
             onClick={handleVisitLink}
-            className="w-full flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-md"
           >
             <ExternalLink className="h-4 w-4" />
             Visit Link

@@ -45,19 +45,24 @@ const ExpandableDescription = ({ description }: { description: string }) => {
       </p>
       {description.length > 150 && (
         <Button
-          variant="ghost"
+          variant={expanded ? "ghost" : "secondary"}
           size="sm"
-          className="mt-1 h-7 text-xs text-primary hover:text-primary/80 px-2"
+          className={clsx(
+            "mt-2 h-8 text-xs px-4 font-medium shadow-sm",
+            expanded
+              ? "text-muted-foreground hover:text-foreground"
+              : "bg-gradient-to-r from-blue-500/90 to-indigo-500/90 hover:from-blue-600 hover:to-indigo-600 text-white dark:from-blue-600/90 dark:to-indigo-600/90"
+          )}
           onClick={() => setExpanded(!expanded)}
         >
           {expanded ? (
             <>
-              <ChevronUp className="h-3.5 w-3.5 mr-1" />
+              <ChevronUp className="h-3.5 w-3.5 mr-1.5" />
               Show Less
             </>
           ) : (
             <>
-              <ChevronDown className="h-3.5 w-3.5 mr-1" />
+              <ChevronDown className="h-3.5 w-3.5 mr-1.5" />
               Read More
             </>
           )}

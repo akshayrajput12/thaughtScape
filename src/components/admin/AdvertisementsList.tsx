@@ -5,15 +5,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Advertisement } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -24,11 +24,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { 
-  Eye, 
-  Pencil, 
-  Trash2, 
-  RefreshCw, 
+import {
+  Eye,
+  Pencil,
+  Trash2,
+  RefreshCw,
   Plus,
   ExternalLink,
   Image as ImageIcon
@@ -165,7 +165,10 @@ export function AdvertisementsList() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Advertisements</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Advertisements</h2>
+          <p className="text-muted-foreground mt-1">Manage promotional content across the platform</p>
+        </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -179,7 +182,7 @@ export function AdvertisementsList() {
           <Button
             size="sm"
             onClick={handleNewAdvertisement}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
           >
             <Plus className="h-4 w-4" />
             New Advertisement
@@ -230,7 +233,17 @@ export function AdvertisementsList() {
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {advertisement.display_location?.map((location) => (
-                        <Badge key={location} variant="outline" className="capitalize">
+                        <Badge
+                          key={location}
+                          variant="outline"
+                          className={`capitalize ${
+                            location === 'home'
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                              : location === 'explore'
+                                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                                : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                          }`}
+                        >
                           {location}
                         </Badge>
                       ))}
@@ -302,15 +315,20 @@ export function AdvertisementsList() {
           </Table>
         </div>
       ) : (
-        <div className="text-center py-12 bg-card rounded-xl border border-border">
-          <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <ImageIcon className="h-6 w-6 text-primary" />
+        <div className="text-center py-12 bg-card rounded-xl border border-border bg-gradient-to-b from-card to-muted/20">
+          <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 shadow-md">
+            <ImageIcon className="h-8 w-8 text-primary" />
           </div>
           <h3 className="text-xl font-medium text-foreground mb-2">No advertisements yet</h3>
           <p className="text-muted-foreground max-w-md mx-auto mb-6">
             Create your first advertisement to promote content across the platform.
+            Advertisements can be displayed on the home feed, explore page, or as popups.
           </p>
-          <Button onClick={handleNewAdvertisement}>
+          <Button
+            onClick={handleNewAdvertisement}
+            className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-md"
+          >
+            <Plus className="h-4 w-4 mr-2" />
             Create Advertisement
           </Button>
         </div>

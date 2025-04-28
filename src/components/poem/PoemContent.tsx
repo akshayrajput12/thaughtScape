@@ -12,12 +12,12 @@ interface PoemContentProps {
 export const PoemContent = ({ content, isLuxury = false, acceptedTags = [] }: PoemContentProps) => {
   const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
-  
+
   // Process content to highlight hashtags and mentions
   const processContent = (text: string) => {
     // First, split by spaces to identify words
     const words = text.split(/(\s+)/);
-    
+
     return words.map((word, index) => {
       // Handle hashtags
       if (word.startsWith('#')) {
@@ -27,17 +27,17 @@ export const PoemContent = ({ content, isLuxury = false, acceptedTags = [] }: Po
           </span>
         );
       }
-      
+
       // Handle user mentions (@username)
       else if (word.startsWith('@')) {
         const username = word.substring(1); // Remove the @ symbol
         const isAccepted = acceptedTags?.includes(username);
-        
+
         // Only show mentions that are accepted or don't have acceptedTags specified
         if (acceptedTags?.length === 0 || isAccepted) {
           return (
-            <span 
-              key={index} 
+            <span
+              key={index}
               onClick={() => handleProfileClick(username)}
               className="text-purple-500 hover:underline cursor-pointer font-medium"
             >
@@ -49,7 +49,7 @@ export const PoemContent = ({ content, isLuxury = false, acceptedTags = [] }: Po
           return <span key={index}>{word.replace(`@${username}`, username)}</span>;
         }
       }
-      
+
       // Regular text
       return <span key={index}>{word}</span>;
     });
@@ -72,11 +72,15 @@ export const PoemContent = ({ content, isLuxury = false, acceptedTags = [] }: Po
       >
         {processContent(displayContent)}
       </motion.p>
-      
+
       {isLongContent && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="mt-2 text-purple-500 text-sm font-medium hover:text-purple-700 transition-colors"
+          className={`mt-2 px-3 py-1 rounded-md text-sm font-medium ${
+            expanded
+              ? "text-purple-500 hover:text-purple-700"
+              : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600"
+          } transition-colors`}
         >
           {expanded ? "Show less" : "Read more"}
         </button>
