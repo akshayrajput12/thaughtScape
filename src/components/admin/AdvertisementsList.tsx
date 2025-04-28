@@ -49,21 +49,43 @@ export function AdvertisementsList() {
   const { data: advertisements, isLoading, refetch } = useQuery({
     queryKey: ["advertisements"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First, fetch advertisements
+      const { data: adsData, error: adsError } = await supabase
         .from("advertisements")
-        .select(`
-          *,
-          author:profiles!advertisements_author_id_fkey(
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data as Advertisement[];
+      if (adsError) throw adsError;
+
+      // If we have advertisements, fetch the author profiles
+      if (adsData && adsData.length > 0) {
+        const authorIds = adsData.map(ad => ad.author_id).filter(Boolean);
+
+        if (authorIds.length > 0) {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, username, full_name, avatar_url')
+            .in('id', authorIds);
+
+          if (profilesError) {
+            console.error("Error fetching advertisement authors:", profilesError);
+          } else if (profilesData) {
+            // Create a map of profiles by ID for quick lookup
+            const profilesMap = profilesData.reduce((map, profile) => {
+              map[profile.id] = profile;
+              return map;
+            }, {} as Record<string, any>);
+
+            // Attach author profiles to advertisements
+            return adsData.map(ad => ({
+              ...ad,
+              author: ad.author_id ? profilesMap[ad.author_id] : null
+            })) as Advertisement[];
+          }
+        }
+      }
+
+      return adsData as Advertisement[];
     },
   });
 

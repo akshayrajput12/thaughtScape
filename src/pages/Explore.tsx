@@ -52,26 +52,48 @@ const Explore = () => {
   const { data: advertisements = [], isLoading: adsLoading } = useQuery({
     queryKey: ['explore-advertisements'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First, fetch advertisements
+      const { data: adsData, error: adsError } = await supabase
         .from('advertisements')
-        .select(`
-          *,
-          author:profiles!advertisements_author_id_fkey(
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('is_active', true)
         .contains('display_location', ['explore'])
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Error fetching advertisements:", error);
+      if (adsError) {
+        console.error("Error fetching advertisements:", adsError);
         return [];
       }
-      return data as Advertisement[];
+
+      // If we have advertisements, fetch the author profiles
+      if (adsData && adsData.length > 0) {
+        const authorIds = adsData.map(ad => ad.author_id).filter(Boolean);
+
+        if (authorIds.length > 0) {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, username, full_name, avatar_url')
+            .in('id', authorIds);
+
+          if (profilesError) {
+            console.error("Error fetching advertisement authors:", profilesError);
+          } else if (profilesData) {
+            // Create a map of profiles by ID for quick lookup
+            const profilesMap = profilesData.reduce((map, profile) => {
+              map[profile.id] = profile;
+              return map;
+            }, {} as Record<string, any>);
+
+            // Attach author profiles to advertisements
+            return adsData.map(ad => ({
+              ...ad,
+              author: ad.author_id ? profilesMap[ad.author_id] : null
+            })) as Advertisement[];
+          }
+        }
+      }
+
+      return adsData as Advertisement[];
     }
   });
 
