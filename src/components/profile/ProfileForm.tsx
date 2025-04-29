@@ -43,11 +43,31 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
     college: z.string().max(100).optional().nullable(),
     registration_number: z.string().max(50).optional().nullable(),
     whatsapp_number: z.string().max(20).optional().nullable(),
-    instagram_url: z.string().url({ message: 'Please enter a valid URL' }).optional().nullable(),
-    linkedin_url: z.string().url({ message: 'Please enter a valid URL' }).optional().nullable(),
-    twitter_url: z.string().url({ message: 'Please enter a valid URL' }).optional().nullable(),
-    portfolio_url: z.string().url({ message: 'Please enter a valid URL' }).optional().nullable(),
-    snapchat_url: z.string().url({ message: 'Please enter a valid URL' }).optional().nullable(),
+    instagram_url: z.union([
+      z.string().url({ message: 'Please enter a valid URL' }),
+      z.string().max(0),
+      z.null()
+    ]).optional().nullable(),
+    linkedin_url: z.union([
+      z.string().url({ message: 'Please enter a valid URL' }),
+      z.string().max(0),
+      z.null()
+    ]).optional().nullable(),
+    twitter_url: z.union([
+      z.string().url({ message: 'Please enter a valid URL' }),
+      z.string().max(0),
+      z.null()
+    ]).optional().nullable(),
+    portfolio_url: z.union([
+      z.string().url({ message: 'Please enter a valid URL' }),
+      z.string().max(0),
+      z.null()
+    ]).optional().nullable(),
+    snapchat_url: z.union([
+      z.string().url({ message: 'Please enter a valid URL' }),
+      z.string().max(0),
+      z.null()
+    ]).optional().nullable(),
   });
 
   // Initialize the form with the profile data
@@ -158,7 +178,7 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
           name="bio"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Bio</FormLabel>
+              <FormLabel>Bio <span className="text-xs text-muted-foreground">(Optional)</span></FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Tell people a bit about yourself..."
@@ -178,7 +198,7 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
             name="college"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>College/University</FormLabel>
+                <FormLabel>College/University <span className="text-xs text-muted-foreground">(Optional)</span></FormLabel>
                 <FormControl>
                   <Input placeholder="Your college name" {...field} value={field.value || ''} />
                 </FormControl>
@@ -192,7 +212,7 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
             name="registration_number"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Registration Number</FormLabel>
+                <FormLabel>Registration Number <span className="text-xs text-muted-foreground">(Optional)</span></FormLabel>
                 <FormControl>
                   <Input placeholder="Your registration number" {...field} value={field.value || ''} />
                 </FormControl>
@@ -207,7 +227,7 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
           name="whatsapp_number"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>WhatsApp Number</FormLabel>
+              <FormLabel>WhatsApp Number <span className="text-xs text-muted-foreground">(Optional)</span></FormLabel>
               <FormControl>
                 <Input placeholder="Your WhatsApp number with country code" {...field} value={field.value || ''} />
               </FormControl>
@@ -217,15 +237,18 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
         />
 
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Social Media Links</h3>
-          
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Social Media Links</h3>
+            <span className="text-sm text-muted-foreground">All fields optional</span>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
               name="instagram_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Instagram URL</FormLabel>
+                  <FormLabel>Instagram URL <span className="text-xs text-muted-foreground">(Optional)</span></FormLabel>
                   <FormControl>
                     <Input placeholder="https://instagram.com/username" {...field} value={field.value || ''} />
                   </FormControl>
@@ -239,7 +262,7 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
               name="twitter_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Twitter URL</FormLabel>
+                  <FormLabel>Twitter URL <span className="text-xs text-muted-foreground">(Optional)</span></FormLabel>
                   <FormControl>
                     <Input placeholder="https://twitter.com/username" {...field} value={field.value || ''} />
                   </FormControl>
@@ -255,7 +278,7 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
               name="linkedin_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>LinkedIn URL</FormLabel>
+                  <FormLabel>LinkedIn URL <span className="text-xs text-muted-foreground">(Optional)</span></FormLabel>
                   <FormControl>
                     <Input placeholder="https://linkedin.com/in/username" {...field} value={field.value || ''} />
                   </FormControl>
@@ -269,7 +292,7 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
               name="portfolio_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Portfolio URL</FormLabel>
+                  <FormLabel>Portfolio URL <span className="text-xs text-muted-foreground">(Optional)</span></FormLabel>
                   <FormControl>
                     <Input placeholder="https://yourportfolio.com" {...field} value={field.value || ''} />
                   </FormControl>
@@ -284,7 +307,7 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
             name="snapchat_url"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Snapchat URL</FormLabel>
+                <FormLabel>Snapchat URL <span className="text-xs text-muted-foreground">(Optional)</span></FormLabel>
                 <FormControl>
                   <Input placeholder="https://snapchat.com/add/username" {...field} value={field.value || ''} />
                 </FormControl>
