@@ -17,6 +17,13 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ProfileImageUpload } from './ProfileImageUpload';
 import { Profile } from '@/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ProfileFormProps {
   profile: Profile;
@@ -199,9 +206,19 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
             render={({ field }) => (
               <FormItem>
                 <FormLabel>College/University <span className="text-xs text-muted-foreground">(Optional)</span></FormLabel>
-                <FormControl>
-                  <Input placeholder="Your college name" {...field} value={field.value || ''} />
-                </FormControl>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value || ''}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your university" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Lovely Professional University">Lovely Professional University</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
