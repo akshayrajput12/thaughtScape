@@ -224,7 +224,7 @@ const SingleProject = () => {
         {!isAuthenticated && (
           <div className="bg-purple-50 border border-purple-100 rounded-lg p-4 mb-6 text-center">
             <p className="text-purple-800 mb-2">Sign in to apply for this project</p>
-            <Button onClick={handleAuthPrompt} variant="outline" className="bg-white">
+            <Button onClick={handleAuthPrompt} variant="outline" className="bg-white text-purple-800">
               Sign In / Sign Up
             </Button>
           </div>

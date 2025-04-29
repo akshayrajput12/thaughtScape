@@ -19,11 +19,11 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
   const [taggedPosts, setTaggedPosts] = useState<Thought[]>([]);
   const [pendingTags, setPendingTags] = useState<Thought[]>([]);
   const { toast } = useToast();
-  
+
   useEffect(() => {
     fetchTaggedPosts();
   }, [userId]);
-  
+
   const fetchTaggedPosts = async () => {
     setIsLoading(true);
     try {
@@ -32,31 +32,31 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
         .from('tags')
         .select('*')
         .eq('user_id', userId);
-        
+
       if (tagsError) {
         console.error('Error fetching tags:', tagsError);
         throw tagsError;
       }
-      
+
       if (!tagsData || tagsData.length === 0) {
         setTaggedPosts([]);
         setPendingTags([]);
         setIsLoading(false);
         return;
       }
-      
+
       // Type assertion to match our Tag interface
       const tags = tagsData as unknown as Tag[];
-      
+
       // Get all thoughts where this user is tagged
       const acceptedTagsIds = tags
         .filter(tag => tag.status === 'accepted')
         .map(tag => tag.thought_id);
-        
+
       const pendingTagsIds = tags
         .filter(tag => tag.status === 'pending')
         .map(tag => tag.thought_id);
-      
+
       // Fetch accepted thoughts
       if (acceptedTagsIds.length > 0) {
         const { data: acceptedThoughts, error: acceptedError } = await supabase
@@ -73,17 +73,17 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
             )
           `)
           .in('id', acceptedTagsIds);
-          
+
         if (acceptedError) {
           console.error('Error fetching accepted thoughts:', acceptedError);
           throw acceptedError;
         }
-        
+
         setTaggedPosts(acceptedThoughts as Thought[] || []);
       } else {
         setTaggedPosts([]);
       }
-      
+
       // Fetch pending thoughts (only for the user viewing their own profile)
       if (pendingTagsIds.length > 0 && userId === currentUserId) {
         const { data: pendingThoughts, error: pendingError } = await supabase
@@ -100,12 +100,12 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
             )
           `)
           .in('id', pendingTagsIds);
-          
+
         if (pendingError) {
           console.error('Error fetching pending thoughts:', pendingError);
           throw pendingError;
         }
-        
+
         setPendingTags(pendingThoughts as Thought[] || []);
       } else {
         setPendingTags([]);
@@ -121,7 +121,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
       setIsLoading(false);
     }
   };
-  
+
   const handleAcceptTag = async (thoughtId: string) => {
     try {
       // Update tag status to accepted
@@ -130,9 +130,9 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
         .update({ status: 'accepted' })
         .eq('thought_id', thoughtId)
         .eq('user_id', userId);
-        
+
       if (error) throw error;
-      
+
       // Create notification for the author
       const taggedThought = pendingTags.find(thought => thought.id === thoughtId);
       if (taggedThought) {
@@ -147,12 +147,12 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
             tag_status: 'accepted'
           });
       }
-      
+
       toast({
         title: "Success",
         description: "Tag accepted successfully",
       });
-      
+
       // Move the thought from pending to accepted
       const thought = pendingTags.find(t => t.id === thoughtId);
       if (thought) {
@@ -168,7 +168,7 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
       });
     }
   };
-  
+
   const handleRejectTag = async (thoughtId: string) => {
     try {
       // Update tag status to rejected
@@ -177,9 +177,9 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
         .update({ status: 'rejected' })
         .eq('thought_id', thoughtId)
         .eq('user_id', userId);
-        
+
       if (error) throw error;
-      
+
       // Create notification for the author
       const taggedThought = pendingTags.find(thought => thought.id === thoughtId);
       if (taggedThought) {
@@ -194,12 +194,12 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
             tag_status: 'rejected'
           });
       }
-      
+
       toast({
         title: "Success",
         description: "Tag rejected successfully",
       });
-      
+
       // Remove the thought from pending
       setPendingTags(prev => prev.filter(t => t.id !== thoughtId));
     } catch (error) {
@@ -211,17 +211,17 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
       });
     }
   };
-  
+
   // Only show the pending tab for the current user
   const isOwnProfile = userId === currentUserId;
-  
+
   return (
     <div className="mt-10">
       <div className="flex items-center gap-2 mb-6">
-        <TagIcon className="h-5 w-5 text-purple-600" />
-        <h2 className="text-2xl font-serif font-bold text-black">Tagged Posts</h2>
+        <TagIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+        <h2 className="text-2xl font-serif font-bold text-black dark:text-gray-100">Tagged Posts</h2>
       </div>
-      
+
       <Tabs defaultValue="accepted" className="mb-8">
         <TabsList className="mb-6">
           <TabsTrigger value="accepted" className="px-4">
@@ -238,20 +238,20 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
             </TabsTrigger>
           )}
         </TabsList>
-        
+
         <TabsContent value="accepted">
           {isLoading ? (
             <div className="space-y-6">
               {[...Array(2)].map((_, i) => (
-                <div key={i} className="bg-white rounded-lg p-6 shadow-md">
+                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
                   <div className="flex items-center space-x-4 mb-4">
-                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <Skeleton className="h-12 w-12 rounded-full dark:bg-gray-700" />
                     <div className="space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-4 w-32 dark:bg-gray-700" />
+                      <Skeleton className="h-3 w-24 dark:bg-gray-700" />
                     </div>
                   </div>
-                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-24 w-full dark:bg-gray-700" />
                 </div>
               ))}
             </div>
@@ -272,25 +272,25 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
-              <TagIcon className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-              <h3 className="text-lg font-medium text-gray-600">No tagged posts yet</h3>
-              <p className="text-gray-500 mt-2">When someone tags you in a post and you accept it, it will appear here.</p>
+            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <TagIcon className="h-10 w-10 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-600 dark:text-gray-300">No tagged posts yet</h3>
+              <p className="text-gray-500 dark:text-gray-400 mt-2">When someone tags you in a post and you accept it, it will appear here.</p>
             </div>
           )}
         </TabsContent>
-        
+
         {isOwnProfile && (
           <TabsContent value="pending">
             {isLoading ? (
               <div className="space-y-4">
                 {[...Array(2)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-lg p-4 shadow-sm">
+                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
                     <div className="flex items-center space-x-4">
-                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <Skeleton className="h-10 w-10 rounded-full dark:bg-gray-700" />
                       <div className="space-y-2 flex-1">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-4 w-32 dark:bg-gray-700" />
+                        <Skeleton className="h-3 w-full dark:bg-gray-700" />
                       </div>
                     </div>
                   </div>
@@ -304,30 +304,30 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between"
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
-                      <img 
-                        src={thought.author?.avatar_url || "/placeholder.svg"} 
+                      <img
+                        src={thought.author?.avatar_url || "/placeholder.svg"}
                         alt={thought.author?.username || "Unknown"}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                       <div>
-                        <p className="font-medium">{thought.author?.username || "Unknown"}</p>
-                        <p className="text-sm text-gray-500 line-clamp-1">Tagged you in: "{thought.title}"</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">{thought.author?.username || "Unknown"}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">Tagged you in: "{thought.title}"</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => handleAcceptTag(thought.id)}
-                        className="p-2 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition-colors"
+                        className="p-2 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full hover:bg-green-100 dark:hover:bg-green-800/50 transition-colors"
                       >
                         <Check className="h-4 w-4" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleRejectTag(thought.id)}
-                        className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors"
+                        className="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full hover:bg-red-100 dark:hover:bg-red-800/50 transition-colors"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -336,10 +336,10 @@ export const TaggedPosts = ({ userId, currentUserId }: TaggedPostsProps) => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <TagIcon className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                <h3 className="text-lg font-medium text-gray-600">No pending tags</h3>
-                <p className="text-gray-500 mt-2">When someone tags you in a post, it will appear here for your approval.</p>
+              <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <TagIcon className="h-10 w-10 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <h3 className="text-lg font-medium text-gray-600 dark:text-gray-300">No pending tags</h3>
+                <p className="text-gray-500 dark:text-gray-400 mt-2">When someone tags you in a post, it will appear here for your approval.</p>
               </div>
             )}
           </TabsContent>

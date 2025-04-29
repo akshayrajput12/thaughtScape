@@ -125,18 +125,18 @@ export const ApplicationDialog = ({
 
         <ScrollArea className="h-full max-h-[calc(90vh-120px)] sm:max-h-[600px]">
           <div className="space-y-6 px-2">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-semibold text-lg">{project.title}</h3>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+              <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">{project.title}</h3>
               <div className="mt-2 space-y-2 text-sm">
-                <p className="line-clamp-2 text-gray-600">{project.description}</p>
+                <p className="line-clamp-2 text-gray-600 dark:text-gray-300">{project.description}</p>
 
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                   <IndianRupee className="w-4 h-4" />
                   <span>Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
                 </div>
 
                 {(project.application_deadline || project.deadline) && (
-                  <div className="text-gray-600">
+                  <div className="text-gray-600 dark:text-gray-300">
                     Deadline: {project.application_deadline
                       ? format(new Date(project.application_deadline), 'PP')
                       : project.deadline
@@ -146,7 +146,7 @@ export const ApplicationDialog = ({
                 )}
 
                 {project.job_poster_name && (
-                  <div className="text-gray-600">
+                  <div className="text-gray-600 dark:text-gray-300">
                     Posted by: {project.job_poster_name}
                   </div>
                 )}
@@ -156,25 +156,25 @@ export const ApplicationDialog = ({
             <div className="space-y-6">
               {/* Application Methods Section */}
               {availableMethods.length > 1 && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <h3 className="font-semibold mb-2">Available Application Methods</h3>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
+                  <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Available Application Methods</h3>
                   <div className="space-y-2">
                     {availableMethods.includes('inbuilt') && (
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-purple-500"></div>
-                        <span>Apply with built-in form</span>
+                        <span className="text-gray-700 dark:text-gray-300">Apply with built-in form</span>
                       </div>
                     )}
                     {availableMethods.includes('direct') && (
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                        <span>Apply on external website</span>
+                        <span className="text-gray-700 dark:text-gray-300">Apply on external website</span>
                       </div>
                     )}
                     {availableMethods.includes('whatsapp') && (
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                        <span>Apply via WhatsApp</span>
+                        <span className="text-gray-700 dark:text-gray-300">Apply via WhatsApp</span>
                       </div>
                     )}
                   </div>
@@ -187,7 +187,7 @@ export const ApplicationDialog = ({
                   <div className="space-y-2">
                     <div className="flex items-center">
                       <FileText className="h-4 w-4 mr-2 text-blue-500" />
-                      <Label htmlFor="message">Cover Letter</Label>
+                      <Label htmlFor="message" className="text-gray-900 dark:text-gray-100">Cover Letter</Label>
                     </div>
                     <Textarea
                       id="message"
@@ -196,14 +196,14 @@ export const ApplicationDialog = ({
                       placeholder="Introduce yourself and explain why you're a good fit for this project"
                       rows={4}
                       required
-                      className="resize-none"
+                      className="resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center">
                       <Briefcase className="h-4 w-4 mr-2 text-purple-500" />
-                      <Label htmlFor="experience">Relevant Experience</Label>
+                      <Label htmlFor="experience" className="text-gray-900 dark:text-gray-100">Relevant Experience</Label>
                     </div>
                     <Textarea
                       id="experience"
@@ -211,33 +211,35 @@ export const ApplicationDialog = ({
                       onChange={(e) => setExperience(e.target.value)}
                       placeholder="Describe your relevant experience for this project"
                       rows={3}
-                      className="resize-none"
+                      className="resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center">
                       <Link className="h-4 w-4 mr-2 text-green-500" />
-                      <Label htmlFor="portfolio">Portfolio / Previous Work</Label>
+                      <Label htmlFor="portfolio" className="text-gray-900 dark:text-gray-100">Portfolio / Previous Work</Label>
                     </div>
                     <Input
                       id="portfolio"
                       value={portfolio}
                       onChange={(e) => setPortfolio(e.target.value)}
                       placeholder="Link to your portfolio or previous work"
+                      className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 mr-2 text-red-500" />
-                      <Label htmlFor="phoneNumber">Phone Number</Label>
+                      <Label htmlFor="phoneNumber" className="text-gray-900 dark:text-gray-100">Phone Number</Label>
                     </div>
                     <Input
                       id="phoneNumber"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       placeholder="Your phone number (with country code)"
+                      className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                     />
                   </div>
 
@@ -264,7 +266,7 @@ export const ApplicationDialog = ({
               {/* External Application Options */}
               {(availableMethods.includes('direct') || availableMethods.includes('whatsapp')) && (
                 <div className="space-y-4 mt-4">
-                  <h3 className="font-semibold">Other Application Options</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">Other Application Options</h3>
                   <div className="flex flex-wrap gap-3">
                     {availableMethods.includes('direct') && (
                       <Button

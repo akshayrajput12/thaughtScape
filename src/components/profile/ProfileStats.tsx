@@ -106,7 +106,7 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
   const UserList = ({ users }: { users: Profile[] }) => (
     <div className="space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar">
       {users.length === 0 ? (
-        <div className="text-center p-4 text-gray-500">
+        <div className="text-center p-4 text-gray-500 dark:text-gray-400">
           No users to display
         </div>
       ) : (
@@ -115,7 +115,7 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
             key={user.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
+            className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
             onClick={() => {
               navigate(`/profile/${user.id}`);
               setShowFollowersDialog(false);
@@ -127,8 +127,8 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
               <AvatarFallback>{user.username ? user.username[0].toUpperCase() : 'U'}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium">{user.full_name || user.username}</p>
-              <p className="text-sm text-gray-500">@{user.username}</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">{user.full_name || user.username}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">@{user.username}</p>
             </div>
           </motion.div>
         ))
@@ -145,31 +145,31 @@ export const ProfileStats = ({ postsCount, followersCount, followingCount, userI
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${
-              stat.onClick ? 'cursor-pointer hover:bg-gray-50' : ''
+            className={`flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow ${
+              stat.onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''
             }`}
             onClick={stat.onClick || undefined}
           >
-            <stat.icon className="w-6 h-6 mb-2 text-primary" />
-            <span className="text-3xl font-bold text-gray-800">{stat.value}</span>
-            <span className="text-sm text-gray-500">{stat.label}</span>
+            <stat.icon className="w-6 h-6 mb-2 text-primary dark:text-primary-foreground" />
+            <span className="text-3xl font-bold text-gray-800 dark:text-gray-100">{stat.value}</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</span>
           </motion.div>
         ))}
       </div>
 
       <Dialog open={showFollowersDialog} onOpenChange={setShowFollowersDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md bg-white dark:bg-gray-800">
           <DialogHeader>
-            <DialogTitle>Followers ({actualFollowersCount})</DialogTitle>
+            <DialogTitle className="text-gray-900 dark:text-gray-100">Followers ({actualFollowersCount})</DialogTitle>
           </DialogHeader>
           <UserList users={followers} />
         </DialogContent>
       </Dialog>
 
       <Dialog open={showFollowingDialog} onOpenChange={setShowFollowingDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md bg-white dark:bg-gray-800">
           <DialogHeader>
-            <DialogTitle>Following ({actualFollowingCount})</DialogTitle>
+            <DialogTitle className="text-gray-900 dark:text-gray-100">Following ({actualFollowingCount})</DialogTitle>
           </DialogHeader>
           <UserList users={following} />
         </DialogContent>

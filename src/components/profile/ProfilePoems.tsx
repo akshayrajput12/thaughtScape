@@ -15,9 +15,9 @@ interface ProfilePoemsProps {
 export const ProfilePoems = ({ poems, isOwnProfile, isAdmin, onDeletePoem }: ProfilePoemsProps) => {
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-serif font-bold text-gray-800">Thoughts</h2>
+      <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100">Thoughts</h2>
       {poems.length === 0 ? (
-        <p className="text-center text-gray-500 py-8">No thoughts yet</p>
+        <p className="text-center text-gray-500 dark:text-gray-400 py-8">No thoughts yet</p>
       ) : (
         <div className="grid gap-6">
           {poems.map((poem, index) => (
@@ -26,17 +26,17 @@ export const ProfilePoems = ({ poems, isOwnProfile, isAdmin, onDeletePoem }: Pro
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
             >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-serif font-semibold text-gray-800">{poem.title}</h3>
+                <h3 className="text-xl font-serif font-semibold text-gray-800 dark:text-gray-100">{poem.title}</h3>
                 {(isOwnProfile || isAdmin) && (
                   <div className="flex gap-2">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => onDeletePoem(poem.id)}
-                      className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                      className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -44,12 +44,12 @@ export const ProfilePoems = ({ poems, isOwnProfile, isAdmin, onDeletePoem }: Pro
                 )}
               </div>
               <div className="mb-4">
-                <PoemContent 
-                  content={poem.content} 
+                <PoemContent
+                  content={poem.content}
                   acceptedTags={poem.accepted_tags || []}
                 />
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
                 {new Date(poem.created_at).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',

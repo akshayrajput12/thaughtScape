@@ -140,7 +140,7 @@ export function ProfileForm({ profile, onSubmitSuccess, isFirstTimeSetup = false
             profile={profile}
             onImageUploaded={onImageUploaded}
           />
-          <p className="text-sm text-gray-500 mt-2">Click to upload a profile picture</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Click to upload a profile picture</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

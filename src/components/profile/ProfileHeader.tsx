@@ -68,13 +68,13 @@ export function ProfileHeader({
   const hasSocialLinks = profile.instagram_url || profile.twitter_url || profile.linkedin_url || profile.portfolio_url;
 
   return (
-    <div className="relative bg-card/60 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-border/50">
+    <div className="relative bg-card/60 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-border/50 dark:border-gray-700/50">
       <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
         <div className="relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-lg opacity-70"></div>
-          <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
+          <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-secondary/20 dark:from-primary/30 dark:to-secondary/30 rounded-full blur-lg opacity-70"></div>
+          <Avatar className="h-24 w-24 border-4 border-background dark:border-gray-800 shadow-xl">
             <AvatarImage src={profile.avatar_url || undefined} alt={profile.username} />
-            <AvatarFallback className="text-2xl bg-gradient-to-br from-primary/10 to-secondary/10">
+            <AvatarFallback className="text-2xl bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 text-gray-800 dark:text-gray-200">
               {(profile.full_name?.[0] || profile.username?.[0] || '?').toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -84,18 +84,18 @@ export function ProfileHeader({
           <div className="flex flex-wrap justify-center md:justify-between gap-2 items-center">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">{profile.full_name}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{profile.full_name}</h1>
                 {/* Show admin badge if user is an admin */}
                 {profile.is_admin && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 border border-purple-200">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-800 dark:to-indigo-800 text-purple-800 dark:text-purple-100 border border-purple-200 dark:border-purple-700">
                     <ShieldCheck className="h-3 w-3 mr-1" />
                     Admin
                   </span>
                 )}
               </div>
-              <div className="text-muted-foreground">@{profile.username}</div>
+              <div className="text-muted-foreground dark:text-gray-400">@{profile.username}</div>
               {profile.college && (
-                <div className="text-sm text-muted-foreground mt-1">
+                <div className="text-sm text-muted-foreground dark:text-gray-400 mt-1">
                   {profile.college}
                 </div>
               )}
@@ -108,7 +108,7 @@ export function ProfileHeader({
                     variant="outline"
                     onClick={onFollowToggle}
                     disabled={isBlocked}
-                    className={isFollowing ? "border-primary text-primary hover:bg-primary/10" : ""}
+                    className={isFollowing ? "border-primary text-primary dark:text-primary-foreground hover:bg-primary/10 dark:hover:bg-primary/20" : ""}
                   >
                     {isFollowing ? 'Following' : 'Follow'}
                   </Button>
@@ -178,7 +178,7 @@ export function ProfileHeader({
           </div>
 
           {profile.bio && (
-            <p className="text-sm max-w-prose whitespace-pre-line">
+            <p className="text-sm max-w-prose whitespace-pre-line text-gray-700 dark:text-gray-300">
               {profile.bio}
             </p>
           )}
@@ -191,7 +191,7 @@ export function ProfileHeader({
                     href={profile.instagram_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
                   >
                     <Instagram className="h-5 w-5" />
                   </a>
@@ -202,7 +202,7 @@ export function ProfileHeader({
                     href={profile.twitter_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
                   >
                     <Twitter className="h-5 w-5" />
                   </a>
@@ -213,7 +213,7 @@ export function ProfileHeader({
                     href={profile.linkedin_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
                   >
                     <Linkedin className="h-5 w-5" />
                   </a>
@@ -224,7 +224,7 @@ export function ProfileHeader({
                     href={profile.portfolio_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
                     title="Portfolio"
                   >
                     <BriefcaseIcon className="h-5 w-5" />

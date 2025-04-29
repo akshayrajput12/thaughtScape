@@ -336,7 +336,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/5 px-4 py-12 transition-all duration-500">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/5 dark:from-gray-900 dark:via-primary/10 dark:to-secondary/10 px-4 py-12 transition-all duration-500">
       <div className="max-w-4xl mx-auto space-y-12 animate-fadeIn">
         <ProfileHeader
           profile={profileData}
@@ -358,9 +358,9 @@ const Profile = () => {
 
         {shouldShowForm ? (
           <div className={showFirstTimeProfileForm ? "animate-scale-in" : ""}>
-            <div className={showFirstTimeProfileForm ? "mb-6 p-6 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg shadow-sm" : "hidden"}>
-              <h2 className="text-2xl font-bold text-primary mb-3">Welcome to CampusCash!</h2>
-              <p className="text-muted-foreground">Please complete your profile to get started. This will help others connect with you and personalize your experience.</p>
+            <div className={showFirstTimeProfileForm ? "mb-6 p-6 bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 rounded-lg shadow-sm" : "hidden"}>
+              <h2 className="text-2xl font-bold text-primary dark:text-primary-foreground mb-3">Welcome to CampusCash!</h2>
+              <p className="text-muted-foreground dark:text-gray-300">Please complete your profile to get started. This will help others connect with you and personalize your experience.</p>
             </div>
             <ProfileForm
               profile={profileData}

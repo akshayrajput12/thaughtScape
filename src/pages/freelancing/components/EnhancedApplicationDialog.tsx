@@ -72,35 +72,35 @@ export const EnhancedApplicationDialog = ({
   // Helper function to render skills safely
   const renderSkillBadges = () => {
     if (!project.required_skills) return null;
-    
+
     if (Array.isArray(project.required_skills)) {
       return project.required_skills.map((skill, index) => (
         <Badge key={index} variant="outline" className="text-xs font-medium">
           {skill}
         </Badge>
       ));
-    } 
-    
+    }
+
     if (typeof project.required_skills === 'string') {
       const skillsText = project.required_skills as string;
       if (skillsText.trim() === '') return null;
-      
+
       return skillsText.split(',').map((skill, index) => (
         <Badge key={index} variant="outline" className="text-xs font-medium">
           {skill.trim()}
         </Badge>
       ));
     }
-    
+
     return null;
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl bg-white dark:bg-gray-800">
         <DialogHeader>
-          <DialogTitle>Project Application</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-gray-900 dark:text-gray-100">Project Application</DialogTitle>
+          <DialogDescription className="text-gray-600 dark:text-gray-300">
             Submit your application for this project.
           </DialogDescription>
         </DialogHeader>
@@ -111,11 +111,11 @@ export const EnhancedApplicationDialog = ({
               name="message"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Message</FormLabel>
+                  <FormLabel className="text-gray-900 dark:text-gray-100">Message</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Why are you a good fit for this project?"
-                      className="resize-none"
+                      className="resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                       value={message}
                       onChange={(e) => {
                         field.onChange(e);
@@ -132,9 +132,13 @@ export const EnhancedApplicationDialog = ({
               name="phoneNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number (Optional)</FormLabel>
+                  <FormLabel className="text-gray-900 dark:text-gray-100">Phone Number (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your phone number" {...field} />
+                    <Input
+                      placeholder="Enter your phone number"
+                      {...field}
+                      className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -145,11 +149,11 @@ export const EnhancedApplicationDialog = ({
               name="experience"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Experience (Optional)</FormLabel>
+                  <FormLabel className="text-gray-900 dark:text-gray-100">Experience (Optional)</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Describe your relevant experience"
-                      className="resize-none"
+                      className="resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                       {...field}
                     />
                   </FormControl>
@@ -162,9 +166,13 @@ export const EnhancedApplicationDialog = ({
               name="portfolio"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Portfolio (Optional)</FormLabel>
+                  <FormLabel className="text-gray-900 dark:text-gray-100">Portfolio (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Link to your portfolio" {...field} />
+                    <Input
+                      placeholder="Link to your portfolio"
+                      {...field}
+                      className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
