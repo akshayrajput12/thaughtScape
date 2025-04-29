@@ -135,9 +135,13 @@ export const ApplicationDialog = ({
                   <span>Budget: ₹{project.budget?.toLocaleString('en-IN') || 'Not specified'}</span>
                 </div>
 
-                {project.deadline && (
+                {(project.application_deadline || project.deadline) && (
                   <div className="text-gray-600">
-                    Deadline: {format(new Date(project.deadline), 'PP')}
+                    Deadline: {project.application_deadline
+                      ? format(new Date(project.application_deadline), 'PP')
+                      : project.deadline
+                        ? format(new Date(project.deadline), 'PP')
+                        : 'No deadline'}
                   </div>
                 )}
 

@@ -4,6 +4,8 @@ import { AuthError } from '@supabase/supabase-js';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { checkEmailExists, supabase } from '@/integrations/supabase/client';
+import { safeLog, safeErrorLog, maskId } from '@/utils/sanitizeData';
+import { motion } from 'framer-motion';
 
 type SignUpErrorHandlerProps = {
   error: AuthError | null;
@@ -42,9 +44,18 @@ export const SignUpErrorHandler = ({ error, email }: SignUpErrorHandlerProps) =>
 
     // Add listener for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      safeLog("Auth state change in SignUpErrorHandler", {
+        event,
+        hasUser: !!session?.user,
+        emailConfirmed: !!session?.user?.email_confirmed_at
+      });
+
       if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at === null) {
         const userEmail = session?.user?.email;
         if (userEmail) {
+          // Mask email for privacy in logs
+          const maskedEmail = userEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3');
+          safeLog("Verification email sent", { email: maskedEmail });
           setMessage(`A verification email has been sent to ${userEmail}. Please check your inbox.`);
         }
       } else if (event === 'USER_UPDATED') {
@@ -71,7 +82,7 @@ export const SignUpErrorHandler = ({ error, email }: SignUpErrorHandlerProps) =>
             setMessage(null);
           }
         } catch (err) {
-          console.error("Error checking email:", err);
+          safeErrorLog("Error checking email", err);
         } finally {
           setLoading(false);
         }
@@ -99,10 +110,16 @@ export const SignUpErrorHandler = ({ error, email }: SignUpErrorHandlerProps) =>
   if (!message || loading) return null;
 
   return (
-    <Alert variant="destructive" className="mb-4">
-      <AlertCircle className="h-4 w-4" />
-      <AlertTitle>Error</AlertTitle>
-      <AlertDescription>{message}</AlertDescription>
-    </Alert>
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{message}</AlertDescription>
+      </Alert>
+    </motion.div>
   );
 };

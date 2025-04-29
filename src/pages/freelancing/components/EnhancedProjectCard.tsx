@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Calendar,
@@ -14,7 +14,9 @@ import {
   MapPin,
   ExternalLink,
   Clock,
-  Award
+  Award,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { format } from "date-fns";
 import clsx from "clsx";
@@ -48,6 +50,7 @@ export const EnhancedProjectCard = ({
 }: EnhancedProjectCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [expanded, setExpanded] = useState(false);
 
   const handleWhatsAppApply = () => {
     if (!user) {
@@ -277,9 +280,39 @@ export const EnhancedProjectCard = ({
       <CardContent className="p-5 pt-2 pb-3 relative z-10">
         <div className="relative">
           <div className="absolute inset-0 rounded-md bg-gradient-to-r from-primary/5 to-secondary/5 opacity-50" />
-          <p className="relative text-sm text-muted-foreground line-clamp-3 mb-4 p-2 rounded-md">
-            {project.description}
-          </p>
+          <div className="relative p-2 rounded-md">
+            <p className={clsx(
+              "text-sm text-muted-foreground whitespace-pre-line",
+              !expanded && "line-clamp-3"
+            )}>
+              {project.description}
+            </p>
+            {project.description && project.description.length > 150 && (
+              <Button
+                variant={expanded ? "ghost" : "secondary"}
+                size="sm"
+                className={clsx(
+                  "mt-2 h-8 text-xs px-4 font-medium shadow-sm",
+                  expanded
+                    ? "text-muted-foreground hover:text-foreground"
+                    : "bg-gradient-to-r from-blue-500/90 to-indigo-500/90 hover:from-blue-600 hover:to-indigo-600 text-white dark:from-blue-600/90 dark:to-indigo-600/90"
+                )}
+                onClick={() => setExpanded(!expanded)}
+              >
+                {expanded ? (
+                  <>
+                    <ChevronUp className="h-3.5 w-3.5 mr-1.5" />
+                    Show Less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-3.5 w-3.5 mr-1.5" />
+                    Read More
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-4 mt-5">
@@ -302,7 +335,7 @@ export const EnhancedProjectCard = ({
             <div>
               <div className="text-xs text-muted-foreground">Deadline</div>
               <div className="text-foreground">
-                {formatDate(project.deadline)}
+                {formatDate(project.application_deadline || project.deadline)}
               </div>
             </div>
           </div>

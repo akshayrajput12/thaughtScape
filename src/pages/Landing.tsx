@@ -323,8 +323,8 @@ const Landing = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 sm:py-12 bg-white rounded-xl shadow-sm">
-            <p className="text-gray-500">No posts found.</p>
+          <div className="text-center py-8 sm:py-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+            <p className="text-gray-500 dark:text-gray-400">No posts found.</p>
           </div>
         )}
       </section>
@@ -339,10 +339,10 @@ const Landing = () => {
               className="flex items-center"
             >
               <div className="w-1.5 h-8 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full mr-3"></div>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-amber-900 bg-clip-text text-transparent">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-amber-900 dark:from-gray-100 dark:to-amber-300 bg-clip-text text-transparent">
                 Featured Opportunities
               </h2>
-              <Badge variant="outline" className="ml-3 bg-amber-50 text-amber-700 border-amber-200">
+              <Badge variant="outline" className="ml-3 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50">
                 <Award className="h-3 w-3 mr-1" /> Featured
               </Badge>
             </motion.div>
@@ -350,7 +350,7 @@ const Landing = () => {
             <Button
               variant="ghost"
               onClick={() => navigate('/freelancing')}
-              className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 flex items-center gap-1 text-sm sm:text-base"
+              className="text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-1 text-sm sm:text-base"
             >
               <span>View All</span>
               <ArrowRight size={16} />
@@ -388,6 +388,8 @@ const Landing = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
+                  whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                  className="transform hover:shadow-lg transition-all duration-300"
                 >
                   <EnhancedProjectCard
                     project={project}
@@ -411,7 +413,7 @@ const Landing = () => {
             className="flex items-center"
           >
             <div className="w-1.5 h-8 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full mr-3"></div>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold bg-gradient-to-r from-gray-900 to-blue-900 dark:from-gray-100 dark:to-blue-300 bg-clip-text text-transparent">
               Earn on Campus
             </h2>
           </motion.div>
@@ -419,7 +421,7 @@ const Landing = () => {
           <Button
             variant="ghost"
             onClick={() => navigate('/freelancing')}
-            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1 text-sm sm:text-base"
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-1 text-sm sm:text-base"
           >
             <span>View All</span>
             <ArrowRight size={16} />
@@ -457,6 +459,8 @@ const Landing = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                className="transform hover:shadow-lg transition-all duration-300"
               >
                 <EnhancedProjectCard
                   project={project}
@@ -468,8 +472,8 @@ const Landing = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 sm:py-12 bg-white rounded-xl shadow-sm">
-            <p className="text-gray-500">No projects found.</p>
+          <div className="text-center py-8 sm:py-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+            <p className="text-gray-500 dark:text-gray-400">No projects found.</p>
           </div>
         )}
       </section>

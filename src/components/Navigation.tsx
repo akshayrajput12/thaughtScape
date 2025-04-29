@@ -2,6 +2,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useProfile } from "@/contexts/ProfileContext";
 import {
   Home,
   Search,
@@ -10,8 +11,7 @@ import {
   User,
   Bell,
   LogOut,
-  Settings,
-  MessageSquare
+  Settings
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,23 +22,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Profile } from "@/types";
 import { useMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { safeErrorLog } from "@/utils/sanitizeData";
 
 const Navigation = () => {
   const { isAuthenticated, user } = useAuth();
+  const { profile } = useProfile();
   const location = useLocation();
   const navigate = useNavigate();
-  const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const isMobile = useMobile();
   const { toast } = useToast();
-  const [isAdmin, setIsAdmin] = useState(false);
 
   // Fetch notifications data
   const { data: notificationsData } = useQuery({
@@ -83,29 +82,8 @@ const Navigation = () => {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
+  // Set up real-time subscription for notifications
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!isAuthenticated || !user?.id) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*, is_admin')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
-
-        setUserProfile(data);
-        setIsAdmin(!!data?.is_admin);
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-      }
-    };
-
-    fetchUserProfile();
-
-    // Set up real-time subscription for notifications
     if (user?.id) {
       const notificationsChannel = supabase
         .channel('notifications_changes')
@@ -128,7 +106,7 @@ const Navigation = () => {
         supabase.removeChannel(notificationsChannel);
       };
     }
-  }, [isAuthenticated, user?.id]);
+  }, [user?.id]);
 
   const handleSignOut = async () => {
     try {
@@ -139,7 +117,7 @@ const Navigation = () => {
       });
       navigate('/');
     } catch (error) {
-      console.error("Error signing out:", error);
+      safeErrorLog("Error signing out", error);
       toast({
         title: "Error signing out",
         description: "There was a problem signing out. Please try again.",
@@ -162,10 +140,10 @@ const Navigation = () => {
               </span>
             )}
             <Avatar className="h-8 w-8">
-              {userProfile?.avatar_url ? (
-                <AvatarImage src={userProfile.avatar_url} alt={userProfile.username || "User"} />
+              {profile?.avatar_url ? (
+                <AvatarImage src={profile.avatar_url} alt={profile.username || "User"} />
               ) : (
-                <AvatarFallback>{userProfile?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+                <AvatarFallback>{profile?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
               )}
             </Avatar>
           </Button>
@@ -173,12 +151,12 @@ const Navigation = () => {
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{userProfile?.full_name || userProfile?.username}</p>
-              <p className="text-xs leading-none text-muted-foreground">@{userProfile?.username}</p>
+              <p className="text-sm font-medium leading-none">{profile?.full_name || profile?.username}</p>
+              <p className="text-xs leading-none text-muted-foreground">@{profile?.username}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate('/profile/' + userProfile?.id)} className="flex items-center gap-2">
+          <DropdownMenuItem onClick={() => navigate('/profile/' + profile?.id)} className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span>Profile</span>
           </DropdownMenuItem>
@@ -191,7 +169,7 @@ const Navigation = () => {
               </Badge>
             )}
           </DropdownMenuItem>
-          {isAdmin && (
+          {profile?.is_admin && (
             <DropdownMenuItem onClick={() => navigate('/admin')} className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               <span>Admin Dashboard</span>
@@ -242,18 +220,25 @@ const Navigation = () => {
             <div className="flex items-center gap-8">
               <Link
                 to="/"
-                className="relative group"
+                className="relative group flex items-center"
                 onClick={(e) => {
                   e.preventDefault();
                   navigate(isAuthenticated ? '/home' : '/');
                 }}
               >
-                <span className="text-xl font-bold relative z-10 group-hover:text-transparent dark:text-white dark:group-hover:text-transparent transition-colors duration-300 bg-clip-text bg-gradient-to-r from-black to-black dark:from-white dark:to-white group-hover:from-primary group-hover:to-secondary">
+                <div className="relative overflow-hidden rounded-md group-hover:shadow-md transition-all duration-300">
+                  <img
+                    src="/logo.png"
+                    alt="CampusCash Logo"
+                    className="h-8 w-auto object-contain"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/0 to-secondary/0 group-hover:from-primary/10 group-hover:to-secondary/10 transition-all duration-500"></div>
+                </div>
+                <span className="ml-2 text-xl font-bold relative z-10 text-gray-900 dark:text-white">
                   CampusCash
                 </span>
                 <span className="absolute -inset-x-2 -inset-y-1 z-0 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left rounded-lg bg-black/5 dark:bg-white/10"></span>
                 <span className="absolute -bottom-1 left-0 h-0.5 w-full scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left bg-gradient-to-r from-primary to-secondary"></span>
-                <span className="absolute -inset-2 z-0 opacity-0 group-hover:opacity-25 transition-opacity duration-500 rounded-lg blur-xl bg-gradient-to-r from-primary to-secondary"></span>
               </Link>
               {isAuthenticated && (
                 <div className="flex items-center gap-6">
@@ -306,17 +291,23 @@ const Navigation = () => {
         <div className="fixed top-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-b border-border md:hidden z-10 py-3 px-4 flex justify-between items-center">
           <Link
             to="/"
-            className="relative group"
+            className="relative group flex items-center"
             onClick={(e) => {
               e.preventDefault();
               navigate(isAuthenticated ? '/home' : '/');
             }}
           >
-            <span className="text-lg font-bold relative z-10 group-hover:text-transparent dark:text-white dark:group-hover:text-transparent transition-colors duration-300 bg-clip-text bg-gradient-to-r from-black to-black dark:from-white dark:to-white group-hover:from-primary group-hover:to-secondary">
+            <div className="relative overflow-hidden rounded-md group-hover:shadow-md transition-all duration-300">
+              <img
+                src="/logo.png"
+                alt="CampusCash Logo"
+                className="h-7 w-auto object-contain"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/0 to-secondary/0 group-hover:from-primary/10 group-hover:to-secondary/10 transition-all duration-500"></div>
+            </div>
+            <span className="ml-2 text-lg font-bold relative z-10 text-gray-900 dark:text-white">
               CampusCash
             </span>
-            <span className="absolute -inset-x-2 -inset-y-1 z-0 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left rounded-lg bg-black/5 dark:bg-white/10"></span>
-            <span className="absolute -bottom-1 left-0 h-0.5 w-full scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left bg-gradient-to-r from-primary to-secondary"></span>
           </Link>
 
           {isAuthenticated ? (
@@ -387,7 +378,7 @@ const Navigation = () => {
               <span className="text-xs mt-1">Alerts</span>
             </Link>
             <Link
-              to={`/profile/${userProfile?.id}`}
+              to={`/profile/${profile?.id}`}
               className={`flex flex-col items-center p-2 ${location.pathname.includes('/profile/') ? 'text-primary font-medium' : 'text-muted-foreground'}`}
             >
               <User className="h-5 w-5" />

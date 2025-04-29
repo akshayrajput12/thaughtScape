@@ -5,6 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Info } from 'lucide-react';
 import { useAuthForm } from '@/hooks/use-auth-form';
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface CustomSignUpProps {
   redirectTo?: string;
@@ -26,9 +28,9 @@ export const CustomSignUp = ({ redirectTo = window.location.origin, onSignUp }: 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     const { success, error } = await signUp();
-    
+
     if (success) {
       setVerificationSent(true);
       if (onSignUp) {
@@ -41,30 +43,40 @@ export const CustomSignUp = ({ redirectTo = window.location.origin, onSignUp }: 
 
   if (verificationSent) {
     return (
-      <Alert className="bg-blue-50 border-blue-200">
-        <Info className="h-4 w-4 text-blue-600" />
-        <AlertDescription className="text-blue-600">
-          A verification email has been sent to <strong>{email}</strong>. 
-          Please check your inbox and click the link to verify your account.
-          <br /><br />
-          If you don't see the email, check your spam folder.
-        </AlertDescription>
-      </Alert>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="text-blue-600 dark:text-blue-300">
+            A verification email has been sent to <strong>{email}</strong>.
+            Please check your inbox and click the link to verify your account.
+            <br /><br />
+            If you don't see the email, check your spam folder.
+          </AlertDescription>
+        </Alert>
+      </motion.div>
     );
   }
 
   return (
     <div className="space-y-4">
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </motion.div>
       )}
 
       <form onSubmit={handleSignUp} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email address</Label>
+          <Label htmlFor="email" className="text-gray-900 dark:text-gray-100">Email address</Label>
           <Input
             id="email"
             type="email"
@@ -72,12 +84,12 @@ export const CustomSignUp = ({ redirectTo = window.location.origin, onSignUp }: 
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Your email address"
             required
-            className="w-full"
+            className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">Create password</Label>
+          <Label htmlFor="password" className="text-gray-900 dark:text-gray-100">Create password</Label>
           <Input
             id="password"
             type="password"
@@ -85,21 +97,31 @@ export const CustomSignUp = ({ redirectTo = window.location.origin, onSignUp }: 
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Create a strong password"
             required
-            className="w-full"
+            className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
             minLength={6}
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground dark:text-gray-400">
             Password must be at least 6 characters long
           </p>
         </div>
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={loading}
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
         >
-          {loading ? 'Creating account...' : 'Sign up'}
-        </Button>
+          <Button
+            type="submit"
+            className={cn(
+              "w-full bg-gradient-to-r from-indigo-600 to-blue-600",
+              "hover:from-indigo-700 hover:to-blue-700",
+              "dark:from-indigo-700 dark:to-blue-700",
+              "dark:hover:from-indigo-600 dark:hover:to-blue-600"
+            )}
+            disabled={loading}
+          >
+            {loading ? 'Creating account...' : 'Sign up'}
+          </Button>
+        </motion.div>
       </form>
     </div>
   );

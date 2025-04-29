@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { safeLog, safeErrorLog, maskId } from "@/utils/sanitizeData";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +33,7 @@ export const UserMenu = ({ userId, isAdmin, onLogout }: UserMenuProps) => {
 
   const handleProfileClick = () => {
     if (userId) {
+      safeLog("Navigating to profile", { userId: maskId(userId) });
       navigate(`/profile/${userId}`);
     }
   };
@@ -45,7 +47,7 @@ export const UserMenu = ({ userId, isAdmin, onLogout }: UserMenuProps) => {
       });
       navigate('/');
     } catch (error) {
-      console.error("Logout error:", error);
+      safeErrorLog("Logout error", error);
       // Even if the logout fails, we'll clear local state and redirect
       toast({
         title: "Notice",

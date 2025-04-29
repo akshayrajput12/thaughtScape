@@ -221,7 +221,7 @@ export const JobListItem = ({
 
               <span className="flex items-center">
                 <Clock className="h-3.5 w-3.5 mr-1 text-primary/70" />
-                {formatDate(project.deadline)}
+                {formatDate(project.application_deadline || project.deadline)}
               </span>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
+import { safeLog, safeErrorLog } from '@/utils/sanitizeData';
 
 interface UseAuthFormProps {
   redirectTo?: string;
@@ -15,7 +16,7 @@ export const useAuthForm = ({ redirectTo = window.location.origin }: UseAuthForm
   const handleSignIn = async () => {
     try {
       setLoading(true);
-      
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -25,7 +26,7 @@ export const useAuthForm = ({ redirectTo = window.location.origin }: UseAuthForm
 
       return { success: true, data };
     } catch (error: any) {
-      console.error('Error signing in:', error);
+      safeErrorLog('Error signing in', error);
       toast({
         title: 'Sign in failed',
         description: error.message || 'An error occurred during sign in',
@@ -40,7 +41,7 @@ export const useAuthForm = ({ redirectTo = window.location.origin }: UseAuthForm
   const handleSignUp = async () => {
     try {
       setLoading(true);
-      
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -58,7 +59,7 @@ export const useAuthForm = ({ redirectTo = window.location.origin }: UseAuthForm
 
       return { success: true, data };
     } catch (error: any) {
-      console.error('Error signing up:', error);
+      safeErrorLog('Error signing up', error);
       toast({
         title: 'Sign up failed',
         description: error.message || 'An error occurred during sign up',
@@ -73,7 +74,7 @@ export const useAuthForm = ({ redirectTo = window.location.origin }: UseAuthForm
   const handleResetPassword = async () => {
     try {
       setLoading(true);
-      
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${redirectTo}/reset-password`,
       });
@@ -87,7 +88,7 @@ export const useAuthForm = ({ redirectTo = window.location.origin }: UseAuthForm
 
       return { success: true };
     } catch (error: any) {
-      console.error('Error resetting password:', error);
+      safeErrorLog('Error resetting password', error);
       toast({
         title: 'Password reset failed',
         description: error.message || 'An error occurred during password reset',

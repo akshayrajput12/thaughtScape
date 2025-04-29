@@ -2,6 +2,12 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  sanitizeUserForLogs,
+  sanitizeAuthStateForLogs,
+  safeLog,
+  safeErrorLog
+} from '@/utils/sanitizeData';
 
 type AuthContextType = {
   session: Session | null;
@@ -35,27 +41,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Get session from local storage if available
     const persistSession = async () => {
       setLoading(true);
-      
+
       try {
         // Get initial session
         const { data: { session: initialSession } } = await supabase.auth.getSession();
-        
+
         if (initialSession) {
           // Only set the user if their email is confirmed
-          const isEmailConfirmed = initialSession.user?.email_confirmed_at || 
+          const isEmailConfirmed = initialSession.user?.email_confirmed_at ||
                                   initialSession.user?.app_metadata?.provider !== 'email';
-          
+
           if (isEmailConfirmed) {
             setSession(initialSession);
             setUser(initialSession.user);
             setIsAuthenticated(true);
-            console.log("Session restored from storage:", initialSession.user?.id);
+            safeLog("Session restored from storage",
+              sanitizeUserForLogs(initialSession.user)
+            );
           } else {
-            console.log("User email not confirmed, not setting as authenticated");
+            safeLog("User email not confirmed, not setting as authenticated");
             setSession(null);
             setUser(null);
             setIsAuthenticated(false);
-            
+
             // Sign out the user if their email is not confirmed
             await supabase.auth.signOut();
           }
@@ -65,7 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setIsAuthenticated(false);
         }
       } catch (error) {
-        console.error("Error fetching initial session:", error);
+        safeErrorLog("Error fetching initial session", error);
         setSession(null);
         setUser(null);
         setIsAuthenticated(false);
@@ -79,23 +87,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
-        console.log("Auth state changed:", event, currentSession?.user?.id);
-        
+        safeLog(
+          "Auth state changed",
+          sanitizeAuthStateForLogs(event, currentSession)
+        );
+
         if (currentSession) {
           // Only set the user if their email is confirmed
-          const isEmailConfirmed = currentSession.user?.email_confirmed_at || 
+          const isEmailConfirmed = currentSession.user?.email_confirmed_at ||
                                   currentSession.user?.app_metadata?.provider !== 'email';
-          
+
           if (isEmailConfirmed) {
             setSession(currentSession);
             setUser(currentSession.user);
             setIsAuthenticated(true);
           } else {
-            console.log("User email not confirmed, not setting as authenticated");
+            safeLog("User email not confirmed, not setting as authenticated");
             setSession(null);
             setUser(null);
             setIsAuthenticated(false);
-            
+
             // If this is a new sign-up, show a message to check their email
             if (event === 'SIGNED_IN') {
               // Sign out the user if their email is not confirmed

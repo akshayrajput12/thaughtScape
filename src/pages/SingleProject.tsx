@@ -257,7 +257,8 @@ const SingleProject = () => {
               <div className="flex items-center gap-2 text-gray-600">
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm">
-                  Deadline: {project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
+                  Deadline: {project.application_deadline ? format(new Date(project.application_deadline), 'PP') :
+                            project.deadline ? format(new Date(project.deadline), 'PP') : 'No deadline'}
                 </span>
               </div>
 

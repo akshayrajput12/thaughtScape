@@ -2,6 +2,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface PoemContentProps {
   content: string;
@@ -68,22 +71,38 @@ export const PoemContent = ({ content, isLuxury = false, acceptedTags = [] }: Po
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="whitespace-pre-line text-gray-700 leading-relaxed font-serif"
+        className={cn(
+          "whitespace-pre-line text-gray-700 dark:text-gray-300 leading-relaxed font-serif",
+          !expanded && isLongContent && "line-clamp-3"
+        )}
       >
-        {processContent(displayContent)}
+        {processContent(expanded ? content : displayContent)}
       </motion.p>
 
       {isLongContent && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className={`mt-2 px-3 py-1 rounded-md text-sm font-medium ${
+        <Button
+          variant={expanded ? "ghost" : "secondary"}
+          size="sm"
+          className={cn(
+            "mt-2 h-8 text-xs px-4 font-medium shadow-sm",
             expanded
-              ? "text-purple-500 hover:text-purple-700"
-              : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600"
-          } transition-colors`}
+              ? "text-muted-foreground hover:text-foreground"
+              : "bg-gradient-to-r from-blue-500/90 to-indigo-500/90 hover:from-blue-600 hover:to-indigo-600 text-white dark:from-blue-600/90 dark:to-indigo-600/90"
+          )}
+          onClick={() => setExpanded(!expanded)}
         >
-          {expanded ? "Show less" : "Read more"}
-        </button>
+          {expanded ? (
+            <>
+              <ChevronUp className="h-3.5 w-3.5 mr-1.5" />
+              Show Less
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-3.5 w-3.5 mr-1.5" />
+              Read More
+            </>
+          )}
+        </Button>
       )}
     </div>
   );

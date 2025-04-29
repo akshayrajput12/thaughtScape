@@ -7,6 +7,7 @@ import { Footer } from "@/components/home/Footer";
 import { NotificationPopup } from "@/components/notifications/NotificationPopup";
 import type { Thought } from "@/types";
 import { useNavigate } from "react-router-dom";
+import { safeLog, safeErrorLog, maskId } from "@/utils/sanitizeData";
 
 const THOUGHTS_PER_PAGE = 6;
 
@@ -20,7 +21,7 @@ const Index = () => {
   const [currentUserId, setCurrentUserId] = useState<string | undefined>();
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
-  
+
   // Notification states
   const [showNotification, setShowNotification] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -29,7 +30,7 @@ const Index = () => {
 
   const fetchThoughts = useCallback(async (pageNumber: number) => {
     try {
-      console.log(`Fetching thoughts for page ${pageNumber}...`);
+      safeLog(`Fetching thoughts for page ${pageNumber}...`);
       setLoadingMore(true);
 
       const from = pageNumber * THOUGHTS_PER_PAGE;
@@ -52,7 +53,7 @@ const Index = () => {
         .range(from, to);
 
       if (error) {
-        console.error("Error fetching thoughts:", error);
+        safeErrorLog("Error fetching thoughts", error);
         toast({
           title: "Error",
           description: "Failed to load thoughts",
@@ -61,8 +62,8 @@ const Index = () => {
         return;
       }
 
-      console.log(`Fetched ${thoughtsData.length} thoughts`);
-      
+      safeLog(`Fetched ${thoughtsData.length} thoughts`);
+
       if (thoughtsData.length < THOUGHTS_PER_PAGE) {
         setHasMore(false);
       }
@@ -73,7 +74,7 @@ const Index = () => {
         setThoughts(prev => [...prev, ...thoughtsData]);
       }
     } catch (error) {
-      console.error("Unexpected error:", error);
+      safeErrorLog("Unexpected error", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
@@ -88,7 +89,7 @@ const Index = () => {
   useEffect(() => {
     const initializeData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      console.log("Current session:", session?.user?.id);
+      safeLog("Current session", session?.user ? { userId: maskId(session.user.id) } : { userId: null });
       setCurrentUserId(session?.user?.id);
 
       if (session?.user?.id) {
@@ -98,51 +99,51 @@ const Index = () => {
           .eq('id', session.user.id)
           .maybeSingle();
         setIsAdmin(profileData?.is_admin || false);
-        
+
         // Fetch notification data
         const fetchNotificationData = async () => {
           try {
             // Set default values instead of querying messages table
             setUnreadMessages(0);
-            
+
             // Fetch projects by user to get applications
             const { data: userProjects } = await supabase
               .from("projects")
               .select("id")
               .eq("author_id", session.user.id);
-              
+
             if (userProjects && userProjects.length > 0) {
               const projectIds = userProjects.map(p => p.id);
-              
+
               // Fetch unviewed applications
               const { count: applicationsCount } = await supabase
                 .from("project_applications")
                 .select("id", { count: 'exact', head: true })
                 .is("viewed_at", null)
                 .in("project_id", projectIds);
-              
+
               setUnviewedApplications(applicationsCount || 0);
             }
-            
+
             // Fetch new projects
             const { count: projectsCount } = await supabase
               .from("projects")
               .select("id", { count: 'exact', head: true })
               .eq("status", "open")
               .gt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-            
+
             setNewProjects(projectsCount || 0);
-            
+
             // Show notification if there are any unread items
             if ((unviewedApplications || 0) + (projectsCount || 0) > 0) {
               // Delay showing notification to allow page to load first
               setTimeout(() => setShowNotification(true), 1500);
             }
           } catch (error) {
-            console.error("Error fetching notification data:", error);
+            safeErrorLog("Error fetching notification data", error);
           }
         };
-        
+
         fetchNotificationData();
       }
 
@@ -161,7 +162,7 @@ const Index = () => {
           table: 'thoughts'
         },
         () => {
-          console.log("Thoughts updated, refreshing...");
+          safeLog("Thoughts updated, refreshing...");
           fetchThoughts(0);
         }
       )
@@ -189,7 +190,7 @@ const Index = () => {
         .eq('thought_id', thoughtId);
 
       if (likesError) {
-        console.error("Error deleting likes:", likesError);
+        safeErrorLog("Error deleting likes", likesError);
         toast({
           title: "Error",
           description: "Failed to delete associated likes",
@@ -197,7 +198,7 @@ const Index = () => {
         });
         return;
       }
-      
+
       // Then delete any comments associated with this thought
       const { error: commentsError } = await supabase
         .from('comments')
@@ -205,7 +206,7 @@ const Index = () => {
         .eq('thought_id', thoughtId);
 
       if (commentsError) {
-        console.error("Error deleting comments:", commentsError);
+        safeErrorLog("Error deleting comments", commentsError);
         toast({
           title: "Error",
           description: "Failed to delete associated comments",
@@ -213,7 +214,7 @@ const Index = () => {
         });
         return;
       }
-      
+
       // Then delete any bookmarks associated with this thought
       const { error: bookmarksError } = await supabase
         .from('bookmarks')
@@ -221,7 +222,7 @@ const Index = () => {
         .eq('thought_id', thoughtId);
 
       if (bookmarksError) {
-        console.error("Error deleting bookmarks:", bookmarksError);
+        safeErrorLog("Error deleting bookmarks", bookmarksError);
         toast({
           title: "Error",
           description: "Failed to delete associated bookmarks",
@@ -245,7 +246,7 @@ const Index = () => {
 
       setThoughts(thoughts.filter(thought => thought.id !== thoughtId));
     } catch (error) {
-      console.error("Error deleting thought:", error);
+      safeErrorLog("Error deleting thought", error);
       toast({
         title: "Error",
         description: "Failed to delete thought",
@@ -273,8 +274,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-primary/10">
       <Hero onActionClick={handleHeroAction} isLoggedIn={!!currentUserId} />
-      <FeaturedPoems 
-        thoughts={thoughts} 
+      <FeaturedPoems
+        thoughts={thoughts}
         currentUserId={currentUserId}
         isAdmin={isAdmin}
         onDeleteThought={handleDeleteThought}
@@ -283,9 +284,9 @@ const Index = () => {
         onLoadMore={handleLoadMore}
       />
       <Footer />
-      
+
       {currentUserId && (
-        <NotificationPopup 
+        <NotificationPopup
           unreadMessages={unreadMessages}
           projectApplications={unviewedApplications}
           newProjects={newProjects}

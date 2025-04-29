@@ -4,6 +4,7 @@ import { RevealImageList } from "@/components/ui/reveal-images";
 import { Button } from "@/components/ui/button";
 import { LightbulbIcon } from "lucide-react";
 import { GooeyText } from "@/components/ui/gooey-text-morphing";
+import { motion } from "framer-motion";
 
 interface HeroProps {
   onActionClick: () => void;
@@ -12,12 +13,12 @@ interface HeroProps {
 
 export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
   return (
-    <div className="flex flex-col overflow-hidden -mt-4 sm:-mt-8 pt-20 sm:pt-32">
+    <div className="flex flex-col overflow-hidden -mt-4 sm:-mt-8 pt-20 sm:pt-32 dark:bg-gray-900">
       <ContainerScroll
         titleComponent={
           <>
             <div className="space-y-4 sm:space-y-6 md:space-y-8 mt-4 sm:mt-8 md:mt-12">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold relative mt-[100px] sm:mt-[150px] z-0 text-center">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold relative mt-[100px] sm:mt-[150px] z-0 text-center text-gray-900 dark:text-gray-100">
                 Welcome to
               </h1>
               <div className="h-16 sm:h-24 md:h-32 flex items-center justify-center">
@@ -26,7 +27,7 @@ export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
                   morphTime={1.5}
                   cooldownTime={1}
                   className="font-serif w-full"
-                  textClassName="bg-clip-text text-transparent bg-gradient-to-r from-slate-800 via-slate-600 to-slate-900 text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold"
+                  textClassName="bg-clip-text text-transparent bg-gradient-to-r from-slate-800 via-slate-600 to-slate-900 dark:from-slate-200 dark:via-slate-300 dark:to-slate-100 text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold"
                 />
               </div>
             </div>
@@ -35,13 +36,18 @@ export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
               knowledge sharing, and building valuable connections.
             </p>
             <div className="flex justify-center">
-              <Button
-                className="group bg-slate-800 hover:bg-slate-700 text-white px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 rounded-lg text-sm sm:text-base md:text-lg shadow-lg hover:shadow-xl transition-all relative z-10"
-                onClick={onActionClick}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <LightbulbIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:rotate-12 transition-transform" />
-                {!isLoggedIn ? "Share Your Thoughts" : "Start Writing"}
-              </Button>
+                <Button
+                  className="group bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 dark:from-indigo-600 dark:to-purple-700 dark:hover:from-indigo-500 dark:hover:to-purple-600 text-white px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 rounded-lg text-sm sm:text-base md:text-lg shadow-lg hover:shadow-xl transition-all relative z-10"
+                  onClick={onActionClick}
+                >
+                  <LightbulbIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:rotate-12 transition-transform" />
+                  {!isLoggedIn ? "Share Your Thoughts" : "Start Writing"}
+                </Button>
+              </motion.div>
             </div>
             <div className="mt-10 sm:mt-16 relative z-10 px-2 sm:px-0">
               <RevealImageList />
@@ -60,7 +66,7 @@ export const Hero = ({ onActionClick, isLoggedIn }: HeroProps) => {
           ].map((imageId, i) => (
             <div
               key={i}
-              className="relative group overflow-hidden rounded-lg transition-all hover:scale-105 bg-white shadow-md"
+              className="relative group overflow-hidden rounded-lg transition-all hover:scale-105 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg"
             >
               <img
                 src={`https://images.unsplash.com/${imageId}?auto=format&fit=crop&w=800&q=80`}
