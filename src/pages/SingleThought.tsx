@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { Loader2, Edit2 } from "lucide-react";
 import type { Thought } from "@/types";
 import { Button } from "@/components/ui/button";
+import SEO from "@/components/SEO";
 
 const SingleThought = () => {
   const { id } = useParams<{ id: string }>();
@@ -91,6 +92,17 @@ const SingleThought = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Add SEO component for better link sharing */}
+      {thought && (
+        <SEO
+          title={thought.title || "Thought"}
+          description={thought.content.substring(0, 150) + (thought.content.length > 150 ? '...' : '')}
+          companyName={thought.author?.full_name || thought.author?.username || "User"}
+          ogType="article"
+          ogUrl={window.location.href}
+        />
+      )}
+
       <div className="max-w-3xl mx-auto">
         {!isAuthenticated && (
           <div className="bg-purple-50 border border-purple-100 rounded-lg p-4 mb-6 text-center">

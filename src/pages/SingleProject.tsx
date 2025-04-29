@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip";
+import SEO from "@/components/SEO";
 
 const SingleProject = () => {
   const { id } = useParams<{ id: string }>();
@@ -220,6 +221,17 @@ const SingleProject = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Add SEO component for better link sharing */}
+      <SEO
+        title={project.title}
+        description={project.description}
+        companyName={project.author?.full_name || project.author?.username || "Company"}
+        salary={formatBudget(project.min_budget, project.max_budget)}
+        isJob={true}
+        ogType="article"
+        ogUrl={window.location.href}
+      />
+
       <div className="max-w-3xl mx-auto">
         {!isAuthenticated && (
           <div className="bg-purple-50 border border-purple-100 rounded-lg p-4 mb-6 text-center">
