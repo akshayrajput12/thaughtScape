@@ -5,12 +5,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { 
-  Briefcase, 
-  Calendar, 
-  FileText, 
-  Users, 
-  Trash, 
+import {
+  Briefcase,
+  Calendar,
+  FileText,
+  Users,
+  Trash,
   Eye,
   Plus,
   RefreshCw,
@@ -107,7 +107,7 @@ export const ProjectsList = () => {
       });
     }
   };
-  
+
   const fetchApplications = async (projectId: string) => {
     try {
       const { data, error } = await supabase
@@ -117,14 +117,14 @@ export const ProjectsList = () => {
           applicant:profiles!project_applications_applicant_id_fkey(*)
         `)
         .eq('project_id', projectId);
-        
+
       if (error) throw error;
-      
+
       const typedApplications: ProjectApplication[] = data?.map(app => ({
         ...app,
         status: app.status as 'pending' | 'accepted' | 'rejected',
       })) || [];
-      
+
       setApplications(typedApplications);
     } catch (error) {
       console.error('Error fetching applications:', error);
@@ -135,27 +135,27 @@ export const ProjectsList = () => {
       });
     }
   };
-  
+
   const handleViewProject = (project: Project) => {
     setSelectedProject(project);
     fetchApplications(project.id);
   };
-  
+
   const handleUpdateApplicationStatus = async (applicationId: string, status: "accepted" | "rejected") => {
     try {
       const { error } = await supabase
         .from('project_applications')
         .update({ status })
         .eq('id', applicationId);
-        
+
       if (error) throw error;
-      
-      setApplications(apps => 
-        apps.map(app => 
+
+      setApplications(apps =>
+        apps.map(app =>
           app.id === applicationId ? { ...app, status } : app
         )
       );
-      
+
       toast({
         title: "Success",
         description: `Application ${status} successfully`,
@@ -169,7 +169,7 @@ export const ProjectsList = () => {
       });
     }
   };
-  
+
   const handleProjectCreated = (newProject: Project) => {
     setProjects(prev => [newProject, ...prev]);
     setShowNewProjectDialog(false);
@@ -181,7 +181,7 @@ export const ProjectsList = () => {
 
   const renderSkills = (skills: string[] | string | null | undefined) => {
     if (!skills) return null;
-    
+
     if (Array.isArray(skills)) {
       return skills.map((skill, i) => (
         <Badge key={i} variant="secondary" className="bg-indigo-50 text-indigo-700">
@@ -201,7 +201,7 @@ export const ProjectsList = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <Button 
+        <Button
           onClick={fetchProjects}
           className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
           disabled={isLoading}
@@ -209,8 +209,8 @@ export const ProjectsList = () => {
           <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
           {isLoading ? "Loading..." : "Refresh Projects"}
         </Button>
-        
-        <Button 
+
+        <Button
           onClick={() => setShowNewProjectDialog(true)}
           className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
         >
@@ -218,7 +218,7 @@ export const ProjectsList = () => {
           Add Project
         </Button>
       </div>
-      
+
       <Dialog open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
@@ -226,7 +226,7 @@ export const ProjectsList = () => {
               Project Details
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedProject && (
             <div className="flex flex-col md:flex-row gap-6 flex-1 overflow-hidden">
               <div className="md:w-1/2 space-y-6">
@@ -237,14 +237,14 @@ export const ProjectsList = () => {
                     <span>Posted by {selectedProject.author?.full_name || selectedProject.author?.username}</span>
                   </div>
                   <div className="mt-3 text-sm text-gray-700">{selectedProject.description}</div>
-                  
+
                   <div className="mt-4">
                     <div className="text-sm font-medium text-gray-700">Required Skills:</div>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {renderSkills(selectedProject.required_skills)}
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-between mt-4 text-sm">
                     <div>
                       <div className="font-medium text-gray-700">Budget:</div>
@@ -252,21 +252,21 @@ export const ProjectsList = () => {
                         ₹{selectedProject.min_budget}{selectedProject.max_budget ? ` - ₹${selectedProject.max_budget}` : ''}
                       </div>
                     </div>
-                    
+
                     <div>
                       <div className="font-medium text-gray-700">Deadline:</div>
                       <div className="text-gray-600">
                         {selectedProject.deadline ? new Date(selectedProject.deadline).toLocaleDateString() : 'No deadline'}
                       </div>
                     </div>
-                    
+
                     <div>
                       <div className="font-medium text-gray-700">Status:</div>
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className={`capitalize ${
-                          selectedProject.status === 'open' 
-                            ? 'border-green-200 text-green-700 bg-green-50' 
+                          selectedProject.status === 'open'
+                            ? 'border-green-200 text-green-700 bg-green-50'
                             : selectedProject.status === 'in_progress'
                             ? 'border-blue-200 text-blue-700 bg-blue-50'
                             : 'border-gray-200 text-gray-700 bg-gray-50'
@@ -277,14 +277,14 @@ export const ProjectsList = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <h3 className="text-md font-medium text-gray-900 flex items-center gap-2">
                     <Users size={16} />
                     Applications ({applications.length})
                   </h3>
                 </div>
-                
+
                 {applications.length > 0 ? (
                   <ScrollArea className="flex-1 h-[300px] pr-4">
                     <div className="space-y-4">
@@ -303,14 +303,14 @@ export const ProjectsList = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="md:w-1/2">
                 <div className="bg-gray-50 p-4 rounded-lg mb-6">
                   <h3 className="text-md font-medium text-gray-900 flex items-center gap-2 mb-3">
                     <Calendar size={16} />
                     Project Timeline
                   </h3>
-                  
+
                   <div className="space-y-4">
                     <div className="flex items-start gap-3">
                       <div className="bg-purple-100 rounded-full p-1.5">
@@ -323,7 +323,7 @@ export const ProjectsList = () => {
                         </p>
                       </div>
                     </div>
-                    
+
                     {selectedProject.status === 'in_progress' && (
                       <div className="flex items-start gap-3">
                         <div className="bg-blue-100 rounded-full p-1.5">
@@ -337,7 +337,7 @@ export const ProjectsList = () => {
                         </div>
                       </div>
                     )}
-                    
+
                     {selectedProject.status === 'closed' && (
                       <div className="flex items-start gap-3">
                         <div className="bg-green-100 rounded-full p-1.5">
@@ -353,9 +353,9 @@ export const ProjectsList = () => {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="space-y-3">
-                  <Button 
+                  <Button
                     className="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"
                     variant="outline"
                     onClick={() => {
@@ -372,16 +372,16 @@ export const ProjectsList = () => {
           )}
         </DialogContent>
       </Dialog>
-      
+
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
-          <div 
-            key={project.id} 
+          <div
+            key={project.id}
             className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group"
           >
             <div className="p-6 space-y-4">
               <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-gray-800 group-hover:text-indigo-600 transition-colors line-clamp-1">
+                <h3 className="text-lg font-semibold text-gray-800 group-hover:text-indigo-600 transition-colors">
                   {project.title}
                 </h3>
                 <p className="text-sm text-gray-600 line-clamp-2">{project.description}</p>
@@ -392,32 +392,32 @@ export const ProjectsList = () => {
                   ₹{project.budget || project.min_budget}
                 </Badge>
                 <Badge variant="secondary" className={`capitalize
-                  ${project.status === 'open' ? 'bg-green-50 text-green-600' : 
-                    project.status === 'in_progress' ? 'bg-blue-50 text-blue-600' : 
+                  ${project.status === 'open' ? 'bg-green-50 text-green-600' :
+                    project.status === 'in_progress' ? 'bg-blue-50 text-blue-600' :
                     'bg-gray-50 text-gray-600'}
                 `}>
                   {project.status}
                 </Badge>
               </div>
-              
+
               <div className="space-y-2">
                 <div className="text-sm">
                   <span className="text-gray-500">Skills: </span>
                   <span className="text-gray-700">
-                    {Array.isArray(project.required_skills) 
-                      ? project.required_skills.slice(0, 3).join(', ') 
+                    {Array.isArray(project.required_skills)
+                      ? project.required_skills.slice(0, 3).join(', ')
                       : typeof project.required_skills === 'string'
                         ? project.required_skills
                         : ''}
                     {Array.isArray(project.required_skills) && project.required_skills.length > 3 && '...'}
                   </span>
                 </div>
-                
+
                 <div className="text-sm">
                   <span className="text-gray-500">Applications: </span>
                   <span className="text-purple-600 font-medium">
-                    {typeof project.applications_count === 'number' 
-                      ? project.applications_count 
+                    {typeof project.applications_count === 'number'
+                      ? project.applications_count
                       : project.applications_count?.[0]?.count || 0}
                   </span>
                 </div>
@@ -454,8 +454,8 @@ export const ProjectsList = () => {
           </div>
         ))}
       </div>
-      
-      <NewProjectDialog 
+
+      <NewProjectDialog
         isOpen={showNewProjectDialog}
         onOpenChange={setShowNewProjectDialog}
         onSubmit={values => {

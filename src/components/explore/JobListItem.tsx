@@ -194,7 +194,7 @@ export const JobListItem = ({
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+            <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
               {project.title}
             </h3>
             <div className="flex flex-wrap items-center text-sm text-muted-foreground gap-2 mt-1">

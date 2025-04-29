@@ -220,7 +220,7 @@ export const EnhancedProjectCard = ({
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+              <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
                 {project.title}
               </h3>
               <div className="flex items-center text-sm text-muted-foreground mt-1">

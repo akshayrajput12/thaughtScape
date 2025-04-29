@@ -618,7 +618,7 @@ const Home = () => {
                   <span>•</span>
                   <a href="#" className="hover:underline">Contact</a>
                 </div>
-                <p>© 2023 CampusCash</p>
+                <p>© 2025 CampusCash</p>
               </div>
             </div>
           </div>
