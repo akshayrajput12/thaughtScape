@@ -13,7 +13,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { safeLog, safeErrorLog } from "@/utils/sanitizeData";
+import { safeLog, safeErrorLog, maskId } from "@/utils/sanitizeData";
 
 export function UserNav() {
   const { user } = useAuth();

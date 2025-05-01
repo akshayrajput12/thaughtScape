@@ -207,9 +207,14 @@ export function AdvertisementDialog({
         const { error } = await supabase
           .from("advertisements")
           .insert({
-            ...values,
+            title: values.title,
+            description: values.description,
             images: uploadedImageUrls,
             main_image_index: safeMainImageIndex,
+            link_url: values.link_url,
+            is_active: values.is_active,
+            display_location: values.display_location,
+            category: values.category,
             author_id: user.id,
           });
 
