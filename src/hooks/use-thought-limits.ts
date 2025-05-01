@@ -10,6 +10,14 @@ interface ThoughtLimits {
   reason: 'daily_limit_reached' | 'monthly_limit_reached' | null;
 }
 
+// Define the shape of the data returned from the RPC function
+interface ThoughtLimitsResponse {
+  can_create: boolean;
+  daily_remaining: number;
+  monthly_remaining: number;
+  reason: 'daily_limit_reached' | 'monthly_limit_reached' | null;
+}
+
 export const useThoughtLimits = (userId?: string) => {
   const [limits, setLimits] = useState<ThoughtLimits>({
     canCreate: true,
@@ -37,11 +45,14 @@ export const useThoughtLimits = (userId?: string) => {
         }
 
         if (data) {
+          // Properly cast the data to our expected response type
+          const limitsData = data as ThoughtLimitsResponse;
+          
           setLimits({
-            canCreate: data.can_create,
-            dailyRemaining: data.daily_remaining,
-            monthlyRemaining: data.monthly_remaining,
-            reason: data.reason
+            canCreate: limitsData.can_create,
+            dailyRemaining: limitsData.daily_remaining,
+            monthlyRemaining: limitsData.monthly_remaining,
+            reason: limitsData.reason
           });
         }
       } catch (error) {
