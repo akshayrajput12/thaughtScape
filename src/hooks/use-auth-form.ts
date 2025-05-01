@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
@@ -10,6 +11,8 @@ interface UseAuthFormProps {
 export const useAuthForm = ({ redirectTo = window.location.origin }: UseAuthFormProps = {}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -47,6 +50,10 @@ export const useAuthForm = ({ redirectTo = window.location.origin }: UseAuthForm
         password,
         options: {
           emailRedirectTo: redirectTo,
+          data: {
+            full_name: fullName,
+            phone: phoneNumber,
+          },
         },
       });
 
@@ -105,6 +112,10 @@ export const useAuthForm = ({ redirectTo = window.location.origin }: UseAuthForm
     setEmail,
     password,
     setPassword,
+    fullName,
+    setFullName,
+    phoneNumber,
+    setPhoneNumber,
     loading,
     handleSignIn,
     handleSignUp,

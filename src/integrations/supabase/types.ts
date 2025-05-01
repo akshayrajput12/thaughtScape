@@ -9,6 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      advertisements: {
+        Row: {
+          author_id: string | null
+          category: string | null
+          created_at: string | null
+          description: string
+          display_location: string[] | null
+          id: string
+          images: string[] | null
+          is_active: boolean | null
+          link_url: string | null
+          main_image_index: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          description: string
+          display_location?: string[] | null
+          id?: string
+          images?: string[] | null
+          is_active?: boolean | null
+          link_url?: string | null
+          main_image_index?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string
+          display_location?: string[] | null
+          id?: string
+          images?: string[] | null
+          is_active?: boolean | null
+          link_url?: string | null
+          main_image_index?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       blocked_users: {
         Row: {
           blocked_id: string

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,10 @@ export const CustomSignUp = ({ redirectTo = window.location.origin, onSignUp }: 
     setEmail,
     password,
     setPassword,
+    fullName,
+    setFullName,
+    phoneNumber,
+    setPhoneNumber,
     loading,
     handleSignUp: signUp,
   } = useAuthForm({ redirectTo });
@@ -28,6 +33,17 @@ export const CustomSignUp = ({ redirectTo = window.location.origin, onSignUp }: 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Basic validation
+    if (!fullName.trim()) {
+      setError('Please enter your full name');
+      return;
+    }
+
+    if (phoneNumber && !/^\+?[0-9\s()-]{8,20}$/.test(phoneNumber)) {
+      setError('Please enter a valid phone number');
+      return;
+    }
 
     const { success, error } = await signUp();
 
@@ -76,10 +92,36 @@ export const CustomSignUp = ({ redirectTo = window.location.origin, onSignUp }: 
 
       <form onSubmit={handleSignUp} className="space-y-4">
         <div className="space-y-2">
+          <Label htmlFor="fullName" className="text-gray-900 dark:text-gray-100">Full Name</Label>
+          <Input
+            id="fullName"
+            type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="Your full name"
+            required
+            className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="phone" className="text-gray-900 dark:text-gray-100">Phone Number</Label>
+          <Input
+            id="phone"
+            type="tel"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            placeholder="Your phone number (optional)"
+            className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="email" className="text-gray-900 dark:text-gray-100">Email address</Label>
           <Input
             id="email"
             type="email"
+            name="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Your email address"
