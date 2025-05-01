@@ -45,8 +45,8 @@ export const useThoughtLimits = (userId?: string) => {
         }
 
         if (data) {
-          // Properly cast the data to our expected response type
-          const limitsData = data as ThoughtLimitsResponse;
+          // First cast to unknown, then to our expected type to safely handle the conversion
+          const limitsData = data as unknown as ThoughtLimitsResponse;
           
           setLimits({
             canCreate: limitsData.can_create,
