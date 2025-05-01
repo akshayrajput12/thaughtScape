@@ -37,6 +37,8 @@ export const useThoughtLimits = (userId?: string) => {
 
       try {
         setIsLoading(true);
+        
+        // Call the RPC function with a properly structured parameter
         const { data, error } = await supabase
           .rpc('can_create_thought', { user_id: userId });
 
