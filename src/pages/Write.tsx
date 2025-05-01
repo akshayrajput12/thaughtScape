@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Sparkles, Send, PenTool, Hash, AtSign } from "lucide-react";
+import { Sparkles, Send, PenTool, Hash, AtSign, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useThoughtLimits } from "@/hooks/use-thought-limits";
 import type { Profile } from "@/types";
 
 const Write = () => {
@@ -22,6 +23,10 @@ const Write = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>();
+
+  // Use the thought limits hook
+  const { canCreate, dailyRemaining, monthlyRemaining, reason, isLoading: isLoadingLimits } = useThoughtLimits(currentUserId);
 
   // Common hashtags that might be suggested
   const commonHashtags = [
@@ -61,6 +66,8 @@ const Write = () => {
         navigate('/auth');
         return;
       }
+
+      setCurrentUserId(session.user.id);
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -116,6 +123,19 @@ const Write = () => {
       toast({
         title: "Profile Incomplete",
         description: "Please complete your profile before sharing thoughts.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!canCreate) {
+      const limitMessage = reason === 'daily_limit_reached'
+        ? "You've reached your daily limit of 1 thought. Please try again tomorrow."
+        : "You've reached your monthly limit of 15 thoughts. Please try again next month.";
+      
+      toast({
+        title: "Limit Reached",
+        description: limitMessage,
         variant: "destructive",
       });
       return;
@@ -232,6 +252,35 @@ const Write = () => {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-3xl mx-auto"
         >
+          {/* Posting limits banner */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mb-6"
+          >
+            <Alert className={!canCreate ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800" : "bg-indigo-50 dark:bg-indigo-900/20"}>
+              <AlertCircle className={!canCreate ? "h-4 w-4 text-red-500 dark:text-red-400" : "h-4 w-4 text-indigo-500 dark:text-indigo-400"} />
+              <AlertTitle className="font-medium">
+                {!canCreate 
+                  ? "Posting limit reached" 
+                  : "Posting limits"
+                }
+              </AlertTitle>
+              <AlertDescription>
+                <p className="text-sm">
+                  {!canCreate 
+                    ? (reason === 'daily_limit_reached' 
+                      ? "You've reached your daily limit of 1 thought. Please try again tomorrow." 
+                      : "You've reached your monthly limit of 15 thoughts. Please try again next month.")
+                    : `You can post ${dailyRemaining} more thought today and ${monthlyRemaining} more thoughts this month.`
+                  }
+                </p>
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+          
+          {/* Keep the rest of the UI unchanged */}
           <div className="text-center mb-12">
             <motion.div
               initial={{ scale: 0.9 }}
@@ -294,6 +343,7 @@ const Write = () => {
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 className="text-lg font-medium border-2 border-blue-100 dark:border-gray-700 focus:border-blue-300 dark:focus:border-blue-700 focus:ring-blue-200 dark:focus:ring-blue-800 rounded-xl bg-white dark:bg-gray-800 dark:text-white"
+                disabled={!canCreate}
               />
             </div>
             <div className="space-y-2 relative">
@@ -304,6 +354,7 @@ const Write = () => {
                 onChange={(e) => setContent(e.target.value)}
                 required
                 className="min-h-[300px] text-base border-2 border-blue-100 dark:border-gray-700 focus:border-blue-300 dark:focus:border-blue-700 focus:ring-blue-200 dark:focus:ring-blue-800 rounded-xl resize-none bg-white dark:bg-gray-800 dark:text-white"
+                disabled={!canCreate}
               />
 
               {/* Hashtag suggestions */}
@@ -359,14 +410,15 @@ const Write = () => {
             </div>
             <div className="flex justify-end">
               <motion.div
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: !canCreate ? 1 : 1.03 }}
+                whileTap={{ scale: !canCreate ? 1 : 0.97 }}
               >
                 <Button
                   type="submit"
                   className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 dark:from-blue-600 dark:to-indigo-700 dark:hover:from-blue-700 dark:hover:to-indigo-800 text-white px-8 py-6 rounded-xl text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 group"
+                  disabled={!canCreate || isLoadingLimits}
                 >
-                  <span>Share Thought</span>
+                  <span>{isLoadingLimits ? "Checking limits..." : "Share Thought"}</span>
                   <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </motion.div>

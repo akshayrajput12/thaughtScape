@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Thought, Profile, Project, Advertisement } from "@/types";
@@ -19,6 +18,7 @@ import JobListItem from "@/components/explore/JobListItem";
 import SEO from "@/components/SEO";
 import { AdvertisementCard } from "@/components/advertisements/AdvertisementCard";
 import { AdvertisementPopup } from "@/components/advertisements/AdvertisementPopup";
+import { ThoughtLimitsIndicator } from "@/components/ThoughtLimitsIndicator";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -386,6 +386,17 @@ const Home = () => {
                 </div>
               </motion.div>
 
+              {/* Thought Limits Indicator - visible on mobile */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="lg:hidden p-4 bg-card rounded-xl border border-border"
+              >
+                <h3 className="text-sm font-medium mb-3">Your Posting Limits</h3>
+                <ThoughtLimitsIndicator userId={user?.id} />
+              </motion.div>
+
               {/* Tabs for Feed and Jobs */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -545,6 +556,12 @@ const Home = () => {
                 <Button variant="link" size="sm" className="text-primary">
                   Switch
                 </Button>
+              </div>
+
+              {/* Thought Limits Card */}
+              <div className="p-4 bg-card rounded-xl border border-border">
+                <h3 className="text-sm font-medium mb-3">Your Posting Limits</h3>
+                <ThoughtLimitsIndicator userId={user?.id} />
               </div>
 
               <Separator />

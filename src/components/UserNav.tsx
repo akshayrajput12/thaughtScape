@@ -13,12 +13,16 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { safeLog, safeErrorLog, maskId } from "@/utils/sanitizeData";
+import { safeLog, safeErrorLog } from "@/utils/sanitizeData";
+import { Progress } from "@/components/ui/progress";
+import { useThoughtLimits } from "@/hooks/use-thought-limits";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function UserNav() {
   const { user } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
+  const { dailyRemaining, monthlyRemaining } = useThoughtLimits(user?.id);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -27,7 +31,7 @@ export function UserNav() {
 
   const navigateToProfile = () => {
     if (user?.id) {
-      safeLog("Navigating to profile", { userId: maskId(user.id) });
+      safeLog("Navigating to profile", { userId: user.id });
       navigate(`/profile/${user.id}`);
     }
   };
@@ -57,6 +61,33 @@ export function UserNav() {
             </p>
           </div>
         </DropdownMenuLabel>
+        
+        {/* Thought limits indicator */}
+        <div className="px-2 py-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Daily Posts</span>
+                    <span className="font-medium">{dailyRemaining}/1</span>
+                  </div>
+                  <Progress value={dailyRemaining * 100} className="h-1" />
+                  
+                  <div className="flex justify-between text-xs mt-2">
+                    <span className="text-muted-foreground">Monthly Posts</span>
+                    <span className="font-medium">{monthlyRemaining}/15</span>
+                  </div>
+                  <Progress value={(monthlyRemaining / 15) * 100} className="h-1" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>You can post {dailyRemaining} thought today and {monthlyRemaining} thoughts this month</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={navigateToProfile}>
           Profile

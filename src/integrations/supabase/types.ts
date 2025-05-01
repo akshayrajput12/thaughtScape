@@ -614,6 +614,30 @@ export type Database = {
         }
         Relationships: []
       }
+      thought_limits: {
+        Row: {
+          daily_count: number
+          last_thought_date: string | null
+          month_reset_date: string | null
+          monthly_count: number
+          user_id: string
+        }
+        Insert: {
+          daily_count?: number
+          last_thought_date?: string | null
+          month_reset_date?: string | null
+          monthly_count?: number
+          user_id: string
+        }
+        Update: {
+          daily_count?: number
+          last_thought_date?: string | null
+          month_reset_date?: string | null
+          monthly_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       thought_tags: {
         Row: {
           tag_id: string
@@ -724,6 +748,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_create_thought: {
+        Args: { user_id: string }
+        Returns: Json
+      }
       check_project_deadlines: {
         Args: Record<PropertyKey, never>
         Returns: undefined
