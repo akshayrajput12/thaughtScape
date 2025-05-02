@@ -455,13 +455,6 @@ export type Database = {
             foreignKeyName: "project_applications_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
-            referencedRelation: "approved_projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_applications_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -498,10 +491,6 @@ export type Database = {
           status: string | null
           title: string
           updated_at: string
-          verification_note: string | null
-          verification_status: string
-          verified_at: string | null
-          verified_by: string | null
         }
         Insert: {
           allow_normal_apply?: boolean | null
@@ -533,10 +522,6 @@ export type Database = {
           status?: string | null
           title: string
           updated_at?: string
-          verification_note?: string | null
-          verification_status?: string
-          verified_at?: string | null
-          verified_by?: string | null
         }
         Update: {
           allow_normal_apply?: boolean | null
@@ -568,10 +553,6 @@ export type Database = {
           status?: string | null
           title?: string
           updated_at?: string
-          verification_note?: string | null
-          verification_status?: string
-          verified_at?: string | null
-          verified_by?: string | null
         }
         Relationships: [
           {
@@ -764,122 +745,7 @@ export type Database = {
       }
     }
     Views: {
-      approved_projects: {
-        Row: {
-          allow_normal_apply: boolean | null
-          allow_whatsapp_apply: boolean | null
-          application_deadline: string | null
-          application_link: string | null
-          application_method:
-            | Database["public"]["Enums"]["application_method_type"]
-            | null
-          application_methods:
-            | Database["public"]["Enums"]["application_method_type"][]
-            | null
-          attachment_url: string | null
-          author_id: string | null
-          company_name: string | null
-          created_at: string | null
-          deadline: string | null
-          description: string | null
-          experience_level: string | null
-          id: string | null
-          is_featured: boolean | null
-          job_poster_name: string | null
-          job_type: string | null
-          location: string | null
-          max_budget: number | null
-          min_budget: number | null
-          notifications_count: number | null
-          required_skills: string[] | null
-          status: string | null
-          title: string | null
-          updated_at: string | null
-          verification_note: string | null
-          verification_status: string | null
-          verified_at: string | null
-          verified_by: string | null
-        }
-        Insert: {
-          allow_normal_apply?: boolean | null
-          allow_whatsapp_apply?: boolean | null
-          application_deadline?: string | null
-          application_link?: string | null
-          application_method?:
-            | Database["public"]["Enums"]["application_method_type"]
-            | null
-          application_methods?:
-            | Database["public"]["Enums"]["application_method_type"][]
-            | null
-          attachment_url?: string | null
-          author_id?: string | null
-          company_name?: string | null
-          created_at?: string | null
-          deadline?: string | null
-          description?: string | null
-          experience_level?: string | null
-          id?: string | null
-          is_featured?: boolean | null
-          job_poster_name?: string | null
-          job_type?: string | null
-          location?: string | null
-          max_budget?: number | null
-          min_budget?: number | null
-          notifications_count?: number | null
-          required_skills?: string[] | null
-          status?: string | null
-          title?: string | null
-          updated_at?: string | null
-          verification_note?: string | null
-          verification_status?: string | null
-          verified_at?: string | null
-          verified_by?: string | null
-        }
-        Update: {
-          allow_normal_apply?: boolean | null
-          allow_whatsapp_apply?: boolean | null
-          application_deadline?: string | null
-          application_link?: string | null
-          application_method?:
-            | Database["public"]["Enums"]["application_method_type"]
-            | null
-          application_methods?:
-            | Database["public"]["Enums"]["application_method_type"][]
-            | null
-          attachment_url?: string | null
-          author_id?: string | null
-          company_name?: string | null
-          created_at?: string | null
-          deadline?: string | null
-          description?: string | null
-          experience_level?: string | null
-          id?: string | null
-          is_featured?: boolean | null
-          job_poster_name?: string | null
-          job_type?: string | null
-          location?: string | null
-          max_budget?: number | null
-          min_budget?: number | null
-          notifications_count?: number | null
-          required_skills?: string[] | null
-          status?: string | null
-          title?: string | null
-          updated_at?: string | null
-          verification_note?: string | null
-          verification_status?: string | null
-          verified_at?: string | null
-          verified_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "projects_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       can_create_thought: {

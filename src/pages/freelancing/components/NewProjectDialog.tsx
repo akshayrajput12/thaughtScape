@@ -10,8 +10,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import type { Project } from "@/types";
 import { useMobile } from "@/hooks/use-mobile";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export interface NewProjectDialogProps {
   isOpen: boolean;
@@ -49,7 +47,6 @@ export const NewProjectDialog = ({
   const [userFullName, setUserFullName] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [applicationDeadline, setApplicationDeadline] = useState("");
-  const [showVerificationAlert, setShowVerificationAlert] = useState(false);
   const isMobile = useMobile();
 
   const effectiveIsSubmitting = isSubmitting || localIsSubmitting;
@@ -150,7 +147,6 @@ export const NewProjectDialog = ({
           max_budget: maxBudget ? parseFloat(maxBudget) : null,
           author_id: user.id,
           status: 'open',
-          verification_status: 'pending', // Set to pending by default
           job_poster_name: isAdmin ? jobPosterName : userFullName,
           company_name: companyName,
           location,
@@ -182,38 +178,29 @@ export const NewProjectDialog = ({
 
       toast({
         title: "Success",
-        description: "Project created successfully and pending verification",
+        description: "Project created successfully",
       });
 
-      // Show verification alert
-      setShowVerificationAlert(true);
-      
-      // Reset form after 5 seconds of showing the verification alert
-      setTimeout(() => {
-        setTitle("");
-        setDescription("");
-        setRequiredSkills("");
-        setMinBudget("");
-        setMaxBudget("");
-        setWhatsappNumber("");
-        setApplicationDeadline("");
-        setCompanyName("");
-        setLocation("");
-        setJobType("");
-        setExperienceLevel("");
-        setApplicationLink("");
-        setAttachmentUrl("");
-        setApplicationMethods(["inbuilt"]);
-        setIsFeatured(false);
-        
-        setShowVerificationAlert(false);
-        onOpenChange(false);
-        
-        if (data) {
-          onProjectCreated(data as Project);
-        }
-      }, 5000);
-      
+      setTitle("");
+      setDescription("");
+      setRequiredSkills("");
+      setMinBudget("");
+      setMaxBudget("");
+      setWhatsappNumber("");
+      setApplicationDeadline("");
+      setCompanyName("");
+      setLocation("");
+      setJobType("");
+      setExperienceLevel("");
+      setApplicationLink("");
+      setAttachmentUrl("");
+      setApplicationMethods(["inbuilt"]);
+      setIsFeatured(false);
+
+      onOpenChange(false);
+      if (data) {
+        onProjectCreated(data as Project);
+      }
     } catch (error) {
       console.error('Error creating project:', error);
       toast({
@@ -275,272 +262,262 @@ export const NewProjectDialog = ({
           <DialogTitle className="text-xl font-serif dark:text-white">Create New Post</DialogTitle>
         </DialogHeader>
 
-        {showVerificationAlert ? (
-          <div className="py-6">
-            <Alert className="bg-amber-50 border-amber-200">
-              <AlertCircle className="h-5 w-5 text-amber-500" />
-              <AlertDescription className="text-amber-800">
-                <p className="font-medium mb-1">Your job posting is pending verification</p>
-                <p className="text-sm">An admin will review your submission shortly. Once approved, your job will be visible to all users on the platform.</p>
-              </AlertDescription>
-            </Alert>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="title" className="dark:text-gray-300">Title *</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter post title"
+              required
+              className="dark:bg-gray-700 dark:text-white"
+            />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+
+          <div className="space-y-2">
+            <Label htmlFor="description" className="dark:text-gray-300">Description *</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Write your post content here..."
+              rows={5}
+              required
+              className="dark:bg-gray-700 dark:text-white resize-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="skills" className="dark:text-gray-300">Skills *</Label>
+            <Input
+              id="skills"
+              value={requiredSkills}
+              onChange={(e) => setRequiredSkills(e.target.value)}
+              placeholder="Add skills (comma separated)"
+              required
+              className="dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="title" className="dark:text-gray-300">Title *</Label>
+              <Label htmlFor="minBudget" className="dark:text-gray-300">Minimum Budget (₹) *</Label>
               <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter post title"
+                id="minBudget"
+                type="number"
+                value={minBudget}
+                onChange={(e) => setMinBudget(e.target.value)}
+                placeholder="e.g. 5000"
                 required
                 className="dark:bg-gray-700 dark:text-white"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="dark:text-gray-300">Description *</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Write your post content here..."
-                rows={5}
-                required
-                className="dark:bg-gray-700 dark:text-white resize-none"
+              <Label htmlFor="maxBudget" className="dark:text-gray-300">Maximum Budget (₹)</Label>
+              <Input
+                id="maxBudget"
+                type="number"
+                value={maxBudget}
+                onChange={(e) => setMaxBudget(e.target.value)}
+                placeholder="e.g. 10000"
+                className="dark:bg-gray-700 dark:text-white"
               />
             </div>
+          </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="companyName" className="dark:text-gray-300">Company Name *</Label>
+            <Input
+              id="companyName"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Enter company name"
+              required
+              className="dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="skills" className="dark:text-gray-300">Skills *</Label>
+              <Label htmlFor="location" className="dark:text-gray-300">Location</Label>
               <Input
-                id="skills"
-                value={requiredSkills}
-                onChange={(e) => setRequiredSkills(e.target.value)}
-                placeholder="Add skills (comma separated)"
-                required
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Remote, Delhi, etc."
                 className="dark:bg-gray-700 dark:text-white"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="minBudget" className="dark:text-gray-300">Minimum Budget (₹) *</Label>
-                <Input
-                  id="minBudget"
-                  type="number"
-                  value={minBudget}
-                  onChange={(e) => setMinBudget(e.target.value)}
-                  placeholder="e.g. 5000"
-                  required
-                  className="dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="maxBudget" className="dark:text-gray-300">Maximum Budget (₹)</Label>
-                <Input
-                  id="maxBudget"
-                  type="number"
-                  value={maxBudget}
-                  onChange={(e) => setMaxBudget(e.target.value)}
-                  placeholder="e.g. 10000"
-                  className="dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
-              <Label htmlFor="companyName" className="dark:text-gray-300">Company Name *</Label>
-              <Input
-                id="companyName"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="Enter company name"
-                required
-                className="dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="location" className="dark:text-gray-300">Location</Label>
-                <Input
-                  id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. Remote, Delhi, etc."
-                  className="dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="jobType" className="dark:text-gray-300">Job Type</Label>
-                <select
-                  id="jobType"
-                  value={jobType}
-                  onChange={(e) => setJobType(e.target.value)}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                >
-                  <option value="">Select Job Type</option>
-                  {jobTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="experienceLevel" className="dark:text-gray-300">Experience Level</Label>
-                <select
-                  id="experienceLevel"
-                  value={experienceLevel}
-                  onChange={(e) => setExperienceLevel(e.target.value)}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                >
-                  <option value="">Select Experience Level</option>
-                  {experienceLevels.map(level => (
-                    <option key={level} value={level}>{level}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="application_deadline" className="dark:text-gray-300">Application Deadline *</Label>
-                <Input
-                  id="application_deadline"
-                  type="date"
-                  value={applicationDeadline}
-                  onChange={(e) => setApplicationDeadline(e.target.value)}
-                  required
-                  className="dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <Label className="dark:text-gray-300">Application Methods *</Label>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="inbuilt"
-                    checked={applicationMethods.includes('inbuilt')}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setApplicationMethods([...applicationMethods, 'inbuilt']);
-                      } else {
-                        setApplicationMethods(applicationMethods.filter(method => method !== 'inbuilt'));
-                      }
-                    }}
-                  />
-                  <Label htmlFor="inbuilt" className="cursor-pointer dark:text-gray-300">Inbuilt App Apply (Web App Form)</Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="direct"
-                    checked={applicationMethods.includes('direct')}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setApplicationMethods([...applicationMethods, 'direct']);
-                      } else {
-                        setApplicationMethods(applicationMethods.filter(method => method !== 'direct'));
-                      }
-                    }}
-                  />
-                  <Label htmlFor="direct" className="cursor-pointer dark:text-gray-300">Direct Apply (External Link Redirect)</Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="whatsapp"
-                    checked={applicationMethods.includes('whatsapp')}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setApplicationMethods([...applicationMethods, 'whatsapp']);
-                      } else {
-                        setApplicationMethods(applicationMethods.filter(method => method !== 'whatsapp'));
-                      }
-                    }}
-                  />
-                  <Label htmlFor="whatsapp" className="cursor-pointer dark:text-gray-300">WhatsApp Apply</Label>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground dark:text-gray-400">Select one or more application methods</p>
-            </div>
-
-            {applicationMethods.includes('direct') && (
-              <div className="space-y-2">
-                <Label htmlFor="application_link" className="dark:text-gray-300">External Application Link *</Label>
-                <Input
-                  id="application_link"
-                  value={applicationLink}
-                  onChange={(e) => setApplicationLink(e.target.value)}
-                  placeholder="e.g. https://example.com/apply"
-                  required={applicationMethods.includes('direct')}
-                  className="dark:bg-gray-700 dark:text-white"
-                />
-                <p className="text-xs text-muted-foreground dark:text-gray-400">Link to an external application form or website</p>
-              </div>
-            )}
-
-            {applicationMethods.includes('whatsapp') && (
-              <div className="space-y-2">
-                <Label htmlFor="whatsapp_number" className="dark:text-gray-300">WhatsApp Number *</Label>
-                <Input
-                  id="whatsapp_number"
-                  value={whatsappNumber}
-                  onChange={(e) => setWhatsappNumber(e.target.value)}
-                  placeholder="e.g. +919876543210 (with country code)"
-                  required={applicationMethods.includes('whatsapp')}
-                  className="dark:bg-gray-700 dark:text-white"
-                />
-                <p className="text-xs text-muted-foreground dark:text-gray-400">This will be saved to your profile for future projects</p>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="attachment_url" className="dark:text-gray-300">Attachment URL</Label>
-              <Input
-                id="attachment_url"
-                value={attachmentUrl}
-                onChange={(e) => setAttachmentUrl(e.target.value)}
-                placeholder="e.g. https://example.com/job-details.pdf"
-                className="dark:bg-gray-700 dark:text-white"
-              />
-              <p className="text-xs text-muted-foreground dark:text-gray-400">Link to additional job details or documents</p>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="is_featured"
-                checked={isFeatured}
-                onCheckedChange={(checked) => setIsFeatured(checked as boolean)}
-              />
-              <Label htmlFor="is_featured" className="cursor-pointer dark:text-gray-300">Mark as featured job</Label>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+              <Label htmlFor="jobType" className="dark:text-gray-300">Job Type</Label>
+              <select
+                id="jobType"
+                value={jobType}
+                onChange={(e) => setJobType(e.target.value)}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={effectiveIsSubmitting}
-                className="bg-gradient-to-r from-[#9b87f5] to-[#6E59A5] hover:from-[#8B5CF6] hover:to-[#7E69AB] text-white"
-              >
-                {effectiveIsSubmitting ? "Posting..." : "Post"}
-              </Button>
+                <option value="">Select Job Type</option>
+                {jobTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
             </div>
-          </form>
-        )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="experienceLevel" className="dark:text-gray-300">Experience Level</Label>
+              <select
+                id="experienceLevel"
+                value={experienceLevel}
+                onChange={(e) => setExperienceLevel(e.target.value)}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              >
+                <option value="">Select Experience Level</option>
+                {experienceLevels.map(level => (
+                  <option key={level} value={level}>{level}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="application_deadline" className="dark:text-gray-300">Application Deadline *</Label>
+              <Input
+                id="application_deadline"
+                type="date"
+                value={applicationDeadline}
+                onChange={(e) => setApplicationDeadline(e.target.value)}
+                required
+                className="dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <Label className="dark:text-gray-300">Application Methods *</Label>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="inbuilt"
+                  checked={applicationMethods.includes('inbuilt')}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setApplicationMethods([...applicationMethods, 'inbuilt']);
+                    } else {
+                      setApplicationMethods(applicationMethods.filter(method => method !== 'inbuilt'));
+                    }
+                  }}
+                />
+                <Label htmlFor="inbuilt" className="cursor-pointer dark:text-gray-300">Inbuilt App Apply (Web App Form)</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="direct"
+                  checked={applicationMethods.includes('direct')}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setApplicationMethods([...applicationMethods, 'direct']);
+                    } else {
+                      setApplicationMethods(applicationMethods.filter(method => method !== 'direct'));
+                    }
+                  }}
+                />
+                <Label htmlFor="direct" className="cursor-pointer dark:text-gray-300">Direct Apply (External Link Redirect)</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="whatsapp"
+                  checked={applicationMethods.includes('whatsapp')}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setApplicationMethods([...applicationMethods, 'whatsapp']);
+                    } else {
+                      setApplicationMethods(applicationMethods.filter(method => method !== 'whatsapp'));
+                    }
+                  }}
+                />
+                <Label htmlFor="whatsapp" className="cursor-pointer dark:text-gray-300">WhatsApp Apply</Label>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground dark:text-gray-400">Select one or more application methods</p>
+          </div>
+
+          {applicationMethods.includes('direct') && (
+            <div className="space-y-2">
+              <Label htmlFor="application_link" className="dark:text-gray-300">External Application Link *</Label>
+              <Input
+                id="application_link"
+                value={applicationLink}
+                onChange={(e) => setApplicationLink(e.target.value)}
+                placeholder="e.g. https://example.com/apply"
+                required={applicationMethods.includes('direct')}
+                className="dark:bg-gray-700 dark:text-white"
+              />
+              <p className="text-xs text-muted-foreground dark:text-gray-400">Link to an external application form or website</p>
+            </div>
+          )}
+
+          {applicationMethods.includes('whatsapp') && (
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp_number" className="dark:text-gray-300">WhatsApp Number *</Label>
+              <Input
+                id="whatsapp_number"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+                placeholder="e.g. +919876543210 (with country code)"
+                required={applicationMethods.includes('whatsapp')}
+                className="dark:bg-gray-700 dark:text-white"
+              />
+              <p className="text-xs text-muted-foreground dark:text-gray-400">This will be saved to your profile for future projects</p>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="attachment_url" className="dark:text-gray-300">Attachment URL</Label>
+            <Input
+              id="attachment_url"
+              value={attachmentUrl}
+              onChange={(e) => setAttachmentUrl(e.target.value)}
+              placeholder="e.g. https://example.com/job-details.pdf"
+              className="dark:bg-gray-700 dark:text-white"
+            />
+            <p className="text-xs text-muted-foreground dark:text-gray-400">Link to additional job details or documents</p>
+          </div>
+
+
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="is_featured"
+              checked={isFeatured}
+              onCheckedChange={(checked) => setIsFeatured(checked as boolean)}
+            />
+            <Label htmlFor="is_featured" className="cursor-pointer dark:text-gray-300">Mark as featured job</Label>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={effectiveIsSubmitting}
+              className="bg-gradient-to-r from-[#9b87f5] to-[#6E59A5] hover:from-[#8B5CF6] hover:to-[#7E69AB] text-white"
+            >
+              {effectiveIsSubmitting ? "Posting..." : "Post"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

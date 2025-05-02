@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,7 +69,6 @@ const JobsTab = ({ advertisements = [] }: JobsTabProps) => {
           applications:project_applications(count)
         `)
         .eq('status', 'open')
-        .eq('verification_status', 'approved') // Only show approved projects
         .order('created_at', { ascending: false });
 
       if (error) throw error;
