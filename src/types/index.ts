@@ -42,6 +42,10 @@ export interface Project {
   deadline: string;
   attachment_url?: string;
   status: 'open' | 'closed' | 'in_progress';
+  verification_status?: 'pending' | 'approved' | 'rejected';
+  verification_note?: string;
+  verified_at?: string;
+  verified_by?: string;
   author_id: string;
   notifications_count?: number;
   created_at: string;
