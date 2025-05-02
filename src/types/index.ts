@@ -1,4 +1,3 @@
-
 export interface Profile {
   id: string;
   username: string;
@@ -73,6 +72,7 @@ export interface Project {
   job_poster_name?: string;
   application_method?: 'direct' | 'inbuilt' | 'whatsapp';
   application_methods?: ('direct' | 'inbuilt' | 'whatsapp')[];
+  verifier?: Profile;
 }
 
 export interface ProjectApplication {

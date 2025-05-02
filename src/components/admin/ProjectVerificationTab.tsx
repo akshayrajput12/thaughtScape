@@ -54,7 +54,7 @@ export function ProjectVerificationTab() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Project[];
+      return data as unknown as Project[];
     },
     enabled: !!user?.id,
   });
@@ -73,7 +73,7 @@ export function ProjectVerificationTab() {
             full_name,
             avatar_url
           ),
-          verifier:profiles!projects_verified_by_fkey(
+          verifier:profiles(
             id,
             username,
             full_name,
@@ -85,7 +85,7 @@ export function ProjectVerificationTab() {
         .limit(10);
 
       if (error) throw error;
-      return data as Project[];
+      return data as unknown as Project[];
     },
     enabled: !!user?.id,
   });
