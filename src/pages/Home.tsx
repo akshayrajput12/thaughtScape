@@ -30,6 +30,7 @@ const Home = () => {
   const [activeTab, setActiveTab] = useState("feed");
   const [showAdPopup, setShowAdPopup] = useState(false);
   const [popupAd, setPopupAd] = useState<Advertisement | null>(null);
+  const [userApplications, setUserApplications] = useState<string[]>([]);
 
   // Fetch thoughts/posts
   const { data: thoughts, isLoading: isLoadingThoughts } = useQuery({
@@ -120,6 +121,7 @@ const Home = () => {
         setUserApplications(data.map(app => app.project_id));
       } catch (error) {
         console.error("Error fetching user applications:", error);
+        setUserApplications([]);
       }
     };
 
