@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Thought, Profile, Project, Advertisement } from "@/types";
-import { Loader2, UserPlus, UserMinus, Briefcase, MessageSquare, Bell, Sparkles } from "lucide-react";
+import { Loader2, UserPlus, UserMinus, Briefcase, MessageSquare, Bell, Sparkles, UserCheck, User } from "lucide-react";
 import { PoemCard } from "@/components/PoemCard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useNavigate } from 'react-router-dom';
@@ -14,11 +14,11 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import JobListItem from "@/components/explore/JobListItem";
 import SEO from "@/components/SEO";
 import { AdvertisementCard } from "@/components/advertisements/AdvertisementCard";
 import { AdvertisementPopup } from "@/components/advertisements/AdvertisementPopup";
 import { ThoughtLimitsIndicator } from "@/components/ThoughtLimitsIndicator";
+import { PeopleList } from "@/components/PeopleList";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -28,7 +28,6 @@ const Home = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("feed");
-  const [userApplications, setUserApplications] = useState<string[]>([]);
   const [showAdPopup, setShowAdPopup] = useState(false);
   const [popupAd, setPopupAd] = useState<Advertisement | null>(null);
 
@@ -54,54 +53,6 @@ const Home = () => {
 
       if (error) throw error;
       return data as unknown as Thought[];
-    }
-  });
-
-  // Fetch projects/jobs
-  const { data: projects, isLoading: isLoadingProjects } = useQuery({
-    queryKey: ['projects'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('projects')
-        .select(`
-          *,
-          author:profiles!projects_author_id_fkey(
-            id,
-            username,
-            full_name,
-            avatar_url,
-            whatsapp_number,
-            created_at,
-            updated_at
-          ),
-          applications:project_applications(count)
-        `)
-        .eq('status', 'open')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-
-      // Ensure the status is properly cast to the expected type
-      if (data) {
-        const typedProjects = data.map(project => ({
-          ...project,
-          // Keep both min_budget and max_budget for proper budget display
-          min_budget: project.min_budget,
-          max_budget: project.max_budget,
-          // For backward compatibility
-          budget: project.min_budget,
-          _count: {
-            applications: project.applications?.[0]?.count || 0,
-            comments: 0
-          },
-          status: project.status as "open" | "closed" | "in_progress"
-        }));
-
-        return typedProjects as Project[];
-      }
-
-      return [] as Project[];
     }
   });
 
@@ -340,7 +291,7 @@ const Home = () => {
     ad.display_location.includes('home')
   ) || [];
 
-  const isLoading = isLoadingThoughts || isLoadingProjects || isLoadingAds;
+  const isLoading = isLoadingThoughts || isLoadingAds;
 
   if (isLoading) {
     return (
@@ -382,7 +333,7 @@ const Home = () => {
                 </div>
                 <div>
                   <h2 className="font-medium text-lg">Welcome back, {user?.user_metadata?.full_name?.split(' ')[0] || 'there'}!</h2>
-                  <p className="text-muted-foreground text-sm">Check out the latest posts and job opportunities</p>
+                  <p className="text-muted-foreground text-sm">Check out the latest posts and connect with people</p>
                 </div>
               </motion.div>
 
@@ -397,21 +348,16 @@ const Home = () => {
                 <ThoughtLimitsIndicator userId={user?.id} />
               </motion.div>
 
-              {/* Tabs for Feed and Jobs */}
+              {/* Tabs for Feed and People */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="feed" className="flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
                     <span>Feed</span>
                   </TabsTrigger>
-                  <TabsTrigger value="jobs" className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4" />
-                    <span>Jobs</span>
-                    {projects && projects.length > 0 && (
-                      <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1 flex items-center justify-center">
-                        {projects.length}
-                      </Badge>
-                    )}
+                  <TabsTrigger value="people" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span>People</span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -470,8 +416,8 @@ const Home = () => {
                   )}
                 </TabsContent>
 
-                <TabsContent value="jobs" className="space-y-6">
-                  {/* Display home advertisements at the top of the jobs tab */}
+                <TabsContent value="people" className="space-y-6">
+                  {/* Display home advertisements at the top of the people tab */}
                   {homeAds.length > 0 && (
                     <div className="mb-6">
                       <AdvertisementCard
@@ -481,60 +427,8 @@ const Home = () => {
                     </div>
                   )}
 
-                  {projects?.length === 0 ? (
-                    <div className="text-center py-12 bg-card rounded-xl border border-border">
-                      <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                      <h3 className="text-xl font-medium text-foreground mb-2">No jobs available</h3>
-                      <p className="text-muted-foreground max-w-md mx-auto mb-6">
-                        There are no job opportunities available at the moment. Check back later or explore all jobs.
-                      </p>
-                      <Button onClick={() => navigate('/freelancing')}>
-                        View All Jobs
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {projects?.map((project, index) => (
-                        <motion.div
-                          key={project.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="bg-card hover:bg-card/80 border border-border hover:border-primary/20 rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
-                        >
-                          <JobListItem
-                            project={project}
-                            hasApplied={userApplications.includes(project.id)}
-                            onApply={handleApplyToProject}
-                            featured={project.is_featured}
-                          />
-
-                          {/* Insert an advertisement after every 2 jobs if available */}
-                          {index > 0 &&
-                           index % 2 === 0 &&
-                           homeAds.length > 1 &&
-                           homeAds[Math.min(Math.floor(index / 2), homeAds.length - 1)] && (
-                            <div className="mt-4">
-                              <AdvertisementCard
-                                advertisement={homeAds[Math.min(Math.floor(index / 2), homeAds.length - 1)]}
-                                variant="compact"
-                              />
-                            </div>
-                          )}
-                        </motion.div>
-                      ))}
-
-                      <div className="flex justify-center mt-4">
-                        <Button
-                          variant="outline"
-                          onClick={() => navigate('/freelancing')}
-                          className="w-full"
-                        >
-                          View All Jobs
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                  {/* People List Component */}
+                  <PeopleList />
                 </TabsContent>
               </Tabs>
             </div>

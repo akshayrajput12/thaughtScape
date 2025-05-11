@@ -1,4 +1,3 @@
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -7,7 +6,6 @@ import {
   Home,
   Search,
   PenSquare,
-  Briefcase,
   User,
   Bell,
   LogOut,
@@ -199,7 +197,7 @@ const Navigation = () => {
       path: "/freelancing",
       icon: (
         <div className="relative">
-          <Briefcase className="h-5 w-5" />
+          <User className="h-5 w-5" />
           {notificationsData?.unreadApplications > 0 && (
             <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-medium text-white">
               {notificationsData.unreadApplications > 9 ? '9+' : notificationsData.unreadApplications}
@@ -207,7 +205,7 @@ const Navigation = () => {
           )}
         </div>
       ),
-      label: "Jobs"
+      label: "People"
     },
   ];
 
